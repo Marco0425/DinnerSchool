@@ -1,0 +1,8 @@
+# Archivo para que Git ignore ciertos archivos y carpetas que solo son temporales o de configuración local.
+# Ignorar archivos .pyc (archivos compilados de Python)
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar carpetas de caché
+__pycache__/

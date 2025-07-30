@@ -1,10 +1,11 @@
 from django.db import models
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from .choices import *
 
 # Create your models here.
 class Usuarios(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default=None)
     nombre = models.CharField(max_length=100)
     paterno = models.CharField(max_length=100)
     materno = models.CharField(max_length=100)
