@@ -1,0 +1,129 @@
+{% extends "main.html" %} {% load static %}{% block content %}
+<div
+  class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
+>
+  <div class="flex flex-col items-center mb-6">
+    <!-- Logo de la cafetería -->
+    <img
+      src="{% static 'img/logos/logo.png' %}"
+      alt="Logo de la Cafetería Certo"
+      class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
+    />
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear/Editar Empleado</h1>
+    <p class="text-gray-600 text-center">
+      Ingresa o modifica los datos del Empleado
+    </p>
+  </div>
+
+  <form id="employeeForm" class="space-y-4">
+    <div>
+      <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1"
+        >Nombre</label
+      >
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        placeholder="Nombre del empleado"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      />
+    </div>
+
+    <div>
+      <label
+        for="apellidoPaterno"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Apellido Paterno</label
+      >
+      <input
+        type="text"
+        id="apellidoPaterno"
+        name="apellidoPaterno"
+        placeholder="Apellido Paterno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      />
+    </div>
+
+    <div>
+      <label
+        for="apellidoMaterno"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Apellido Materno</label
+      >
+      <input
+        type="text"
+        id="apellidoMaterno"
+        name="apellidoMaterno"
+        placeholder="Apellido Materno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
+    </div>
+
+    <div>
+      <label for="correo" class="block text-sm font-medium text-gray-700 mb-1"
+        >Correo Electrónico</label
+      >
+      <input
+        type="text"
+        id="correo"
+        name="correo"
+        placeholder="Correo Electronico"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
+    </div>
+
+    <div>
+      <label for="telefono" class="block text-sm font-medium text-gray-700 mb-1"
+        >Número de Telefono</label
+      >
+      <input
+        type="text"
+        id="telefono"
+        name="telefono"
+        placeholder="+52 1 234 567 8901"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
+    </div>
+
+    <div>
+      <label for="puesto" class="block text-sm font-medium text-gray-700 mb-1"
+        >Puesto</label
+      >
+      <select
+        id="puesto"
+        name="puesto"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      >
+        <option value="">Selecciona el puesto</option>
+        <option value="A">Cocinero</option>
+        <option value="B">Mesero</option>
+        <option value="C">Cajero</option>
+      </select>
+    </div>
+
+    <div class="flex justify-end space-x-4 pt-4">
+      <button
+        type="button"
+        id="discardButton"
+        class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
+      >
+        Descartar
+      </button>
+      <button
+        type="submit"
+        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
+      >
+        Guardar
+      </button>
+    </div>
+  </form>
+
+  <div
+    id="message"
+    class="mt-6 p-3 text-sm text-center rounded-md hidden"
+  ></div>
+</div>
+{% endblock %}
