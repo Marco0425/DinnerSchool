@@ -61,4 +61,4 @@ def signInUp(request):
             # return redirect('vista_exito')  # Usa el nombre de tu URL 'vista_exito'
             return HttpResponse("Usuario registrado exitosamente.")
 
-        return render(request, 'signup.html')
+        return render(request, 'Login/siginup.html')

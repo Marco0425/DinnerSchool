@@ -1,0 +1,17 @@
+body {
+    font-family: "Inter", sans-serif;
+    background-color: #f3f4f6; /* Un gris claro para el fondo */
+}
+.bg-primary-red {
+    background-color: #dc2626; /* Rojo del logo */
+}
+.text-primary-red {
+    color: #dc2626; /* Rojo del logo */
+}
+.border-primary-red {
+    border-color: #dc2626; /* Rojo del logo */
+}
+/* Oculta los contenedores inicialmente para ser controlados por JS */
+.hidden-form {
+    display: none;
+}

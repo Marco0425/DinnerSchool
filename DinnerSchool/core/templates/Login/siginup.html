@@ -1,0 +1,256 @@
+{% extends "main.html" %} {% block content %}
+<div
+  class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full border-t-8 border-primary-red"
+>
+  <div class="flex flex-col items-center mb-6">
+    <!-- Logo de la cafetería - Ahora con una imagen de marcador de posición funcional -->
+    <img
+      src="../DinnerSchool/static/img/logos/logo.png"
+      alt="Logo de la Cafetería Certo"
+      class="w-24 h-24 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
+    />
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Cafetería Escolar</h1>
+    <p class="text-gray-600 text-center" id="form-description">
+      Inicia sesión para acceder a tu cuenta
+    </p>
+  </div>
+
+  <!-- Contenedor del formulario de Inicio de Sesión -->
+  <div id="loginContainer">
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label
+          for="loginUsername"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Usuario o Email</label
+        >
+        <input
+          type="text"
+          id="loginUsername"
+          name="username"
+          placeholder="Tu usuario o email"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          for="loginPassword"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Contraseña</label
+        >
+        <input
+          type="password"
+          id="loginPassword"
+          name="password"
+          placeholder="Tu contraseña"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
+      >
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-gray-600">
+      ¿Olvidaste tu contraseña?
+      <a
+        href="#"
+        id="showResetPasswordForm"
+        class="font-medium text-primary-red hover:text-red-700"
+        >Restablecer aquí</a
+      >
+    </p>
+    <p class="mt-2 text-center text-sm text-gray-600">
+      ¿No tienes una cuenta?
+      <a
+        href="#"
+        id="showRegisterForm"
+        class="font-medium text-primary-red hover:text-red-700"
+        >Crea una aquí</a
+      >
+    </p>
+  </div>
+
+  <!-- Contenedor del formulario de Registro (inicialmente oculto) -->
+  <div id="registerContainer" class="hidden-form">
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label
+          for="registerUsername"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Nombre</label
+        >
+        <input
+          type="text"
+          id="registerUsername"
+          name="username"
+          placeholder="Tu nombre"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+      <div>
+        <label
+          for="registerUserlastname"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Apellido Paterno</label
+        >
+        <input
+          type="text"
+          id="registerUserlastname"
+          name="userlastname"
+          placeholder="Tu apellido"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+      <div>
+        <label
+          for="registerUserlastname2"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Apellido Materno</label
+        >
+        <input
+          type="text"
+          id="registerUserlastname2"
+          name="userlastname2"
+          placeholder="Tu segundo apellido"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        />
+      </div>
+      <div>
+        <label
+          for="registerUseremail"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Email</label
+        >
+        <input
+          type="text"
+          id="registerUseremail"
+          name="useremail"
+          placeholder="Tu email"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          for="registerPassword"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Contraseña</label
+        >
+        <input
+          type="password"
+          id="registerPassword"
+          name="password"
+          placeholder="Crea tu contraseña"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          for="confirmPassword"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Confirmar Contraseña</label
+        >
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="Confirma tu contraseña"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          for="registerUserType"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Tipo de Usuario</label
+        >
+        <select
+          id="registerUserType"
+          name="userType"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        >
+          <option value="">Selecciona tu tipo de usuario</option>
+          <option value="parent">Tutor</option>
+          <option value="employee">Empleado</option>
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
+      >
+        Registrarse
+      </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-gray-600">
+      ¿Ya tienes una cuenta?
+      <a
+        href="#"
+        id="showLoginForm"
+        class="font-medium text-primary-red hover:text-red-700"
+        >Inicia sesión aquí</a
+      >
+    </p>
+  </div>
+
+  <!-- Contenedor del formulario de Restablecimiento de Contraseña (inicialmente oculto) -->
+  <div id="resetPasswordContainer" class="hidden-form">
+    <form id="resetPasswordForm" class="space-y-4">
+      <div>
+        <label
+          for="resetEmail"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Email</label
+        >
+        <input
+          type="email"
+          id="resetEmail"
+          name="email"
+          placeholder="Tu email registrado"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
+      >
+        Enviar Enlace de Restablecimiento
+      </button>
+    </form>
+
+    <p class="mt-4 text-center text-sm text-gray-600">
+      <a
+        href="#"
+        id="backToLoginFromReset"
+        class="font-medium text-primary-red hover:text-red-700"
+        >Volver a Iniciar Sesión</a
+      >
+    </p>
+  </div>
+
+  <!-- Mensaje de estado (inicialmente oculto) -->
+  <div
+    id="message"
+    class="mt-6 p-3 text-sm text-center rounded-md hidden"
+  ></div>
+</div>
+{% endblock %}
