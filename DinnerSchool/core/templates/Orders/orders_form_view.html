@@ -1,179 +1,129 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crear Pedido - Cafetería Escolar</title>
-    <!-- Carga de Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
+{% extends "main.html" %} {% load static %}{% block content %}
+<div
+  class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
+>
+  <div class="flex flex-col items-center mb-6">
+    <!-- Logo de la cafetería -->
+    <img
+      src="{% static 'img/logos/logo.png' %}"
+      alt="Logo de la Cafetería Certo"
+      class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
     />
-    <style>
-      /* Estilos personalizados para la tipografía y colores */
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: #f3f4f6; /* Un gris claro para el fondo */
-      }
-      .bg-primary-red {
-        background-color: #dc2626; /* Rojo del logo */
-      }
-      .text-primary-red {
-        color: #dc2626; /* Rojo del logo */
-      }
-      .border-primary-red {
-        border-color: #dc2626; /* Rojo del logo */
-      }
-      .shadow-custom {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-          0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-    </style>
-  </head>
-  <!-- El cuerpo está centrado vertical y horizontalmente -->
-  <body class="flex items-center justify-center min-h-screen p-4">
-    <div
-      class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
-    >
-      <div class="flex flex-col items-center mb-6">
-        <!-- Logo de la cafetería -->
-        <img
-          src="https://placehold.co/120x120/DC2626/FFFFFF?text=CERTO"
-          alt="Logo de la Cafetería Certo"
-          class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
-        />
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">
-          Crear Nuevo Pedido
-        </h1>
-        <p class="text-gray-600 text-center">
-          Ingresa los datos del nuevo pedido
-        </p>
-      </div>
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nuevo Pedido</h1>
+    <p class="text-gray-600 text-center">Ingresa los datos del nuevo pedido</p>
+  </div>
 
-      <form id="ordersForm" class="space-y-4">
-        <div>
-          <label
-            for="platillo"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Platillo</label
-          >
-          <select
-            id="platillo"
-            name="platillo"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          >
-            <option value="">Selecciona el Platillo</option>
-            <option value="1">Hamburguesa</option>
-            <option value="2">Tamal</option>
-            <option value="3">Sincronizada</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            for="ingredientes"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Ingredientes</label
-          >
-          <select
-            id="ingredientes"
-            name="ingredientes"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            multiple
-          >
-            <option value="">Selecciona los ingredientes</option>
-            <option value="1">Lechuga</option>
-            <option value="2">Jitomate</option>
-            <option value="3">Mayonesa</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            for="notas"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Notas</label
-          >
-          <input
-            type="text"
-            id="notas"
-            name="notas"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          />
-        </div>
-        <div>
-          <label
-            for="alumno"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Alumno</label
-          >
-          <select
-            id="alumno"
-            name="alumno"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          >
-            <option value="">Selecciona el Alumno</option>
-            <option value="1">Juan Perez</option>
-            <option value="2">Marco Antonio</option>
-          </select>
-        </div>
-        <div>
-          <label
-            for="turno"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Turno</label
-          >
-          <select
-            id="turno"
-            name="turno"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          >
-            <option value="">Selecciona el Horario de Comida</option>
-            <option value="1">Desayuno</option>
-            <option value="2">Comida</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            for="total"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Total</label
-          >
-          <input
-            type="number"
-            id="grado"
-            name="grado"
-            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          />
-        </div>
-
-        <div class="flex justify-end space-x-4 pt-4">
-          <button
-            type="button"
-            id="discardButton"
-            class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
-          >
-            Descartar
-          </button>
-          <button
-            type="submit"
-            class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
-          >
-            Solicitar Pedido
-          </button>
-        </div>
-      </form>
-
-      <div
-        id="message"
-        class="mt-6 p-3 text-sm text-center rounded-md hidden"
-      ></div>
+  <form id="ordersForm" class="space-y-4">
+    <div>
+      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1"
+        >Platillo</label
+      >
+      <select
+        id="platillo"
+        name="platillo"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      >
+        <option value="">Selecciona el Platillo</option>
+        <option value="1">Hamburguesa</option>
+        <option value="2">Tamal</option>
+        <option value="3">Sincronizada</option>
+      </select>
     </div>
-  </body>
-</html>
+
+    <div>
+      <label
+        for="ingredientes"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Ingredientes</label
+      >
+      <select
+        id="ingredientes"
+        name="ingredientes"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        multiple
+      >
+        <option value="">Selecciona los ingredientes</option>
+        <option value="1">Lechuga</option>
+        <option value="2">Jitomate</option>
+        <option value="3">Mayonesa</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="notas" class="block text-sm font-medium text-gray-700 mb-1"
+        >Notas</label
+      >
+      <input
+        type="text"
+        id="notas"
+        name="notas"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
+    </div>
+    <div>
+      <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
+        >Alumno</label
+      >
+      <select
+        id="alumno"
+        name="alumno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      >
+        <option value="">Selecciona el Alumno</option>
+        <option value="1">Juan Perez</option>
+        <option value="2">Marco Antonio</option>
+      </select>
+    </div>
+    <div>
+      <label for="turno" class="block text-sm font-medium text-gray-700 mb-1"
+        >Turno</label
+      >
+      <select
+        id="turno"
+        name="turno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      >
+        <option value="">Selecciona el Horario de Comida</option>
+        <option value="1">Desayuno</option>
+        <option value="2">Comida</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="total" class="block text-sm font-medium text-gray-700 mb-1"
+        >Total</label
+      >
+      <input
+        type="number"
+        id="grado"
+        name="grado"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
+    </div>
+
+    <div class="flex justify-end space-x-4 pt-4">
+      <button
+        type="button"
+        id="discardButton"
+        class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
+      >
+        Descartar
+      </button>
+      <button
+        type="submit"
+        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
+      >
+        Solicitar Pedido
+      </button>
+    </div>
+  </form>
+
+  <div
+    id="message"
+    class="mt-6 p-3 text-sm text-center rounded-md hidden"
+  ></div>
+</div>
+{% endblock %}

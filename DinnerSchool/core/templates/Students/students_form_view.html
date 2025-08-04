@@ -9,48 +9,94 @@
       alt="Logo de la Cafetería Certo"
       class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
     />
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">
-      Crear Nuevo Nivel Educativo
-    </h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nuevo Alumno</h1>
     <p class="text-gray-600 text-center">
-      Ingresa los datos del nuevo nivel educativo que deseas agregar a la
-      cafetería escolar.
+      Ingresa los datos del nuevo estudiante
     </p>
   </div>
 
-  <form id="ordersForm" class="space-y-4">
+  <form id="studentForm" class="space-y-4">
     <div>
-      <label for="nivel" class="block text-sm font-medium text-gray-700 mb-1"
-        >Nivel</label
+      <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1"
+        >Nombre(s)</label
       >
       <input
         type="text"
-        id="nivel"
-        name="nivel"
+        id="nombre"
+        name="nombre"
+        placeholder="Nombre(s) del alumno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      />
+    </div>
+
+    <div>
+      <label
+        for="apellidoPaterno"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Apellido Paterno</label
+      >
+      <input
+        type="text"
+        id="apellidoPaterno"
+        name="apellidoPaterno"
+        placeholder="Apellido Paterno"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        required
+      />
+    </div>
+
+    <div>
+      <label
+        for="apellidoMaterno"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Apellido Materno</label
+      >
+      <input
+        type="text"
+        id="apellidoMaterno"
+        name="apellidoMaterno"
+        placeholder="Apellido Materno"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
       />
     </div>
+
     <div>
       <label for="grado" class="block text-sm font-medium text-gray-700 mb-1"
         >Grado</label
       >
-      <input
-        type="text"
+      <select
         id="grado"
         name="grado"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      />
+        required
+      >
+        <option value="">Selecciona el Grado</option>
+        <option value="1">1°</option>
+        <option value="2">2°</option>
+        <option value="3">3°</option>
+        <option value="4">4°</option>
+        <option value="5">5°</option>
+        <option value="6">6°</option>
+      </select>
     </div>
+
     <div>
       <label for="grupo" class="block text-sm font-medium text-gray-700 mb-1"
         >Grupo</label
       >
-      <input
-        type="text"
+      <select
         id="grupo"
         name="grupo"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      />
+        required
+      >
+        <option value="">Selecciona el Grupo</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
     </div>
 
     <div class="flex justify-end space-x-4 pt-4">
@@ -65,7 +111,7 @@
         type="submit"
         class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
       >
-        Guardar
+        Guardar Alumno
       </button>
     </div>
   </form>

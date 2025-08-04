@@ -1,199 +1,144 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Alumnos - Cafetería Escolar</title>
-    <!-- Carga de Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      /* Estilos personalizados para la tipografía y colores */
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: #f3f4f6; /* Un gris claro para el fondo */
-      }
-      .bg-primary-red {
-        background-color: #dc2626; /* Rojo del logo */
-      }
-      .text-primary-red {
-        color: #dc2626; /* Rojo del logo */
-      }
-      .border-primary-red {
-        border-color: #dc2626; /* Rojo del logo */
-      }
-      .shadow-custom {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-          0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-    </style>
-  </head>
-  <body class="flex flex-col items-center min-h-screen p-4">
-    <div
-      class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red mb-8"
-    >
-      <div class="flex flex-col md:flex-row items-center justify-between mb-6">
-        <!-- Logo de la cafetería -->
-        <div class="flex items-center mb-4 md:mb-0">
-          <img
-            src="https://placehold.co/120x120/DC2626/FFFFFF?text=CERTO"
-            alt="Logo de la Cafetería Certo"
-            class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
-          />
-          <h1 class="text-3xl font-bold text-gray-800">Lista de Alumnos</h1>
-        </div>
-        <!-- Botón para volver o añadir alumno -->
-        <div class="text-right">
-          <button
-            onclick="window.history.back()"
-            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out mr-2"
-          >
-            Volver
-          </button>
-          <button
-            onclick="alert('Redirigir a formulario de nuevo alumno')"
-            class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
-          >
-            + Añadir Alumno
-          </button>
-        </div>
-      </div>
-
-      <!-- Tabla de Alumnos -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white rounded-lg shadow-custom">
-          <thead class="bg-gray-200">
-            <tr>
-              <th
-                class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tl-lg"
-              >
-                Nombre(s)
-              </th>
-              <th
-                class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-              >
-                Apellido Paterno
-              </th>
-              <th
-                class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-              >
-                Apellido Materno
-              </th>
-              <th
-                class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-              >
-                Grado
-              </th>
-              <th
-                class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
-              >
-                Grupo
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr class="hover:bg-gray-50">
-              <td
-                class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-              >
-                Ana
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                García
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                López
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                3°
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                B
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td
-                class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-              >
-                Carlos
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Martínez
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Sánchez
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                5°
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                A
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td
-                class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-              >
-                Sofía
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Rodríguez
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Pérez
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                1°
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                C
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td
-                class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-              >
-                Diego
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Hernández
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Díaz
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                4°
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                B
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td
-                class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-              >
-                Laura
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                González
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                Ramírez
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                2°
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-                A
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+{% extends "main.html" %} {% load static %}{% block content %}
+<div
+  class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red mb-8"
+>
+  <div class="flex flex-col md:flex-row items-center justify-between mb-6">
+    <!-- Logo de la cafetería -->
+    <div class="flex items-center mb-4 md:mb-0">
+      <img
+        src="{% static 'img/logos/logo.png' %}"
+        alt="Logo de la Cafetería Certo"
+        class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
+      />
+      <h1 class="text-3xl font-bold text-gray-800">Lista de Alumnos</h1>
     </div>
-  </body>
-</html>
+    <!-- Botón para volver o añadir alumno -->
+    <div class="text-right">
+      <button
+        onclick="window.history.back()"
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out mr-2"
+      >
+        Volver
+      </button>
+      <button
+        onclick="alert('Redirigir a formulario de nuevo alumno')"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+      >
+        + Añadir Alumno
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Alumnos -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white rounded-lg shadow-custom">
+      <thead class="bg-gray-200">
+        <tr>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tl-lg"
+          >
+            Nombre(s)
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+          >
+            Apellido Paterno
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+          >
+            Apellido Materno
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+          >
+            Grado
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+          >
+            Grupo
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr class="hover:bg-gray-50">
+          <td
+            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            Ana
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            García
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            López
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">3°</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">B</td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+          <td
+            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            Carlos
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Martínez
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Sánchez
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">5°</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">A</td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+          <td
+            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            Sofía
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Rodríguez
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Pérez
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">1°</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">C</td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+          <td
+            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            Diego
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Hernández
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Díaz
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">4°</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">B</td>
+        </tr>
+        <tr class="hover:bg-gray-50">
+          <td
+            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+          >
+            Laura
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            González
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            Ramírez
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">2°</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">A</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

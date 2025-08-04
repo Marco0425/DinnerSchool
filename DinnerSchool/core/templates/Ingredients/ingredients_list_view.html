@@ -1,38 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Ingredientes - Cafetería Escolar</title>
-    <!-- Carga de Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      /* Estilos personalizados para la tipografía y colores */
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: #f3f4f6; /* Un gris claro para el fondo */
-      }
-      .bg-primary-red {
-        background-color: #dc2626; /* Rojo del logo */
-      }
-      .text-primary-red {
-        color: #dc2626; /* Rojo del logo */
-      }
-      .border-primary-red {
-        border-color: #dc2626; /* Rojo del logo */
-      }
-      .shadow-custom {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-          0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-    </style>
-  </head>
-  <body class="flex flex-col items-center min-h-screen p-4">
+{% extends "main.html" %} {% load static %}{% block content %}
     <div
       class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red mb-8"
     >
@@ -40,7 +6,7 @@
         <!-- Logo de la cafetería -->
         <div class="flex items-center mb-4 md:mb-0">
           <img
-            src="https://placehold.co/120x120/DC2626/FFFFFF?text=CERTO"
+            src="{% static 'img/logos/logo.png' %}"
             alt="Logo de la Cafetería Certo"
             class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
           />
@@ -105,3 +71,4 @@
     </div>
   </body>
 </html>
+{% endblock %}
