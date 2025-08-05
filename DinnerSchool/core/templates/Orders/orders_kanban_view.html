@@ -1,4 +1,5 @@
 {% extends "main.html" %} {% load static %}{% block content %}
+<script src="{% static 'js/kanban.js' %}"></script>
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-6xl w-full border-t-8 border-primary-red mb-8"
 >
@@ -10,9 +11,7 @@
         alt="Logo de la Cafetería Certo"
         class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
       />
-      <h1 class="text-3xl font-bold text-gray-800">
-        Gestión de Pedidos (Kanban)
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-800">Gestión de Pedidos</h1>
     </div>
     <!-- Botón para volver -->
     <div class="text-right">

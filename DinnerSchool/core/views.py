@@ -127,6 +127,35 @@ def saucers(request):
         return render(request, 'saucers/saucers_list_view.html', {'saucers': saucers})
     else:
         return redirect('core:signInUp')
+    
+def order(request):
+    """
+    Vista para manejar los pedidos.
+    Esta vista se encarga de mostrar y gestionar los pedidos realizados por los estudiantes.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de pedidos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'orders/orders_kanban_view.html')
+    else:
+        return redirect('core:signInUp')
+
+def employee(request):
+    """
+    Vista para manejar los empleados.
+    Esta vista se encarga de mostrar y gestionar los empleados registrados.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de empleados.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'employees/employees_list_view.html')
+    else:
+        return redirect('core:signInUp')
+    
 
 
 def logout_view(request):
