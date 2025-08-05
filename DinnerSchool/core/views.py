@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes
 
 # Imports del core
@@ -96,3 +97,20 @@ def ingredients(request):
         return render(request, 'ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
     else:
         return redirect('core:signInUp')
+
+
+def logout_view(request):
+    """
+    Vista para manejar el cierre de sesión del usuario.
+    Esta vista se encarga de cerrar la sesión del usuario autenticado.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige al usuario a la página de inicio de sesión/registro.
+    """
+    if request.user.is_authenticated:
+        # Cerrar la sesión del usuario
+        django_logout(request)
+        return redirect('core:signInUp')
+    else:
+        return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
