@@ -98,6 +98,36 @@ def ingredients(request):
     else:
         return redirect('core:signInUp')
 
+def students(request):
+    """
+    Vista para manejar los estudiantes.
+    Esta vista se encarga de mostrar y gestionar los estudiantes registrados.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
+    """
+    if request.user.is_authenticated:
+        students = Usuarios.objects.all()
+        return render(request, 'students/students_list_view.html', {'students': students})
+    else:
+        return redirect('core:signInUp')
+
+def saucers(request):
+    """
+    Vista para manejar los platillos (sauces).
+    Esta vista se encarga de mostrar y gestionar los platillos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
+    """
+    if request.user.is_authenticated:
+        saucers = []
+        return render(request, 'saucers/saucers_list_view.html', {'saucers': saucers})
+    else:
+        return redirect('core:signInUp')
+
 
 def logout_view(request):
     """
