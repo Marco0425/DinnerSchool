@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.urls import reverse
+from comedor.models import Ingredientes
 
 # Imports del core
 from .models import *
@@ -79,3 +80,19 @@ def dashboard(request):
         return render(request, 'HOME/home_dashboard_view.html', {'user': request.user})
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
+    
+def ingredients(request):
+    """
+    Vista para manejar los ingredientes.
+    Esta vista se encarga de mostrar y gestionar los ingredientes disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de ingredientes.
+    """
+    if request.user.is_authenticated:
+        # Aquí podrías obtener los ingredientes y pasarlos al template
+        ingredients = Ingredientes.objects.all()
+        return render(request, 'ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
+    else:
+        return redirect('core:signInUp')
