@@ -2,6 +2,8 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
+from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
 from django.urls import reverse
 
 # Imports del core
@@ -10,6 +12,11 @@ from .models import *
 
 def index(request):
     return HttpResponse("Hello, world. You're at the core index.")
+
+def logout_view(request):
+    print("Cerrando sesión del usuario")
+    logout(request)
+    return redirect('core:signInUp') 
 
 def signInUp(request):
     """
@@ -36,7 +43,7 @@ def signInUp(request):
             numeroTelefonico = request.POST.get("numeroTelefonico")
             correo = request.POST.get("correo")
             contrasena = request.POST.get("contrasena")
-            
+
             # Crear la instancia de usuario
             user = User.objects.create_user(
                 username = f"{Nombre} {ApellidoPaterno} {ApellidoMaterno}",
@@ -60,9 +67,21 @@ def signInUp(request):
             
             # Aquí podrías redirigir a una página de éxito o mostrar un mensaje
             # return redirect('vista_exito')  # Usa el nombre de tu URL 'vista_exito'
-            return HttpResponse("Usuario registrado exitosamente.")
+            return redirect(reverse('core:dashboard'))
 
-        return render(request, 'Login/siginup.html')
+        elif request.method == "GET":
+            correo = request.GET.get("username")
+            contrasena = request.GET.get("password")
+
+            user = authenticate(request, username=correo, password=contrasena)
+            if user is not None:
+                login(request, user)
+                return redirect('core:dashboard')
+            else:
+                messages.error(request, 'Credenciales inválidas')
+                return render(request, 'Login/siginup.html')
+
+        return render(request, 'Login/signup.html')
 
 def dashboard(request):
     """
