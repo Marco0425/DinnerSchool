@@ -58,7 +58,6 @@
         Iniciar Sesión
       </button>
     </form>
-
     <p class="mt-4 text-center text-sm text-gray-600">
       ¿Olvidaste tu contraseña?
       <a
@@ -82,6 +81,7 @@
   <!-- Contenedor del formulario de Registro (inicialmente oculto) -->
   <div id="registerContainer" class="hidden-form">
     <form id="registerForm" class="space-y-4">
+      {% csrf_token %}
       <div>
         <label
           for="registerUsername"
@@ -187,8 +187,8 @@
           required
         >
           <option value="">Selecciona tu tipo de usuario</option>
-          <option value="parent">Tutor</option>
-          <option value="employee">Empleado</option>
+          <option value="Tutor">Tutor</option>
+          <option value="Employee">Empleado</option>
         </select>
       </div>
 
