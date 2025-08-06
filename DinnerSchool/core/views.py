@@ -136,6 +136,7 @@ def ingredients(request):
     Returns:
         HttpResponse: Respuesta HTTP que renderiza la lista de ingredientes.
     """
+
     if request.user.is_authenticated:
         # Aquí podrías obtener los ingredientes y pasarlos al template
         ingredients = Ingredientes.objects.all()
@@ -143,6 +144,17 @@ def ingredients(request):
     else:
         return redirect('core:signInUp')
 
+
+from django.views.decorators.http import require_POST
+
+@require_POST
+def ingredients_bulk_delete(request):
+    if not request.user.is_authenticated:
+        return redirect('core:signInUp')
+    ids = request.POST.getlist('selected_ids')
+    if ids:
+        Ingredientes.objects.filter(id__in=ids).delete()
+    return redirect('core:ingredients')
 def students(request):
     """
     Vista para manejar los estudiantes.
