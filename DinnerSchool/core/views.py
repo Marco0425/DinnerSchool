@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.urls import reverse
+from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes
 
 # Imports del core
@@ -15,9 +16,20 @@ def index(request):
     return HttpResponse("Hello, world. You're at the core index.")
 
 def logout_view(request):
-    print("Cerrando sesión del usuario")
-    logout(request)
-    return redirect('core:signInUp') 
+    """
+    Vista para manejar el cierre de sesión del usuario.
+    Esta vista se encarga de cerrar la sesión del usuario autenticado.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige al usuario a la página de inicio de sesión/registro.
+    """
+    if request.user.is_authenticated:
+        # Cerrar la sesión del usuario
+        django_logout(request)
+        return redirect('core:signInUp')
+    else:
+        return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
 def signInUp(request):
     """
@@ -113,5 +125,91 @@ def ingredients(request):
         # Aquí podrías obtener los ingredientes y pasarlos al template
         ingredients = Ingredientes.objects.all()
         return render(request, 'ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
+    else:
+        return redirect('core:signInUp')
+
+def students(request):
+    """
+    Vista para manejar los estudiantes.
+    Esta vista se encarga de mostrar y gestionar los estudiantes registrados.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
+    """
+    if request.user.is_authenticated:
+        students = Usuarios.objects.all()
+        return render(request, 'students/students_list_view.html', {'students': students})
+    else:
+        return redirect('core:signInUp')
+
+def saucers(request):
+    """
+    Vista para manejar los platillos (sauces).
+    Esta vista se encarga de mostrar y gestionar los platillos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
+    """
+    if request.user.is_authenticated:
+        saucers = []
+        return render(request, 'saucers/saucers_list_view.html', {'saucers': saucers})
+    else:
+        return redirect('core:signInUp')
+    
+def order(request):
+    """
+    Vista para manejar los pedidos.
+    Esta vista se encarga de mostrar y gestionar los pedidos realizados por los estudiantes.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de pedidos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'orders/orders_kanban_view.html')
+    else:
+        return redirect('core:signInUp')
+
+def employee(request):
+    """
+    Vista para manejar los empleados.
+    Esta vista se encarga de mostrar y gestionar los empleados registrados.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de empleados.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'employees/employees_list_view.html')
+    else:
+        return redirect('core:signInUp')
+
+def education_level(request):
+    """
+    Vista para manejar los niveles educativos.
+    Esta vista se encarga de mostrar y gestionar los niveles educativos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de niveles educativos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'educational_levels/level_list_view.html')
+    else:
+        return redirect('core:signInUp')
+    
+def credit(request):
+    """
+    Vista para manejar los créditos.
+    Esta vista se encarga de mostrar y gestionar los créditos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'credit/credit_list_view.html')
     else:
         return redirect('core:signInUp')
