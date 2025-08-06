@@ -242,3 +242,18 @@ def ads(request):
         return render(request, 'ads/ads_list_view.html')
     else:
         return redirect('core:signInUp')
+
+def user_list_view(request):
+    """
+    Vista para manejar la lista de usuarios.
+    Esta vista se encarga de mostrar y gestionar los usuarios registrados en el sistema.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:    
+        HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
+    """
+    if request.user.is_authenticated:
+        users = User.objects.all()
+        return render(request, 'Users/users_list_view.html', {'users': users})
+    else:
+        return redirect('core:signInUp')

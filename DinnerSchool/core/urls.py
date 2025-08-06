@@ -17,4 +17,5 @@ urlpatterns = [
     path("credit/", views.credit, name="credit"),
     path("educational/", views.education_level, name="educational"),
     path("ads/", views.ads, name="ads"),
+    path("users/", views.user_list_view, name="users"),
 ]
