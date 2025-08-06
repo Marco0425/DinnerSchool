@@ -66,11 +66,12 @@ def signInUp(request):
             )
 
             user.set_password(registerPassword)  # Asegurarse de que la contraseña esté encriptada
-            user.save()
 
             group = Group.objects.get(name=userType) if userType else Group.objects.get(pk=2)
+            user.groups.add(group)
+            user.save()
             
-            Usuarios.objects.create(
+            usuario = Usuarios.objects.create(
                 user=user,
                 groupId=group,
                 email=useremail,
