@@ -1,8 +1,8 @@
 # Imports de Django
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.models import User, Group
+from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
@@ -49,38 +49,44 @@ def signInUp(request):
     else:
         # Funcion para manejar el registro de usuarios
         if request.method == "POST":
-            # Variables para obtener los datos del formulario
-            Nombre = request.POST.get("Nombre")
-            ApellidoPaterno = request.POST.get("ApellidoPaterno")
-            ApellidoMaterno = request.POST.get("ApellidoMaterno")
-            numeroTelefonico = request.POST.get("numeroTelefonico")
-            correo = request.POST.get("correo")
-            contrasena = request.POST.get("contrasena")
+            username = request.POST.get("username")
+            userlastname = request.POST.get("userlastname")
+            userlastname2 = request.POST.get("userlastname2")
+            useremail = request.POST.get("useremail")
+            registerPassword = request.POST.get("password")
+            confirmPassword = request.POST.get("confirmPassword")
+            userType = request.POST.get("userType")
 
-            # Crear la instancia de usuario
             user = User.objects.create_user(
-                username = f"{Nombre} {ApellidoPaterno} {ApellidoMaterno}",
-                email = correo,
-                password = contrasena
+                username=useremail,
+                email=useremail,
+                password=registerPassword,
+                first_name=username,
+                last_name=f"{userlastname} {userlastname2}"
             )
+
+            user.set_password(registerPassword)  # Asegurarse de que la contraseña esté encriptada
+            user.save()
+
+            group = Group.objects.get(name=userType) if userType else Group.objects.get(pk=2)
             
-            # Asignar el grupo correspondiente
-            group = Group.objects.get(name='Tutor')
-            
-            # Crear el usuario personalizado
             Usuarios.objects.create(
-                user = user,
-                groupId = group,
-                email = correo,
-                telefono = numeroTelefonico,
-                nombre = Nombre,
-                paterno = ApellidoPaterno,
-                materno = ApellidoMaterno,
+                user=user,
+                groupId=group,
+                email=useremail,
+                nombre=username,
+                paterno=userlastname,
+                materno=userlastname2,
             )
-            
-            # Aquí podrías redirigir a una página de éxito o mostrar un mensaje
-            # return redirect('vista_exito')  # Usa el nombre de tu URL 'vista_exito'
-            return redirect(reverse('core:dashboard'))
+            print(f"Usuario creado: {useremail}, {registerPassword}")
+            userAuth = authenticate(request, username=useremail, password=registerPassword)
+            print(f"Usuario autenticado: {userAuth}")
+            if userAuth is not None:
+                login(request, userAuth)
+                return redirect('core:dashboard')
+            else:
+                messages.error(request, 'Credenciales inválidas')
+                return render(request, 'Login/siginup.html')
 
         elif request.method == "GET":
             correo = request.GET.get("username")
@@ -108,7 +114,12 @@ def dashboard(request):
     """
     if request.user.is_authenticated:
         # Aquí podrías obtener información del usuario y pasarla al template
-        return render(request, 'HOME/home_dashboard_view.html', {'user': request.user})
+        context = {
+            'user': request.user,
+            'is_tutor': request.user.groups.filter(name='Tutor').exists(),
+            'is_employee': request.user.groups.filter(name='Employee').exists(),
+        }
+        return render(request, 'HOME/home_dashboard_view.html', context)
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
     
@@ -124,7 +135,7 @@ def ingredients(request):
     if request.user.is_authenticated:
         # Aquí podrías obtener los ingredientes y pasarlos al template
         ingredients = Ingredientes.objects.all()
-        return render(request, 'ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
+        return render(request, 'Ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
     else:
         return redirect('core:signInUp')
 
@@ -154,7 +165,7 @@ def saucers(request):
     """
     if request.user.is_authenticated:
         saucers = []
-        return render(request, 'saucers/saucers_list_view.html', {'saucers': saucers})
+        return render(request, 'Saucer/saucer_list_view.html', {'saucers': saucers})
     else:
         return redirect('core:signInUp')
     

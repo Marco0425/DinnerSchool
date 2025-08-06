@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function showRegisterForm() {
     hideAllForms();
+    registerForm.setAttribute("method", "post");
+    registerForm.setAttribute("action", "/core/signInUp/");
     registerContainer.classList.remove("hidden-form");
     formDescription.textContent = "Crea tu cuenta para empezar";
   }
