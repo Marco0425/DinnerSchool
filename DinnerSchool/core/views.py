@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes
+from django.views.decorators.http import require_POST
 
 # Imports del core
 from .models import *
@@ -143,9 +144,6 @@ def ingredients(request):
         return render(request, 'Ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
     else:
         return redirect('core:signInUp')
-
-
-from django.views.decorators.http import require_POST
 
 @require_POST
 def ingredients_bulk_delete(request):
