@@ -155,8 +155,34 @@ def employee(request):
         return render(request, 'employees/employees_list_view.html')
     else:
         return redirect('core:signInUp')
-    
 
+def education_level(request):
+    """
+    Vista para manejar los niveles educativos.
+    Esta vista se encarga de mostrar y gestionar los niveles educativos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de niveles educativos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'educational_levels/level_list_view.html')
+    else:
+        return redirect('core:signInUp')
+    
+def credit(request):
+    """
+    Vista para manejar los créditos.
+    Esta vista se encarga de mostrar y gestionar los créditos disponibles.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
+    """
+    if request.user.is_authenticated:
+        return render(request, 'credit/credit_list_view.html')
+    else:
+        return redirect('core:signInUp')
 
 def logout_view(request):
     """
