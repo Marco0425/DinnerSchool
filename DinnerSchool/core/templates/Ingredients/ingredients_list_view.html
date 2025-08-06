@@ -34,7 +34,7 @@
     <form
       id="deleteForm"
       method="post"
-      action="{% url 'core:ingredients_bulk_delete' %}"
+      action="{% url 'core:bulk_delete' 'ingredientes' 'core:ingredients' %}"
     >
       {% csrf_token %}
       <div

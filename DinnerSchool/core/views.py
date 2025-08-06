@@ -8,6 +8,8 @@ from django.urls import reverse
 from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST
+from django.apps import apps
 
 # Imports del core
 from .models import *
@@ -15,6 +17,20 @@ from .models import *
 
 def index(request):
     return HttpResponse("Hello, world. You're at the core index.")
+
+# Vista genérica para eliminar
+@require_POST
+def bulk_delete(request, model_name, redirect_url):
+    if not request.user.is_authenticated:
+        return redirect('core:signInUp')
+    ids = request.POST.getlist('selected_ids')
+    try:
+        Model = apps.get_model('comedor' if model_name == 'ingredientes' else 'core', model_name.capitalize())
+    except LookupError:
+        return redirect(redirect_url)
+    if ids:
+        Model.objects.filter(id__in=ids).delete()
+    return redirect(redirect_url)
 
 def logout_view(request):
     """
@@ -145,29 +161,6 @@ def ingredients(request):
     else:
         return redirect('core:signInUp')
 
-@require_POST
-def ingredients_bulk_delete(request):
-    if not request.user.is_authenticated:
-        return redirect('core:signInUp')
-    ids = request.POST.getlist('selected_ids')
-    if ids:
-        Ingredientes.objects.filter(id__in=ids).delete()
-    return redirect('core:ingredients')
-def students(request):
-    """
-    Vista para manejar los estudiantes.
-    Esta vista se encarga de mostrar y gestionar los estudiantes registrados.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
-    """
-    if request.user.is_authenticated:
-        students = Usuarios.objects.all()
-        return render(request, 'students/students_list_view.html', {'students': students})
-    else:
-        return redirect('core:signInUp')
-
 def saucers(request):
     """
     Vista para manejar los platillos (sauces).
@@ -180,6 +173,21 @@ def saucers(request):
     if request.user.is_authenticated:
         saucers = []
         return render(request, 'Saucer/saucer_list_view.html', {'saucers': saucers})
+    else:
+        return redirect('core:signInUp')
+    
+def students(request):
+    """
+    Vista para manejar los estudiantes.
+    Esta vista se encarga de mostrar y gestionar los estudiantes registrados.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
+    """
+    if request.user.is_authenticated:
+        students = Usuarios.objects.all()
+        return render(request, 'students/students_list_view.html', {'students': students})
     else:
         return redirect('core:signInUp')
     
