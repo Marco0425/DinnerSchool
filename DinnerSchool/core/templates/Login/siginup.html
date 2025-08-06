@@ -173,7 +173,7 @@
           required
         />
       </div>
-
+      {% if is_staff %}
       <div>
         <label
           for="registerUserType"
@@ -191,7 +191,7 @@
           <option value="Employee">Empleado</option>
         </select>
       </div>
-
+      {% endif %}
       <button
         type="submit"
         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"

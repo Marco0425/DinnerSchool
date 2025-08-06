@@ -45,7 +45,10 @@ def signInUp(request):
     if request.user.is_authenticated:
         # Si el usuario ya está autenticado, redirigir a la página de dashboard
         # Aquí podrías redirigir a una página de dashboard o inicio
-        return redirect(reverse('core:dashboard'))
+        if request.user.is_staff:
+            return render(request, 'Login/siginup.html', {'is_staff': request.user.is_staff})
+        else:
+            return redirect(reverse('core:dashboard'))
     else:
         # Funcion para manejar el registro de usuarios
         if request.method == "POST":
