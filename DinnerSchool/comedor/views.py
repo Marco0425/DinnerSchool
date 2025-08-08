@@ -5,7 +5,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
-from comedor.models import Ingredientes
+from comedor.models import Ingredientes, Platillo
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -101,7 +101,40 @@ def saucers(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
     """
     if request.user.is_authenticated:
-        saucers = []
-        return render(request, 'Saucer/saucer_list_view.html', {'saucers': saucers})
+        saucers = Platillo.objects.all()
+        platillos = []
+        for platillo in saucers:
+            platillos.append({
+                'nombre': platillo.nombre,
+                'ingredientes': [Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing],
+                'precio': platillo.precio
+            })
+
+        print(platillos)
+        return render(request, 'Saucer/saucer_list_view.html', {'saucers': platillos})
     else:
         return redirect('core:signInUp')
+    
+def createSaucer(request):
+    """
+    Vista para crear un nuevo platillo.
+    Esta vista se encarga de manejar la creación de un nuevo platillo.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de platillos.
+    """
+    if request.method == "POST":
+        nombre = request.POST.get("platillo")
+        ingredientes = request.POST.getlist("ingredientes")
+        precio = request.POST.get("precio")
+        if nombre and ingredientes:
+            nuevoPlatillo = Platillo(nombre=nombre, precio=precio, ingredientes= str(ingredientes))
+            nuevoPlatillo.save()
+            messages.success(request, "Platillo creado exitosamente.")
+            return redirect('comedor:saucers')
+        else:
+            messages.error(request, "Por favor, ingresa un nombre para el platillo.")
+    else:
+        ingredientes = Ingredientes.objects.all()
+        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes})

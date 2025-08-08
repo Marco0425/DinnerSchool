@@ -20,12 +20,12 @@
       >
         Volver
       </a>
-      <button
-        onclick="alert('Redirigir a formulario de nuevo alumno')"
+      <a
+        href="{% url 'comedor:createSaucer' %}"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         + Añadir platillo
-      </button>
+      </a>
     </div>
   </div>
 
@@ -52,32 +52,21 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200">
+        {% for platillo in saucers %}
         <tr class="hover:bg-gray-50">
           <td
             class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
           >
-            Hamburguesa Clásica
+            {{ platillo.nombre }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            JITOMATE, LECHUGA, CEBOLLA, QUESO, CARNE, PAN
+            {{ platillo.ingredientes|join:", " }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            $50.00
+            ${{ platillo.precio }}
           </td>
         </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Torta de Tamal
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            PAN, TAMALES, SALSA
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            $15.00
-          </td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
