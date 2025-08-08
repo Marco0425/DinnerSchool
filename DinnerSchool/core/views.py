@@ -14,10 +14,6 @@ from django.apps import apps
 # Imports del core
 from .models import *
 
-
-def index(request):
-    return HttpResponse("Hello, world. You're at the core index.")
-
 # Vista genérica para eliminar
 @require_POST
 def bulk_delete(request, model_name, redirect_url):
@@ -143,39 +139,7 @@ def dashboard(request):
         return render(request, 'HOME/home_dashboard_view.html', context)
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
-    
-def ingredients(request):
-    """
-    Vista para manejar los ingredientes.
-    Esta vista se encarga de mostrar y gestionar los ingredientes disponibles.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de ingredientes.
-    """
 
-    if request.user.is_authenticated:
-        # Aquí podrías obtener los ingredientes y pasarlos al template
-        ingredients = Ingredientes.objects.all()
-        return render(request, 'Ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
-    else:
-        return redirect('core:signInUp')
-
-def saucers(request):
-    """
-    Vista para manejar los platillos (sauces).
-    Esta vista se encarga de mostrar y gestionar los platillos disponibles.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
-    """
-    if request.user.is_authenticated:
-        saucers = []
-        return render(request, 'Saucer/saucer_list_view.html', {'saucers': saucers})
-    else:
-        return redirect('core:signInUp')
-    
 def students(request):
     """
     Vista para manejar los estudiantes.
@@ -188,20 +152,6 @@ def students(request):
     if request.user.is_authenticated:
         students = Usuarios.objects.all()
         return render(request, 'students/students_list_view.html', {'students': students})
-    else:
-        return redirect('core:signInUp')
-    
-def order(request):
-    """
-    Vista para manejar los pedidos.
-    Esta vista se encarga de mostrar y gestionar los pedidos realizados por los estudiantes.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de pedidos.
-    """
-    if request.user.is_authenticated:
-        return render(request, 'orders/orders_kanban_view.html')
     else:
         return redirect('core:signInUp')
 
@@ -230,34 +180,6 @@ def education_level(request):
     """
     if request.user.is_authenticated:
         return render(request, 'educational_levels/level_list_view.html')
-    else:
-        return redirect('core:signInUp')
-    
-def credit(request):
-    """
-    Vista para manejar los créditos.
-    Esta vista se encarga de mostrar y gestionar los créditos disponibles.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
-    """
-    if request.user.is_authenticated:
-        return render(request, 'credit/credit_list_view.html')
-    else:
-        return redirect('core:signInUp')
-
-def ads(request):
-    """
-    Vista para manejar los anuncios.
-    Esta vista se encarga de mostrar y gestionar los anuncios disponibles.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de anuncios.
-    """
-    if request.user.is_authenticated:
-        return render(request, 'ads/ads_list_view.html')
     else:
         return redirect('core:signInUp')
 
