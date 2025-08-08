@@ -27,7 +27,28 @@ def ingredients(request):
         return render(request, 'Ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
     else:
         return redirect('core:signInUp')
-    
+
+def createIngredient(request):
+    """
+    Vista para crear un nuevo ingrediente.
+    Esta vista se encarga de manejar la creación de un nuevo ingrediente.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de ingredientes.
+    """
+    if request.method == "POST":
+        nombre = request.POST.get("ingrediente")
+        if nombre:
+            nuevoIngrediente = Ingredientes(nombre=nombre)
+            nuevoIngrediente.save()
+            messages.success(request, "Ingrediente creado exitosamente.")
+            return redirect('comedor:ingredients')
+        else:
+            messages.error(request, "Por favor, ingresa un nombre para el ingrediente.")
+    else:
+        return render(request, 'Ingredients/ingredients_form_view.html')
+
 def credit(request):
     """
     Vista para manejar los créditos.

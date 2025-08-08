@@ -6,6 +6,7 @@ app_name = 'comedor'
 
 urlpatterns = [
     path("ingredients/", views.ingredients, name="ingredients"),
+    path("ingredients/create/", views.createIngredient, name="createIngredient"),
     path("saucers/", views.saucers, name="saucers"),
     path("order/", views.order, name="order"),
     path("credit/", views.credit, name="credit"),
