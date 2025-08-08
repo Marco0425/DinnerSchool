@@ -1,7 +1,7 @@
 from django.db import models
 
 from .choices import *
-from core.models import Tutor, Alumnos, NivelEducativo    
+from core.models import Tutor, Alumnos, NivelEducativo, Usuarios    
 
 # Create your models here.
 class Credito(models.Model):
@@ -47,3 +47,13 @@ class CreditoDiario(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.monto}"
+    
+class Noticias(models.Model):
+    titulo = models.CharField(max_length=100)
+    contenido = models.TextField()
+    activo = models.BooleanField(default=True)
+    autor = models.ForeignKey(Usuarios, on_delete=models.CASCADE)
+    fecha = models.DateField(auto_now=True)
+
+    def __str__(self):
+        return self.titulo
