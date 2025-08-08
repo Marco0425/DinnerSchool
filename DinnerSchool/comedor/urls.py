@@ -10,6 +10,7 @@ urlpatterns = [
     path("saucers/", views.saucers, name="saucers"),
     path("saucers/create/", views.createSaucer, name="createSaucer"),
     path("order/", views.order, name="order"),
+    path("order/create/", views.createOrder, name="createOrder"),
     path("credit/", views.credit, name="credit"),
     path("ads/", views.ads, name="ads"),
 ]

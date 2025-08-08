@@ -91,6 +91,21 @@ def order(request):
     else:
         return redirect('core:signInUp')
     
+def createOrder(request):
+    """
+    Vista para crear un nuevo pedido.
+    Esta vista se encarga de manejar la creación de un nuevo pedido.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de pedidos.
+    """
+    if request.method == "POST":
+        # Aquí puedes manejar la creación del pedido
+        pass
+    else:
+        return render(request, 'orders/orders_form_view.html')
+
 def saucers(request):
     """
     Vista para manejar los platillos (sauces).

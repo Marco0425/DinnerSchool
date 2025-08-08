@@ -20,12 +20,12 @@
       >
         Volver
       </a>
-      <button
-        onclick="alert('Redirigir a formulario de nuevo alumno')"
+      <a
+        href="{% url 'core:createStudents' %}"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         + Añadir Alumno
-      </button>
+      </a>
     </div>
   </div>
 
@@ -52,6 +52,11 @@
           <th
             class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
           >
+            Nivel Educativo
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+          >
             Grado
           </th>
           <th
@@ -62,81 +67,26 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200">
+        {% for student in students %}
         <tr class="hover:bg-gray-50">
           <td
             class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
           >
-            Ana
+            {{ student.nombre }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            García
+            {{ student.paterno }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            López
+            {{ student.materno }}
           </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">3°</td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">B</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">{{ student.nivel }}</td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            {{ student.grado }}
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">{{ student.grupo }}</td>
         </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Carlos
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Martínez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Sánchez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">5°</td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">A</td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Sofía
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Rodríguez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Pérez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">1°</td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">C</td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Diego
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Hernández
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Díaz
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">4°</td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">B</td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Laura
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            González
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Ramírez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">2°</td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">A</td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>

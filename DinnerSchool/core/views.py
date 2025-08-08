@@ -10,6 +10,8 @@ from comedor.models import Ingredientes
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
+from .choices import *
+from .herramientas import getChoiceLabel
 
 # Imports del core
 from .models import *
@@ -150,10 +152,75 @@ def students(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
     """
     if request.user.is_authenticated:
-        students = Usuarios.objects.all()
-        return render(request, 'students/students_list_view.html', {'students': students})
+        tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+        students = Alumnos.objects.filter(tutorId=tutor)
+        
+        studentsTutor = []
+        if students:
+            for student in students:
+                    student = {
+                        'nombre': student.nombre,
+                        'paterno': student.paterno,
+                        'materno': student.materno,
+                        'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
+                        'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
+                        'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
+                    }
+                    studentsTutor.append(student)
+            print(studentsTutor)
+            return render(request, 'students/students_list_view.html', {'students': studentsTutor})
+        else:
+            messages.warning(request, 'No se encontraron estudiantes.')
+            return render(request, 'students/students_form_view.html')
     else:
         return redirect('core:signInUp')
+
+def createStudents(request):
+    """
+    Vista para crear un nuevo estudiante.
+    Esta vista se encarga de manejar la creación de un nuevo estudiante.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de estudiantes.
+    """
+    if request.method == "POST":
+        print("Datos recibidos del formulario:", request.POST)
+        nombre = request.POST.get("nombre")
+        paterno = request.POST.get("apellidoPaterno")
+        materno = request.POST.get("apellidoMaterno")
+        tutorId = request.user
+        grado = request.POST.get("grado")
+        grupo = request.POST.get("grupo")
+        nivelEducativo = request.POST.get("nivelEducativo")
+
+        nivelEducativoAlumno = NivelEducativo.objects.get(
+            nivel=int(nivelEducativo),
+            grado=int(grado),
+            grupo=int(grupo)
+        )
+
+        if not nivelEducativoAlumno:
+            messages.error(request, 'Nivel educativo no válido.')
+            return render(request, 'students/students_form_view.html')
+
+        try:
+            tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=tutorId))
+            Alumno = Alumnos.objects.create(
+                nombre=nombre,
+                paterno=paterno,
+                materno=materno,
+                tutorId=tutor,
+                nivelEducativo=nivelEducativoAlumno
+            )
+            print(f"Alumno creado: {Alumno.nombre}, Tutor: {tutor.usuario.nombre}")
+            messages.success(request, 'Estudiante creado exitosamente.')
+            return redirect('core:students')
+        except Tutor.DoesNotExist:
+            messages.error(request, 'Tutor no encontrado.')
+            return render(request, 'students/students_form_view.html')
+    else:
+        return render(request, 'students/students_form_view.html')
 
 def employee(request):
     """

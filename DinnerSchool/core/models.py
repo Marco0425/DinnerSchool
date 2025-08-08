@@ -45,3 +45,6 @@ class Alumnos(models.Model):
     materno = models.CharField(max_length=100)
     tutorId = models.ForeignKey(Tutor, on_delete=models.CASCADE)
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.nombre} {self.paterno} {self.materno}"
