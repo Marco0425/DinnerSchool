@@ -28,6 +28,7 @@ class Platillo(models.Model):
     
 class Pedido(models.Model):
     platillo = models.ForeignKey(Platillo, on_delete=models.CASCADE)
+    ingredientePlatillo = models.CharField(max_length=200, blank=True, null=True)
     nota = models.TextField(max_length=50, blank=True, null=True)
     alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE)
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE)
@@ -37,7 +38,7 @@ class Pedido(models.Model):
     turno = models.PositiveIntegerField(choices=TURNO, default=0)
 
     def __str__(self):
-        return f"{self.fecha} - {self.monto}"
+        return f"{self.fecha} - {self.total}"
     
 class CreditoDiario(models.Model):
     fecha = models.DateField(auto_now=True)

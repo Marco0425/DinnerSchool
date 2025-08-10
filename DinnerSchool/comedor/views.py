@@ -5,11 +5,17 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
-from comedor.models import Ingredientes, Platillo
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
 
+from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
+from core.models import Alumnos, Usuarios, Tutor
+from core.choices import *
+from .choices import *
+from core.herramientas import *
+
+import json
 
 def ingredients(request):
     """
@@ -87,7 +93,22 @@ def order(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de pedidos.
     """
     if request.user.is_authenticated:
-        return render(request, 'orders/orders_kanban_view.html')
+        orders = []
+        
+        for pedido in Pedido.objects.all():
+            order = {
+                "id": f"order-{pedido.id}",
+                "platillo": pedido.platillo.nombre,
+                "ingredientes": pedido.ingredientePlatillo,
+                "nota": pedido.nota,
+                "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}",
+                "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel),
+                "turno": "Comida",
+                "status": "pendiente",
+            }
+            orders.append(order)
+        print(orders)
+        return render(request, 'orders/orders_kanban_view.html', {'orders': orders})
     else:
         return redirect('core:signInUp')
     
@@ -101,10 +122,51 @@ def createOrder(request):
         HttpResponse: Respuesta HTTP que redirige a la lista de pedidos.
     """
     if request.method == "POST":
-        # Aquí puedes manejar la creación del pedido
-        pass
+        print(request.POST)
+        orden = request.POST.get("platillo")
+        ordenIngredientes = request.POST.getlist("ingredientes")
+        ordenNotas = request.POST.get("notas")
+        ordenAlumno = request.POST.get("alumno")
+        ordenTurno = request.POST.get("turno")
+        precio = request.POST.get("precio")
+        print("ordenTurno", ordenTurno)
+
+        platillo = Platillo.objects.get(id=orden)
+        nuevaOrden = Pedido.objects.update_or_create(
+            platillo=platillo,
+            ingredientePlatillo=", ".join(ordenIngredientes),
+            nota=ordenNotas,
+            alumnoId=Alumnos.objects.get(id=ordenAlumno),
+            nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo,
+            turno=ordenTurno,
+            total=float(precio)
+        )
+        
+        return redirect('core:dashboard')
     else:
-        return render(request, 'orders/orders_form_view.html')
+        platillos = Platillo.objects.all()
+        
+        tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+        students = Alumnos.objects.filter(tutorId=tutor)
+        
+        context = {
+                    "Platillos": [
+                        {
+                            "id": platillo.id,
+                            "nombre": platillo.nombre,
+                            "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                            "precio": float(platillo.precio)
+                        } for platillo in platillos
+                    ],
+                    "Alumnos": [
+                        {
+                            "id": alumno.id,
+                            "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                        } for alumno in students
+                    ]
+                }
+        
+        return render(request, 'orders/orders_form_view.html', context)
 
 def saucers(request):
     """
