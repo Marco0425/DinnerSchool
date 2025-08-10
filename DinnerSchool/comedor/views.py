@@ -79,9 +79,33 @@ def ads(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de anuncios.
     """
     if request.user.is_authenticated:
-        return render(request, 'ads/ads_list_view.html')
+        return render(request, 'Ads/ads_list_view.html')
     else:
         return redirect('core:signInUp')
+
+def createAds(request):
+    """
+    Vista para crear un nuevo anuncio.
+    Esta vista se encarga de manejar la creación de un nuevo anuncio.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de anuncios.
+    """
+    if request.method == "POST":
+        pass
+        titulo = request.POST.get("titulo")
+        contenido = request.POST.get("contenido")
+
+        crearNoticia = Noticias(
+            tipo=titulo, 
+            contenido=contenido,
+            activo=True,
+            autor=Usuarios.objects.get(user=request.user),
+        )
+    else:
+        messages.error(request, "Por favor, completa todos los campos.")
+    return render(request, 'Ads/ads_form_view.html')
 
 def order(request):
     """

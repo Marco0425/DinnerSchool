@@ -13,4 +13,5 @@ urlpatterns = [
     path("order/create/", views.createOrder, name="createOrder"),
     path("credit/", views.credit, name="credit"),
     path("ads/", views.ads, name="ads"),
+    path("ads/create/", views.createAds, name="createAds"),
 ]
