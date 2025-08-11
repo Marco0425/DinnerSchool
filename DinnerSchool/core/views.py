@@ -262,7 +262,7 @@ def user_list_view(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
     """
     if request.user.is_authenticated:
-        users = User.objects.all()
+        users = User.objects.filter(groups__name__in = ['Employee','Tutor'])
         return render(request, 'Users/users_list_view.html', {'users': users})
     else:
         return redirect('core:signInUp')
