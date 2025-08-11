@@ -168,30 +168,38 @@ def students(request):
     Returns:
         HttpResponse: Respuesta HTTP que renderiza la lista de estudiantes.
     """
-    if request.user.is_authenticated:
-        tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
-        students = Alumnos.objects.filter(tutorId=tutor)
-        
-        studentsTutor = []
-        if students:
-            for student in students:
-                    student = {
-                        'id': student.id,
-                        'nombre': student.nombre,
-                        'paterno': student.paterno,
-                        'materno': student.materno,
-                        'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
-                        'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
-                        'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
-                    }
-                    studentsTutor.append(student)
-            print(studentsTutor)
-            return render(request, 'students/students_list_view.html', {'students': studentsTutor})
-        else:
-            messages.warning(request, 'No se encontraron estudiantes.')
-            return render(request, 'students/students_form_view.html')
-    else:
+    if not request.user.is_authenticated:
         return redirect('core:signInUp')
+
+    if request.user.is_staff:
+        students = Alumnos.objects.all()
+        return render(request, 'students/students_list_view.html', {'students': students})
+
+    try:
+        usuario = Usuarios.objects.get(user=request.user)
+        tutor = Tutor.objects.get(usuario=usuario)
+        students = Alumnos.objects.filter(tutorId=tutor)
+    except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
+        messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
+        return render(request, 'students/students_form_view.html')
+
+    studentsTutor = []
+    for student in students:
+        studentsTutor.append({
+            'id': student.id,
+            'nombre': student.nombre,
+            'paterno': student.paterno,
+            'materno': student.materno,
+            'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
+            'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
+            'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
+        })
+
+    if studentsTutor:
+        return render(request, 'students/students_list_view.html', {'students': studentsTutor})
+    else:
+        messages.warning(request, 'No se encontraron estudiantes.')
+        return render(request, 'students/students_form_view.html')
 
 def createStudents(request):
     """
