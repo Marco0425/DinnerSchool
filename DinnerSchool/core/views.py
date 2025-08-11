@@ -30,7 +30,7 @@ def bulk_delete(request, model_name, redirect_url):
         'ads': ('comedor', 'Noticias'),
         'users': ('core', 'Usuarios'),
         'tutors': ('core', 'Tutor'),
-        'students': ('core', 'students'),
+        'students': ('core', 'Alumnos'),
         'employees': ('core', 'Empleados'),
         'education_levels': ('core', 'NivelEducativo'),
     }
@@ -42,7 +42,15 @@ def bulk_delete(request, model_name, redirect_url):
     # Filtrar valores vacíos
     valid_ids = [i for i in ids if i.strip()]
     if valid_ids:
-        Model.objects.filter(id__in=valid_ids).delete()
+        # Si el modelo es Usuarios, elimina también el User relacionado
+        if model_name.lower() == 'users':
+            usuarios = Model.objects.filter(id__in=valid_ids)
+            for usuario in usuarios:
+                if usuario.user:
+                    usuario.user.delete()
+                usuario.delete()
+        else:
+            Model.objects.filter(id__in=valid_ids).delete()
     return redirect(redirect_url)
 
 def logout_view(request):
