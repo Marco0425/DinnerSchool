@@ -68,6 +68,31 @@ def credit(request):
         return render(request, 'credit/credit_list_view.html')
     else:
         return redirect('core:signInUp')
+    
+def createCredit(request):
+    """
+    Vista para crear un nuevo crédito.
+    Esta vista se encarga de manejar la creación de un nuevo crédito.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que redirige a la lista de créditos.
+    """
+    if request.method == "POST":
+        tutor_id = request.POST.get("tutor")
+        credito = request.POST.get("credito")
+        if tutor_id and credito:
+            tutor = Tutor.objects.get(id=tutor_id)
+            nuevoCredito = CreditoDiario(tutor=tutor, credito=credito)
+            nuevoCredito.save()
+            messages.success(request, "Crédito creado exitosamente.")
+            return redirect('comedor:credit')
+        else:
+            messages.error(request, "Por favor, completa todos los campos.")
+    else:
+        tutors = Tutor.objects.all()
+        return render(request, 'credit/credit_form_view.html', {'tutors': tutors})
+    
 
 def ads(request):
     """
