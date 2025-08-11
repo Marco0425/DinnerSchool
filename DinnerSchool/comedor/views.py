@@ -93,7 +93,6 @@ def createCredit(request):
         tutors = Tutor.objects.all()
         return render(request, 'credit/credit_form_view.html', {'tutors': tutors})
     
-
 def ads(request):
     """
     Vista para manejar los anuncios.

@@ -27,6 +27,12 @@ def bulk_delete(request, model_name, redirect_url):
     model_map = {
         'ingredientes': ('comedor', 'Ingredientes'),
         'saucers': ('comedor', 'Platillo'),
+        'ads': ('comedor', 'Noticias'),
+        'users': ('core', 'Usuarios'),
+        'tutors': ('core', 'Tutor'),
+        'students': ('core', 'Alumnos'),
+        'employees': ('core', 'Empleados'),
+        'education_levels': ('core', 'NivelEducativo'),
     }
     app_label, model_class_name = model_map.get(model_name.lower(), ('core', model_name.capitalize()))
     try:
