@@ -232,6 +232,7 @@ def saucers(request):
         platillos = []
         for platillo in saucers:
             platillos.append({
+                'id': platillo.id,
                 'nombre': platillo.nombre,
                 'ingredientes': [Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing],
                 'precio': platillo.precio

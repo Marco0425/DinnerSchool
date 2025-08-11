@@ -22,12 +22,21 @@ def bulk_delete(request, model_name, redirect_url):
     if not request.user.is_authenticated:
         return redirect('core:signInUp')
     ids = request.POST.getlist('selected_ids')
+    # Mapeo de modelos a sus respectivas apps
+    # Mapeo de nombres de modelo a (app_label, model_class_name)
+    model_map = {
+        'ingredientes': ('comedor', 'Ingredientes'),
+        'saucers': ('comedor', 'Platillo'),
+    }
+    app_label, model_class_name = model_map.get(model_name.lower(), ('core', model_name.capitalize()))
     try:
-        Model = apps.get_model('comedor' if model_name == 'ingredientes' else 'core', model_name.capitalize())
+        Model = apps.get_model(app_label, model_class_name)
     except LookupError:
         return redirect(redirect_url)
-    if ids:
-        Model.objects.filter(id__in=ids).delete()
+    # Filtrar valores vacíos
+    valid_ids = [i for i in ids if i.strip()]
+    if valid_ids:
+        Model.objects.filter(id__in=valid_ids).delete()
     return redirect(redirect_url)
 
 def logout_view(request):
