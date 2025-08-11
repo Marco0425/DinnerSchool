@@ -6,7 +6,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
-from comedor.models import Ingredientes
+from comedor.models import Ingredientes, Noticias
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -137,6 +137,8 @@ def dashboard(request):
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
             'is_employee': request.user.groups.filter(name='Employee').exists(),
+            'is_admin': request.user.is_staff,
+            'noticias': Noticias.objects.filter(activo=True),
         }
         return render(request, 'HOME/home_dashboard_view.html', context)
     else:

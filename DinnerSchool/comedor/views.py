@@ -79,7 +79,8 @@ def ads(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de anuncios.
     """
     if request.user.is_authenticated:
-        return render(request, 'Ads/ads_list_view.html')
+        noticiaList = Noticias.objects.all()
+        return render(request, 'Ads/ads_list_view.html', {'noticias': noticiaList})
     else:
         return redirect('core:signInUp')
 

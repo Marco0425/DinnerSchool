@@ -49,16 +49,18 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
+          {% for noticia in noticias %}
           <tr class="hover:bg-gray-50">
             <td
               class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
             >
-              Aviso
+              {{ noticia.titulo }}
             </td>
             <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-              La cafetería tendrá un horario especial el próximo viernes debido a un evento escolar.
+              {{ noticia.contenido }}
             </td>
           </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
