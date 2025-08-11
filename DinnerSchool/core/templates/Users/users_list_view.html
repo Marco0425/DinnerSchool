@@ -31,11 +31,36 @@
 
   <!-- Tabla de Usuarios -->
   <div class="overflow-x-auto">
+        <form
+      id="deleteForm"
+      method="post"
+      action="{% url 'core:bulk_delete' 'user' 'users' %}"
+    >
+      {% csrf_token %}
+      <div
+        class="flex justify-end mb-2"
+        id="deleteBtnContainer"
+        style="display: none"
+      >
+        <button
+          type="submit"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+        >
+          Eliminar seleccionados
+        </button>
+      </div>
     <table class="min-w-full bg-white rounded-lg shadow-custom">
       <thead class="bg-gray-200">
         <tr>
+          <th class="py-3 px-2 text-center rounded-tl-lg">
+              <input
+                type="checkbox"
+                id="selectAll"
+                class="form-checkbox h-4 w-4 text-primary-red"
+              />
+            </th>
           <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tl-lg"
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
           >
             Nombre(s)
           </th>
@@ -59,6 +84,14 @@
       <tbody class="divide-y divide-gray-200">
         {% for user in users %}
         <tr class="hover:bg-gray-50">
+          <td class="py-3 px-2 text-center">
+              <input
+                type="checkbox"
+                name="selected_ids"
+                value="{{ user.id }}"
+                class="rowCheckbox form-checkbox h-4 w-4 text-primary-red"
+              />
+          </td>
           <td
             class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
           >
@@ -78,5 +111,7 @@
       </tbody>
     </table>
   </div>
+</form>
 </div>
+<script src="{% static 'js/list.js' %}"></script>
 {% endblock %}

@@ -290,3 +290,32 @@ def user_list_view(request):
         return render(request, 'Users/users_list_view.html', {'users': users})
     else:
         return redirect('core:signInUp')
+    
+def account_settings_form_view(request):
+    """
+    Vista para manejar los ajustes de cuenta del usuario.
+    Esta vista se encarga de mostrar y gestionar los ajustes de cuenta del usuario autenticado.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza el formulario de ajustes de cuenta.
+    """
+    if request.user.is_authenticated:
+        user = request.user
+        if request.method == "POST":
+            user.first_name = request.POST.get("first_name", user.first_name)
+            user.last_name = request.POST.get("last_name", user.last_name)
+            user.email = request.POST.get("email", user.email)
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
+            if new_password and new_password == confirm_password:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Ajustes de cuenta actualizados exitosamente.')
+                return redirect('core:account_settings')
+            else:
+                messages.error(request, 'Las contraseñas no coinciden o están vacías.')
+        return render(request, 'account_settings/account_settings_form_view.html', {'user': user})
+    else:
+        return redirect('core:signInUp')
+            
