@@ -30,7 +30,7 @@ def bulk_delete(request, model_name, redirect_url):
         'ads': ('comedor', 'Noticias'),
         'users': ('core', 'Usuarios'),
         'tutors': ('core', 'Tutor'),
-        'students': ('core', 'Alumnos'),
+        'students': ('core', 'students'),
         'employees': ('core', 'Empleados'),
         'education_levels': ('core', 'NivelEducativo'),
     }
@@ -176,6 +176,7 @@ def students(request):
         if students:
             for student in students:
                     student = {
+                        'id': student.id,
                         'nombre': student.nombre,
                         'paterno': student.paterno,
                         'materno': student.materno,
