@@ -38,7 +38,31 @@
         Pendiente
       </h2>
       <div id="pendiente-cards" class="space-y-4 min-h-[100px]">
-        <!-- Las tarjetas se cargarán aquí por JS -->
+        {% for order in orders %} {% if order.status == 'pendiente' %}
+        <div
+          id="{{ order.id }}"
+          class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
+          draggable="true"
+        >
+          <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          <p class="text-sm text-gray-600">
+            <strong>Alumno:</strong> {{ order.alumno }}
+          </p>
+          <p class="text-xs text-gray-500">
+            <strong>Nivel:</strong> {{ order.nivel }} |
+            <strong>Turno:</strong> {{ order.turno }}
+          </p>
+          {% if order.ingredientes %}
+          <p class="text-xs text-gray-500">
+            <strong>Ingredientes:</strong> {{ order.ingredientes }}
+          </p>
+          {% endif %} {% if order.nota %}
+          <p class="text-xs text-gray-500">
+            <strong>Nota:</strong> {{ order.nota }}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %} {% endfor %}
       </div>
     </div>
 
@@ -54,7 +78,31 @@
         En Preparación
       </h2>
       <div id="en-preparacion-cards" class="space-y-4 min-h-[100px]">
-        <!-- Las tarjetas se cargarán aquí por JS -->
+        {% for order in orders %} {% if order.status == 'en preparacion' %}
+        <div
+          id="{{ order.id }}"
+          class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
+          draggable="true"
+        >
+          <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          <p class="text-sm text-gray-600">
+            <strong>Alumno:</strong> {{ order.alumno }}
+          </p>
+          <p class="text-xs text-gray-500">
+            <strong>Nivel:</strong> {{ order.nivel }} |
+            <strong>Turno:</strong> {{ order.turno }}
+          </p>
+          {% if order.ingredientes %}
+          <p class="text-xs text-gray-500">
+            <strong>Ingredientes:</strong> {{ order.ingredientes }}
+          </p>
+          {% endif %} {% if order.nota %}
+          <p class="text-xs text-gray-500">
+            <strong>Nota:</strong> {{ order.nota }}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %} {% endfor %}
       </div>
     </div>
 
@@ -70,7 +118,31 @@
         Finalizado
       </h2>
       <div id="finalizado-cards" class="space-y-4 min-h-[100px]">
-        <!-- Las tarjetas se cargarán aquí por JS -->
+        {% for order in orders %} {% if order.status == 'finalizado' %}
+        <div
+          id="{{ order.id }}"
+          class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
+          draggable="true"
+        >
+          <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          <p class="text-sm text-gray-600">
+            <strong>Alumno:</strong> {{ order.alumno }}
+          </p>
+          <p class="text-xs text-gray-500">
+            <strong>Nivel:</strong> {{ order.nivel }} |
+            <strong>Turno:</strong> {{ order.turno }}
+          </p>
+          {% if order.ingredientes %}
+          <p class="text-xs text-gray-500">
+            <strong>Ingredientes:</strong> {{ order.ingredientes }}
+          </p>
+          {% endif %} {% if order.nota %}
+          <p class="text-xs text-gray-500">
+            <strong>Nota:</strong> {{ order.nota }}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %} {% endfor %}
       </div>
     </div>
   </div>

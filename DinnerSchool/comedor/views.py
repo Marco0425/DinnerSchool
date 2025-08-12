@@ -8,6 +8,8 @@ from django.contrib.auth import logout as django_logout
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
 from core.models import Alumnos, Usuarios, Tutor
@@ -216,6 +218,39 @@ def createOrder(request):
                 }
         
         return render(request, 'orders/orders_form_view.html', context)
+
+@csrf_exempt
+def update_order_status(request):
+    """
+    Vista para actualizar el status de un pedido vía AJAX.
+    Espera POST con 'order_id' (ej: 'order-5') y 'new_status' (pendiente, en preparacion, finalizado).
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            order_id = data.get("order_id")
+            new_status = data.get("new_status")
+            if not order_id or not new_status:
+                return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
+
+            # Mapear status string a valor entero de STATUSPEDIDO
+            status_map = {
+                "pendiente": 0,
+                "en preparacion": 1,
+                "finalizado": 2,
+            }
+            if new_status not in status_map:
+                return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
+
+            pedido_id = int(order_id.replace("order-", ""))
+            from comedor.models import Pedido
+            pedido = Pedido.objects.get(id=pedido_id)
+            pedido.status = status_map[new_status]
+            pedido.save()
+            return JsonResponse({"success": True})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
 def saucers(request):
     """
