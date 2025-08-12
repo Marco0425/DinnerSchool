@@ -127,7 +127,7 @@ def signInUp(request):
                     return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
 
                 try:
-                    group = Group.objects.get(name=userType) if userType else Group.objects.get(pk=2)
+                    group = Group.objects.get(pk=userType) if userType else Group.objects.get(pk=2)
                     print(f"[DEBUG] Grupo asignado: {group}")
                 except Group.DoesNotExist:
                     print("[DEBUG] Tipo de usuario inválido")
@@ -160,6 +160,15 @@ def signInUp(request):
                         materno=userlastname2,
                         telefono=userphone or ''
                     )
+                    
+                    if userType == 1:
+                        Tutor.objects.create(
+                            usuario=usuario
+                        )
+                    else:
+                        Empleados.objects.create(
+                            usuario=usuario
+                        )
                     print(f"[DEBUG] Usuarios creado: {usuario}")
                 except Exception as e:
                     print(f"[DEBUG] Error creando Usuarios: {e}")
@@ -196,15 +205,17 @@ def signInUp(request):
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
             # Si no se especifica userType, asignar 'Tutor' por defecto
+            print(f"[DEBUG] userType recibido antes de condicion: {userType}")
             if not userType:
                 try:
-                    group = Group.objects.get(name="Tutor")
+                    group = Group.objects.get(pk=1)
                 except Group.DoesNotExist:
                     messages.error(request, 'No existe el grupo Tutor. Contacta al administrador.')
                     return render(request, 'Login/siginup.html')
             else:
                 try:
-                    group = Group.objects.get(name=userType)
+                    print(f"[DEBUG] userType recibido: {userType}")
+                    group = Group.objects.get(pk=userType)
                 except Group.DoesNotExist:
                     messages.error(request, 'Tipo de usuario inválido.')
                     return render(request, 'Login/siginup.html')
@@ -232,14 +243,7 @@ def signInUp(request):
                 materno=userlastname2,
             )
 
-            if userType == 1:
-                Tutor.objects.create(
-                    usuario=usuario
-                )
-            else:
-                Empleados.objects.create(
-                    usuario=usuario
-                )
+            Tutor.objects.create(usuario=usuario)
                 
             userAuth = authenticate(request, username=useremail, password=registerPassword)
             if userAuth is not None:
