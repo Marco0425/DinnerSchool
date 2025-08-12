@@ -22,8 +22,10 @@ def bulk_delete(request, model_name, redirect_url):
     if not request.user.is_authenticated:
         return redirect('core:signInUp')
     ids = request.POST.getlist('selected_ids')
+    print(f"[bulk_delete] model_name recibido: {model_name}")
+    print(f"[bulk_delete] redirect_url recibido: {redirect_url}")
+    print(f"[bulk_delete] IDs recibidos: {ids}")
     # Mapeo de modelos a sus respectivas apps
-    # Mapeo de nombres de modelo a (app_label, model_class_name)
     model_map = {
         'ingredientes': ('comedor', 'Ingredientes'),
         'saucers': ('comedor', 'Platillo'),
@@ -35,21 +37,29 @@ def bulk_delete(request, model_name, redirect_url):
         'education_levels': ('core', 'NivelEducativo'),
     }
     app_label, model_class_name = model_map.get(model_name.lower(), ('core', model_name.capitalize()))
+    print(f"[bulk_delete] app_label: {app_label}, model_class_name: {model_class_name}")
     try:
         Model = apps.get_model(app_label, model_class_name)
+        print(f"[bulk_delete] Modelo encontrado: {Model}")
     except LookupError:
+        print(f"[bulk_delete] Modelo no encontrado para {app_label}.{model_class_name}")
         return redirect(redirect_url)
     # Filtrar valores vacíos
     valid_ids = [i for i in ids if i.strip()]
+    print(f"[bulk_delete] IDs válidos: {valid_ids}")
     if valid_ids:
-        # Si el modelo es Usuarios, elimina también el User relacionado
         if model_name.lower() == 'users':
             usuarios = Model.objects.filter(id__in=valid_ids)
+            print(f"[bulk_delete] Usuarios a eliminar: {[u.id for u in usuarios]}")
             for usuario in usuarios:
-                if usuario.user:
-                    usuario.user.delete()
+                print(f"[bulk_delete] Eliminando usuario Usuarios.id={usuario.id}, User.id={usuario.user.id if usuario.user else None}")
+                user_obj = usuario.user
+                if user_obj and User.objects.filter(id=user_obj.id).exists():
+                    print(f"[bulk_delete] Eliminando primero User.id={user_obj.id}")
+                    user_obj.delete()
                 usuario.delete()
         else:
+            print(f"[bulk_delete] Eliminando objetos de {Model} con IDs: {valid_ids}")
             Model.objects.filter(id__in=valid_ids).delete()
     return redirect(redirect_url)
 
@@ -294,7 +304,8 @@ def user_list_view(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
     """
     if request.user.is_authenticated:
-        users = User.objects.filter(groups__name__in = ['Employee','Tutor'])
+        # users = User.objects.filter(groups__name__in = ['Employee','Tutor'])
+        users = Usuarios.objects.all()
         return render(request, 'Users/users_list_view.html', {'users': users})
     else:
         return redirect('core:signInUp')

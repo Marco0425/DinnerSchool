@@ -34,7 +34,7 @@
         <form
       id="deleteForm"
       method="post"
-      action="{% url 'core:bulk_delete' 'user' 'core:user_list_view' %}"
+      action="{% url 'core:bulk_delete' 'Usuarios' 'core:user_list_view' %}"
     >
       {% csrf_token %}
       <div
@@ -95,16 +95,16 @@
           <td
             class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
           >
-            {{ user.first_name }}
+            {{ user.nombre }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ user.last_name }}
+            {{ user.paterno }} {{ user.materno }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
             {{ user.email }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ user.groups.all|join:", " }}
+            {{ user.groupId|join:", " }}
           </td>
         </tr>
         {% endfor %}
