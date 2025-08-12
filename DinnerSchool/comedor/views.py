@@ -119,20 +119,46 @@ def createAds(request):
     Returns:
         HttpResponse: Respuesta HTTP que redirige a la lista de anuncios.
     """
+    noticia_id = request.GET.get('id') or request.POST.get('id')
+    noticia = None
+    if noticia_id:
+        try:
+            noticia = Noticias.objects.get(id=noticia_id)
+        except Noticias.DoesNotExist:
+            noticia = None
+
     if request.method == "POST":
-        pass
         titulo = request.POST.get("titulo")
         contenido = request.POST.get("contenido")
-
-        crearNoticia = Noticias(
-            tipo=titulo, 
-            contenido=contenido,
-            activo=True,
-            autor=Usuarios.objects.get(user=request.user),
-        )
+        if titulo and contenido:
+            if noticia:
+                noticia.titulo = titulo
+                noticia.contenido = contenido
+                noticia.save()
+                messages.success(request, "Anuncio actualizado exitosamente.")
+            else:
+                try:
+                    usuario = Usuarios.objects.get(user=request.user)
+                except Usuarios.DoesNotExist:
+                    messages.error(request, "No existe un perfil de usuario asociado a este usuario. Contacta al administrador.")
+                    return render(request, 'Ads/ads_form_view.html', {'noticia': None})
+                nueva_noticia = Noticias(
+                    titulo=titulo,
+                    contenido=contenido,
+                    activo=True,
+                    autor=usuario,
+                )
+                nueva_noticia.save()
+                print('Nueva noticia creada:', nueva_noticia)
+                messages.success(request, "Anuncio creado exitosamente.")
+            return redirect('comedor:ads')
+        else:
+            messages.error(request, "Por favor, completa todos los campos.")
+        context = {'noticia': noticia}
+        return render(request, 'Ads/ads_form_view.html', context)
     else:
-        messages.error(request, "Por favor, completa todos los campos.")
-    return render(request, 'Ads/ads_form_view.html')
+        context = {'noticia': noticia}
+        return render(request, 'Ads/ads_form_view.html', context)
 
 def order(request):
     """
