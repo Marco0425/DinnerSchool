@@ -146,7 +146,8 @@ def order(request):
     if request.user.is_authenticated:
         orders = []
         
-        # Mapeo de status int a string para el Kanban
+        from datetime import date
+        today = date.today()
         status_map = {
             0: "pendiente",
             1: "en preparacion",
@@ -154,7 +155,7 @@ def order(request):
             3: "finalizado",  # "entregado" también como finalizado
             4: "cancelado",
         }
-        for pedido in Pedido.objects.all():
+        for pedido in Pedido.objects.filter(fecha=today):
             order = {
                 "id": f"order-{pedido.id}",
                 "platillo": pedido.platillo.nombre,
