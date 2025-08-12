@@ -146,6 +146,14 @@ def order(request):
     if request.user.is_authenticated:
         orders = []
         
+        # Mapeo de status int a string para el Kanban
+        status_map = {
+            0: "pendiente",
+            1: "en preparacion",
+            2: "finalizado",  # Puedes ajustar si quieres mostrar "listo" o "finalizado"
+            3: "finalizado",  # "entregado" también como finalizado
+            4: "cancelado",
+        }
         for pedido in Pedido.objects.all():
             order = {
                 "id": f"order-{pedido.id}",
@@ -155,7 +163,7 @@ def order(request):
                 "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}",
                 "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel),
                 "turno": "Comida",
-                "status": "pendiente",
+                "status": status_map.get(pedido.status, "pendiente"),
             }
             orders.append(order)
         print(orders)
