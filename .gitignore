@@ -4,3 +4,6 @@ __pycache__/
 
 # Ignorar entorno virtual
 entorno/
+
+# Ignorar archivos de configuración
+secret.json

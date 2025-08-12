@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import json
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -128,3 +129,11 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SECRET = os.path.join(BASE_DIR, 'secret.json')
+
+with open(SECRET) as f:
+    recaptcha_config = json.load(f)
+
+SITE_KEY = recaptcha_config['recaptcha_site_key']
+SECRET_KEY = recaptcha_config['recaptcha_secret_key']

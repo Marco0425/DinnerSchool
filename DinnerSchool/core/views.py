@@ -11,7 +11,8 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
 from .choices import *
-from .herramientas import getChoiceLabel
+from .herramientas import *
+from django.conf import settings
 
 # Imports del core
 from .models import *
@@ -182,7 +183,17 @@ def signInUp(request):
             useremail = request.POST.get("useremail")
             registerPassword = request.POST.get("password")
             confirmPassword = request.POST.get("confirmPassword")
-            userType = request.POST.get("userType")
+            userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
+
+            result = requestReCAPTCHA(request.POST.get('g-recaptcha-response'))
+
+            if not result.get('success'):
+                messages.error(request, 'Verificación reCAPTCHA fallida.')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+
+            if useremail == User.objects.filter(email=useremail).exists():
+                messages.error(request, 'El correo electrónico ya está en uso.')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
             # Si no se especifica userType, asignar 'Tutor' por defecto
             if not userType:
@@ -206,7 +217,9 @@ def signInUp(request):
                 last_name=f"{userlastname} {userlastname2}"
             )
 
-            user.set_password(registerPassword)
+            user.set_password(registerPassword)  # Asegurarse de que la contraseña esté encriptada
+
+            group = Group.objects.get(pk=userType) if userType else Group.objects.get(pk=1)
             user.groups.add(group)
             user.save()
 
@@ -218,15 +231,23 @@ def signInUp(request):
                 paterno=userlastname,
                 materno=userlastname2,
             )
-            print(f"Usuario creado: {useremail}, {registerPassword}")
+
+            if userType == 1:
+                Tutor.objects.create(
+                    usuario=usuario
+                )
+            else:
+                Empleados.objects.create(
+                    usuario=usuario
+                )
+                
             userAuth = authenticate(request, username=useremail, password=registerPassword)
-            print(f"Usuario autenticado: {userAuth}")
             if userAuth is not None:
                 login(request, userAuth)
                 return redirect('core:dashboard')
             else:
                 messages.error(request, 'Credenciales inválidas')
-                return render(request, 'Login/siginup.html')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         elif request.method == "GET":
             correo = request.GET.get("username")
@@ -238,9 +259,9 @@ def signInUp(request):
                 return redirect('core:dashboard')
             else:
                 messages.error(request, 'Credenciales inválidas')
-                return render(request, 'Login/siginup.html')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
-        return render(request, 'Login/signup.html')
+        return render(request, 'Login/signup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
 def dashboard(request):
     """

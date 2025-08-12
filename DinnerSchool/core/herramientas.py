@@ -1,3 +1,7 @@
+# Import nativas
+import requests
+
+from django.conf import settings
 
 def getChoiceLabel(choices, value):
     for val, label in choices:
@@ -10,3 +14,11 @@ def getChoiceValue(choices, value):
         if lbl == value:
             return val
     return None  # Si no lo encuentra
+
+def requestReCAPTCHA(recaptcha_response):
+    data = {
+        'secret': settings.SECRET_KEY,
+        'response': recaptcha_response
+    }
+    r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+    return r.json()
