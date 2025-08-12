@@ -45,17 +45,31 @@ def createIngredient(request):
     Returns:
         HttpResponse: Respuesta HTTP que redirige a la lista de ingredientes.
     """
+    ingrediente_id = request.GET.get('id') or request.POST.get('id')
+    ingrediente = None
+    if ingrediente_id:
+        try:
+            ingrediente = Ingredientes.objects.get(id=ingrediente_id)
+        except Ingredientes.DoesNotExist:
+            ingrediente = None
+
     if request.method == "POST":
         nombre = request.POST.get("ingrediente")
         if nombre:
-            nuevoIngrediente = Ingredientes(nombre=nombre)
-            nuevoIngrediente.save()
-            messages.success(request, "Ingrediente creado exitosamente.")
+            if ingrediente:
+                ingrediente.nombre = nombre
+                ingrediente.save()
+                messages.success(request, "Ingrediente actualizado exitosamente.")
+            else:
+                nuevoIngrediente = Ingredientes(nombre=nombre)
+                nuevoIngrediente.save()
+                messages.success(request, "Ingrediente creado exitosamente.")
             return redirect('comedor:ingredients')
         else:
             messages.error(request, "Por favor, ingresa un nombre para el ingrediente.")
+        return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
     else:
-        return render(request, 'Ingredients/ingredients_form_view.html')
+        return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
 
 def credit(request):
     """
@@ -321,17 +335,34 @@ def createSaucer(request):
     Returns:
         HttpResponse: Respuesta HTTP que redirige a la lista de platillos.
     """
+    platillo_id = request.GET.get('id') or request.POST.get('id')
+    platillo = None
+    if platillo_id:
+        try:
+            platillo = Platillo.objects.get(id=platillo_id)
+        except Platillo.DoesNotExist:
+            platillo = None
+
+    ingredientes = Ingredientes.objects.all()
+
     if request.method == "POST":
         nombre = request.POST.get("platillo")
-        ingredientes = request.POST.getlist("ingredientes")
+        ingredientes_ids = request.POST.getlist("ingredientes")
         precio = request.POST.get("precio")
-        if nombre and ingredientes:
-            nuevoPlatillo = Platillo(nombre=nombre, precio=precio, ingredientes= str(ingredientes))
-            nuevoPlatillo.save()
-            messages.success(request, "Platillo creado exitosamente.")
+        if nombre and ingredientes_ids:
+            if platillo:
+                platillo.nombre = nombre
+                platillo.precio = precio
+                platillo.ingredientes = str(ingredientes_ids)
+                platillo.save()
+                messages.success(request, "Platillo actualizado exitosamente.")
+            else:
+                nuevoPlatillo = Platillo(nombre=nombre, precio=precio, ingredientes=str(ingredientes_ids))
+                nuevoPlatillo.save()
+                messages.success(request, "Platillo creado exitosamente.")
             return redirect('comedor:saucers')
         else:
-            messages.error(request, "Por favor, ingresa un nombre para el platillo.")
+            messages.error(request, "Por favor, ingresa un nombre para el platillo y selecciona ingredientes.")
+        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
     else:
-        ingredientes = Ingredientes.objects.all()
-        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes})
+        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})

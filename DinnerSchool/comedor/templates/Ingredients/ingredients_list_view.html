@@ -68,13 +68,14 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           {% for ingrediente in ingredientes %}
-          <tr class="hover:bg-gray-50">
+          <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='{% url 'comedor:createIngredient' %}?id={{ ingrediente.id }}'">
             <td class="py-3 px-2 text-center">
               <input
                 type="checkbox"
                 name="selected_ids"
                 value="{{ ingrediente.id }}"
                 class="rowCheckbox form-checkbox h-4 w-4 text-primary-red"
+                onclick="event.stopPropagation();"
               />
             </td>
             <td

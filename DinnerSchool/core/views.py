@@ -91,14 +91,90 @@ def signInUp(request):
         HttpResponse: Respuesta HTTP que indica el resultado del registro.
     """
     if request.user.is_authenticated:
-        # Si el usuario ya está autenticado, redirigir a la página de dashboard
-        # Aquí podrías redirigir a una página de dashboard o inicio
+        # Si el usuario es staff, mostrar solo el formulario de registro (sin login)
         if request.user.is_staff:
-            return render(request, 'Login/siginup.html', {'is_staff': request.user.is_staff})
+            # Si es POST, procesar registro
+            print(f"[DEBUG] Método recibido: {request.method}")
+            if request.method == "GET" and request.GET.get("username"):
+                print("[DEBUG] Intento de registro por GET, ignorando por seguridad.")
+                messages.error(request, 'El registro debe realizarse mediante POST.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            if request.method == "POST":
+                print("[DEBUG] POST recibido para registro staff")
+                username = request.POST.get("username")
+                userlastname = request.POST.get("userlastname")
+                userlastname2 = request.POST.get("userlastname2")
+                useremail = request.POST.get("useremail")
+                registerPassword = request.POST.get("password")
+                confirmPassword = request.POST.get("confirmPassword")
+                userType = request.POST.get("userType")
+                userphone = request.POST.get("userphone")
+                print(f"[DEBUG] username={username}, userlastname={userlastname}, userlastname2={userlastname2}, useremail={useremail}, userType={userType}, userphone={userphone}")
+
+                # Validación de campos obligatorios
+                if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
+                    print("[DEBUG] Faltan campos obligatorios")
+                    messages.error(request, 'Por favor, completa todos los campos obligatorios.')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+                if registerPassword != confirmPassword:
+                    print("[DEBUG] Contraseñas no coinciden")
+                    messages.error(request, 'Las contraseñas no coinciden.')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+                if User.objects.filter(username=useremail).exists():
+                    print("[DEBUG] Usuario ya existe")
+                    messages.error(request, 'Ya existe un usuario con ese correo.')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
+                try:
+                    group = Group.objects.get(name=userType) if userType else Group.objects.get(pk=2)
+                    print(f"[DEBUG] Grupo asignado: {group}")
+                except Group.DoesNotExist:
+                    print("[DEBUG] Tipo de usuario inválido")
+                    messages.error(request, 'Tipo de usuario inválido.')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
+                try:
+                    user = User.objects.create_user(
+                        username=useremail,
+                        email=useremail,
+                        password=registerPassword,
+                        first_name=username,
+                        last_name=f"{userlastname} {userlastname2}"
+                    )
+                    print(f"[DEBUG] User creado: {user}")
+                    user.groups.add(group)
+                    user.save()
+                except Exception as e:
+                    print(f"[DEBUG] Error creando User: {e}")
+                    messages.error(request, f'Error creando usuario: {e}')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
+                try:
+                    usuario = Usuarios.objects.create(
+                        user=user,
+                        groupId=group,
+                        email=useremail,
+                        nombre=username,
+                        paterno=userlastname,
+                        materno=userlastname2,
+                        telefono=userphone or ''
+                    )
+                    print(f"[DEBUG] Usuarios creado: {usuario}")
+                except Exception as e:
+                    print(f"[DEBUG] Error creando Usuarios: {e}")
+                    messages.error(request, f'Error creando perfil de usuario: {e}')
+                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
+                print(f"[DEBUG] Usuario creado: {useremail}, {registerPassword}")
+                messages.success(request, f'El usuario {useremail} ha sido creado exitosamente.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            # GET: mostrar solo el registro
+            return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
         else:
+            # Si está autenticado pero no es staff, redirigir a dashboard
             return redirect(reverse('core:dashboard'))
     else:
-        # Funcion para manejar el registro de usuarios
+        # No autenticado: login y registro normal
         if request.method == "POST":
             username = request.POST.get("username")
             userlastname = request.POST.get("userlastname")
@@ -108,6 +184,20 @@ def signInUp(request):
             confirmPassword = request.POST.get("confirmPassword")
             userType = request.POST.get("userType")
 
+            # Si no se especifica userType, asignar 'Tutor' por defecto
+            if not userType:
+                try:
+                    group = Group.objects.get(name="Tutor")
+                except Group.DoesNotExist:
+                    messages.error(request, 'No existe el grupo Tutor. Contacta al administrador.')
+                    return render(request, 'Login/siginup.html')
+            else:
+                try:
+                    group = Group.objects.get(name=userType)
+                except Group.DoesNotExist:
+                    messages.error(request, 'Tipo de usuario inválido.')
+                    return render(request, 'Login/siginup.html')
+
             user = User.objects.create_user(
                 username=useremail,
                 email=useremail,
@@ -116,12 +206,10 @@ def signInUp(request):
                 last_name=f"{userlastname} {userlastname2}"
             )
 
-            user.set_password(registerPassword)  # Asegurarse de que la contraseña esté encriptada
-
-            group = Group.objects.get(name=userType) if userType else Group.objects.get(pk=2)
+            user.set_password(registerPassword)
             user.groups.add(group)
             user.save()
-            
+
             usuario = Usuarios.objects.create(
                 user=user,
                 groupId=group,
@@ -228,43 +316,69 @@ def createStudents(request):
     Returns:
         HttpResponse: Respuesta HTTP que redirige a la lista de estudiantes.
     """
+    alumno_id = request.GET.get('id') or request.POST.get('id')
+    alumno = None
+    if alumno_id:
+        try:
+            alumno = Alumnos.objects.get(id=alumno_id)
+        except Alumnos.DoesNotExist:
+            alumno = None
+
+    context = {'alumno': alumno}
+    if request.user.is_staff:
+        context['tutores'] = Tutor.objects.all()
+        context['is_staff'] = True
+
     if request.method == "POST":
-        print("Datos recibidos del formulario:", request.POST)
         nombre = request.POST.get("nombre")
         paterno = request.POST.get("apellidoPaterno")
         materno = request.POST.get("apellidoMaterno")
-        tutorId = request.user
         grado = request.POST.get("grado")
         grupo = request.POST.get("grupo")
         nivelEducativo = request.POST.get("nivelEducativo")
+        tutor_id = request.POST.get("tutor") if request.user.is_staff else None
 
-        nivelEducativoAlumno = NivelEducativo.objects.get(
-            nivel=int(nivelEducativo),
-            grado=int(grado),
-            grupo=int(grupo)
-        )
+        try:
+            nivelEducativoAlumno = NivelEducativo.objects.get(
+                nivel=int(nivelEducativo),
+                grado=int(grado),
+                grupo=int(grupo)
+            )
+        except NivelEducativo.DoesNotExist:
+            nivelEducativoAlumno = None
 
         if not nivelEducativoAlumno:
             messages.error(request, 'Nivel educativo no válido.')
-            return render(request, 'students/students_form_view.html')
+            return render(request, 'students/students_form_view.html', context)
 
         try:
-            tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=tutorId))
-            Alumno = Alumnos.objects.create(
-                nombre=nombre,
-                paterno=paterno,
-                materno=materno,
-                tutorId=tutor,
-                nivelEducativo=nivelEducativoAlumno
-            )
-            print(f"Alumno creado: {Alumno.nombre}, Tutor: {tutor.usuario.nombre}")
-            messages.success(request, 'Estudiante creado exitosamente.')
+            if request.user.is_staff:
+                tutor = Tutor.objects.get(id=tutor_id) if tutor_id else None
+            else:
+                tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+            if alumno:
+                alumno.nombre = nombre
+                alumno.paterno = paterno
+                alumno.materno = materno
+                alumno.nivelEducativo = nivelEducativoAlumno
+                alumno.tutorId = tutor
+                alumno.save()
+                messages.success(request, 'Estudiante actualizado exitosamente.')
+            else:
+                Alumno = Alumnos.objects.create(
+                    nombre=nombre,
+                    paterno=paterno,
+                    materno=materno,
+                    tutorId=tutor,
+                    nivelEducativo=nivelEducativoAlumno
+                )
+                messages.success(request, 'Estudiante creado exitosamente.')
             return redirect('core:students')
         except Tutor.DoesNotExist:
             messages.error(request, 'Tutor no encontrado.')
-            return render(request, 'students/students_form_view.html')
+            return render(request, 'students/students_form_view.html', context)
     else:
-        return render(request, 'students/students_form_view.html')
+        return render(request, 'students/students_form_view.html', context)
 
 def employee(request):
     """
@@ -304,8 +418,7 @@ def user_list_view(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
     """
     if request.user.is_authenticated:
-        # users = User.objects.filter(groups__name__in = ['Employee','Tutor'])
-        users = Usuarios.objects.all()
+        users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Employee"])
         return render(request, 'Users/users_list_view.html', {'users': users})
     else:
         return redirect('core:signInUp')
@@ -319,22 +432,59 @@ def account_settings_form_view(request):
     Returns:
         HttpResponse: Respuesta HTTP que renderiza el formulario de ajustes de cuenta.
     """
-    if request.user.is_authenticated:
-        user = request.user
-        if request.method == "POST":
-            user.first_name = request.POST.get("first_name", user.first_name)
-            user.last_name = request.POST.get("last_name", user.last_name)
-            user.email = request.POST.get("email", user.email)
-            new_password = request.POST.get("new_password")
-            confirm_password = request.POST.get("confirm_password")
-            if new_password and new_password == confirm_password:
-                user.set_password(new_password)
+    if not request.user.is_authenticated:
+        return redirect('core:signInUp')
+
+    user = request.user
+    try:
+        usuario = Usuarios.objects.get(user=user)
+    except Usuarios.DoesNotExist:
+        messages.error(request, 'No existe un perfil de usuario asociado. Contacta al administrador.')
+        return redirect('core:dashboard')
+
+    if request.method == "POST":
+        nombre = request.POST.get("nombre", usuario.nombre)
+        paterno = request.POST.get("apellidoPaterno", usuario.paterno)
+        materno = request.POST.get("apellidoMaterno", usuario.materno)
+        correo = request.POST.get("correo", usuario.email)
+        telefono = request.POST.get("telefono", usuario.telefono)
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirmPassword")
+
+        # Actualizar datos en Usuarios
+        usuario.nombre = nombre
+        usuario.paterno = paterno
+        usuario.materno = materno
+        usuario.telefono = telefono
+
+        # Si cambia el correo, actualizar en ambos modelos
+        if correo and correo != usuario.email:
+            usuario.email = correo
+            user.email = correo
+            user.username = correo
+
+
+        # Cambiar contraseña si ambas coinciden y no están vacías
+        if password:
+            if password == confirm_password:
+                user.set_password(password)
                 user.save()
+                usuario.save()
+                # Reautenticar y hacer login con la nueva contraseña
+                user_auth = authenticate(request, username=user.username, password=password)
+                if user_auth is not None:
+                    login(request, user_auth)
                 messages.success(request, 'Ajustes de cuenta actualizados exitosamente.')
                 return redirect('core:account_settings')
             else:
                 messages.error(request, 'Las contraseñas no coinciden o están vacías.')
-        return render(request, 'account_settings/account_settings_form_view.html', {'user': user})
-    else:
-        return redirect('core:signInUp')
+                return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
+
+        user.save()
+        usuario.save()
+        messages.success(request, 'Ajustes de cuenta actualizados exitosamente.')
+        return redirect('core:account_settings')
+
+    # GET: mostrar datos actuales
+    return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
             

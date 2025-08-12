@@ -16,27 +16,33 @@
     </p>
   </div>
 
+  {% if messages %}
+    <div class="mb-4">
+      {% for message in messages %}
+        <div class="p-2 rounded text-center {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
   <form action="{% url 'comedor:createSaucer' %}" method="post" id="saucerForm" class="space-y-4">
   {% csrf_token %}
+    {% if platillo %}
+      <input type="hidden" name="id" value="{{ platillo.id }}" />
+    {% endif %}
     <div>
-      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1"
-        >Nombre del Platillo</label
-      >
+      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo</label>
       <input
         type="text"
         id="platillo"
         name="platillo"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
         required
+        value="{{ platillo.nombre|default:'' }}"
       />
     </div>
-
     <div>
-      <label
-        for="ingredientes"
-        class="block text-sm font-medium text-gray-700 mb-1"
-        >Ingredientes</label
-      >
+      <label for="ingredientes" class="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
       <select
         id="ingredientes"
         name="ingredientes"
@@ -44,20 +50,18 @@
         multiple
       >
       {% for ingrediente in ingredientes %}
-        <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+        <option value="{{ ingrediente.id }}" {% if platillo and ingrediente.id|stringformat:'s' in platillo.ingredientes %}selected{% endif %}>{{ ingrediente.nombre }}</option>
       {% endfor %}
       </select>
     </div>
-
     <div>
-      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1"
-        >Precio</label
-      >
+      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
       <input
         type="number"
         id="precio"
         name="precio"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        value="{{ platillo.precio|default:'' }}"
       />
     </div>
 
@@ -82,4 +86,12 @@
     class="mt-6 p-3 text-sm text-center rounded-md hidden"
   ></div>
 </div>
+<script>
+  $(document).ready(function() {
+    $('#ingredientes').select2({
+      placeholder: 'Selecciona los ingredientes',
+      width: '100%'
+    });
+  });
+</script>
 {% endblock %}
