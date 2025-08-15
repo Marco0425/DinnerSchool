@@ -262,7 +262,7 @@ def signInUp(request):
                 login(request, user)
                 return redirect('core:dashboard')
             else:
-                messages.error(request, 'Credenciales inválidas')
+
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         return render(request, 'Login/signup.html', {'recaptcha_site_key': settings.SITE_KEY})

@@ -107,7 +107,7 @@
       </a>
       {% endif %}
 
-      {% if is_employee or is_admin %}
+      {% if is_admin %}
 
       <!-- Tarjeta de Ingredientes con icono SVG y nombre claro -->
       <a
@@ -164,7 +164,8 @@
           >
         </div>
       </a>
-
+      {% endif %}
+      {% if is_admin or is_employee%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/"
