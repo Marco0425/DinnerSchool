@@ -261,6 +261,7 @@ def createOrder(request):
                     {
                         "id": alumno.id,
                         "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                        
                     } for alumno in students
                 ],
                 'is_tutor': request.user.groups.filter(name='Tutor').exists(),
@@ -292,6 +293,7 @@ def createOrder(request):
                     {
                         "id": alumno.id,
                         "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                        "tutor_id": alumno.tutorId.id
                     } for alumno in students
                 ],
             }

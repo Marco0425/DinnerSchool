@@ -120,9 +120,11 @@
         required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
       >
-        <option value="">Selecciona el Alumno</option>
+        <option value="">Selecciona un tutor primero</option>
         {% for alumno in Alumnos %}
-        <option value="{{ alumno.id }}">{{ alumno.nombre }}</option>
+        <option value="{{ alumno.id }}" data-tutor-id="{{ alumno.tutor_id }}">
+          {{ alumno.nombre }}
+        </option>
         {% endfor %}
       </select>
     </div>
