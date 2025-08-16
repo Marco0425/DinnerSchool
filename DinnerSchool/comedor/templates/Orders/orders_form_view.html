@@ -1,68 +1,144 @@
-{% extends "main.html" %}
-{% load static %}
-{% block content %}
+{% extends "main.html" %} {% load static %} {% block content %}
 <script src="{% static 'js/orders.js' %}"></script>
-<div class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red">
+<div
+  class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
+>
   <div class="flex flex-col items-center mb-6">
     <!-- Logo -->
-    <img src="{% static 'img/logos/logo.png' %}" alt="Logo de la Cafetería Certo"
-      class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover" />
+    <img
+      src="{% static 'img/logos/logo.png' %}"
+      alt="Logo de la Cafetería Certo"
+      class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
+    />
     <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nuevo Pedido</h1>
     <p class="text-gray-600 text-center">Ingresa los datos del nuevo pedido</p>
   </div>
 
-  <form action="{% url 'comedor:createOrder' %}" method="post" id="ordersForm" class="space-y-4">
-  {% csrf_token %}
+  <form
+    action="{% url 'comedor:createOrder' %}"
+    method="post"
+    id="ordersForm"
+    class="space-y-4"
+  >
+    {% csrf_token %}
     <!-- Platillo -->
     <div>
-      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1">Platillo</label>
-      <select id="platillo" name="platillo" required>
+      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1"
+        >Platillo</label
+      >
+      <select
+        id="platillo"
+        name="platillo"
+        required
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      >
         <option value="">Selecciona el Platillo</option>
         {% for platillo in Platillos %}
-          <option value="{{ platillo.id }}"
-            data-precio="{{ platillo.precio }}"
-            data-ingredientes='{{ platillo.ingredientes}}'>
-            {{ platillo.nombre }}
-          </option>
+        <option
+          value="{{ platillo.id }}"
+          data-precio="{{ platillo.precio }}"
+          data-ingredientes="{{ platillo.ingredientes}}"
+        >
+          {{ platillo.nombre }}
+        </option>
         {% endfor %}
       </select>
     </div>
 
     <!-- Ingredientes -->
     <div>
-      <label for="ingredientes" class="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
-      <select id="ingredientes" name="ingredientes" multiple
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
-        <option value="">Selecciona los ingredientes</option>
-      </select>
+      <label
+        for="ingredientes-display"
+        class="block text-sm font-medium text-gray-700 mb-1"
+        >Ingredientes</label
+      >
+      <textarea
+        id="ingredientes-display"
+        rows="4"
+        readonly
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm"
+        placeholder="Los ingredientes aparecerán aquí..."
+      ></textarea>
+      <input type="hidden" id="ingredientes-hidden" name="ingredientes" />
     </div>
 
     <!-- Notas -->
     <div>
-      <label for="notas" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-      <input type="text" id="notas" name="notas"
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm" />
+      <label for="notas" class="block text-sm font-medium text-gray-700 mb-1"
+        >Notas</label
+      >
+      <input
+        type="text"
+        id="notas"
+        name="notas"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      />
     </div>
 
+    {% if is_tutor%}
     <!-- Alumno -->
     <div>
-      <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1">Alumno</label>
-      <select id="alumno" name="alumno"
+      <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
+        >Alumno</label
+      >
+      <select
+        id="alumno"
+        name="alumno"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-        required>
+        required
+      >
         <option value="">Selecciona el Alumno</option>
         {% for alumno in Alumnos %}
-          <option value="{{ alumno.id }}">{{ alumno.nombre }}</option>
+        <option value="{{ alumno.id }}">{{ alumno.nombre }}</option>
         {% endfor %}
       </select>
     </div>
+    {% endif %} {% if is_admin %}
+    <div>
+      <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1"
+        >Tutor</label
+      >
+      <select
+        id="tutor"
+        name="tutor"
+        required
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      >
+        <option value="">Selecciona el Tutor</option>
+        {% for tutor in tutors %}
+        <option value="{{ tutor.id }}">{{ tutor.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
+        >Alumno</label
+      >
+      <select
+        id="alumno"
+        name="alumno"
+        required
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+      >
+        <option value="">Selecciona el Alumno</option>
+        {% for alumno in Alumnos %}
+        <option value="{{ alumno.id }}">{{ alumno.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
 
     <!-- Turno -->
     <div>
-      <label for="turno" class="block text-sm font-medium text-gray-700 mb-1">Turno</label>
-      <select id="turno" name="turno"
+      <label for="turno" class="block text-sm font-medium text-gray-700 mb-1"
+        >Turno</label
+      >
+      <select
+        id="turno"
+        name="turno"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-        required>
+        required
+      >
         <option value="">Selecciona el Horario de Comida</option>
         <option value="0">Desayuno</option>
         <option value="1">Comida</option>
@@ -71,7 +147,9 @@
 
     <!-- Total -->
     <div>
-      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Total</label>
+      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1"
+        >Total</label
+      >
       <input
         type="number"
         id="precio"
@@ -84,18 +162,25 @@
 
     <!-- Botones -->
     <div class="flex justify-end space-x-4 pt-4">
-      <a href="{% url 'core:dashboard' %}"
-        class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50">
+      <a
+        href="{% url 'core:dashboard' %}"
+        class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+      >
         Descartar
       </a>
-      <button type="submit"
-        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700">
+      <button
+        type="submit"
+        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700"
+      >
         Solicitar Pedido
       </button>
     </div>
   </form>
 
-  <div id="message" class="mt-6 p-3 text-sm text-center rounded-md hidden"></div>
+  <div
+    id="message"
+    class="mt-6 p-3 text-sm text-center rounded-md hidden"
+  ></div>
 </div>
 
 {% endblock %}

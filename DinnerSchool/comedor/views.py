@@ -245,26 +245,56 @@ def createOrder(request):
         return redirect('core:dashboard')
     else:
         platillos = Platillo.objects.all()
-        
-        tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
-        students = Alumnos.objects.filter(tutorId=tutor)
-        
-        context = {
-                    "Platillos": [
-                        {
-                            "id": platillo.id,
-                            "nombre": platillo.nombre,
-                            "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
-                            "precio": float(platillo.precio)
-                        } for platillo in platillos
-                    ],
-                    "Alumnos": [
-                        {
-                            "id": alumno.id,
-                            "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
-                        } for alumno in students
-                    ]
-                }
+        if not request.user.is_staff:
+            tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+            students = Alumnos.objects.filter(tutorId=tutor)
+            context = {
+                "Platillos": [
+                    {
+                        "id": platillo.id,
+                        "nombre": platillo.nombre,
+                        "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                        "precio": float(platillo.precio)
+                    } for platillo in platillos
+                ],
+                "Alumnos": [
+                    {
+                        "id": alumno.id,
+                        "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                    } for alumno in students
+                ],
+                'is_tutor': request.user.groups.filter(name='Tutor').exists(),
+                'is_employee': request.user.groups.filter(name='Employee').exists(),
+                'is_admin': request.user.is_staff,
+            }
+        else:
+            tutors = Tutor.objects.all()
+            students = Alumnos.objects.all()
+            context = {
+                "Platillos": [
+                    {
+                        "id": platillo.id,
+                        "nombre": platillo.nombre,
+                        "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                        "precio": float(platillo.precio)
+                    } for platillo in platillos
+                ],
+                'is_tutor': request.user.groups.filter(name='Tutor').exists(),
+                'is_employee': request.user.groups.filter(name='Employee').exists(),
+                'is_admin': request.user.is_staff,
+                "tutors": [
+                    {
+                        "id": tutor.id,
+                        "nombre": tutor.usuario.user.first_name + " " + tutor.usuario.user.last_name,
+                    } for tutor in tutors
+                ],
+                "Alumnos": [
+                    {
+                        "id": alumno.id,
+                        "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                    } for alumno in students
+                ],
+            }
         
         return render(request, 'orders/orders_form_view.html', context)
 
