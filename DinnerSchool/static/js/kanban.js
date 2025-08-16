@@ -1,11 +1,3 @@
-// Definir el orden de prioridad de los niveles educativos
-const nivelOrder = {
-  Kinder: 1,
-  Primaria: 2,
-  Secundaria: 3,
-  Preparatoria: 4,
-};
-
 // Solo funcionalidad drag & drop, las tarjetas ya están en el HTML
 function dragStart(event) {
   event.dataTransfer.setData("text/plain", event.target.id);
@@ -57,20 +49,21 @@ function drop(event) {
       if (targetColumn.id === "pendiente-column") newStatus = "pendiente";
       else if (targetColumn.id === "en-preparacion-column")
         newStatus = "en preparacion";
+      else if (targetColumn.id === "entregado-column") newStatus = "entregado";
       else if (targetColumn.id === "finalizado-column")
         newStatus = "finalizado";
-
+      console.log(`Nuevo estado: ${newStatus}`);
       if (newStatus) {
         fetch("/comedor/order/update-status/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // 'X-CSRFToken': csrftoken, // Si usas CSRF, descomenta y agrega el token
           },
           body: JSON.stringify({ order_id: cardId, new_status: newStatus }),
         })
           .then((response) => response.json())
           .then((data) => {
+            console.log("Estado actualizado:", data);
             if (!data.success) {
               alert("Error al actualizar el estado: " + (data.error || ""));
             }

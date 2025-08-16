@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
-from core.models import Alumnos, Usuarios, Tutor
+from core.models import Alumnos, Usuarios, Tutor, Empleados
 from core.choices import *
 from .choices import *
 from core.herramientas import *
@@ -191,8 +191,8 @@ def order(request):
         status_map = {
             0: "pendiente",
             1: "en preparacion",
-            2: "finalizado",  # Puedes ajustar si quieres mostrar "listo" o "finalizado"
-            3: "finalizado",  # "entregado" también como finalizado
+            2: "finalizado",
+            3: "entregado",
             4: "cancelado",
         }
         for pedido in Pedido.objects.filter(fecha=today):
@@ -245,7 +245,7 @@ def createOrder(request):
         return redirect('core:dashboard')
     else:
         platillos = Platillo.objects.all()
-        if not request.user.is_staff:
+        if request.user.groups.filter(name='Tutor').exists():
             tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
             students = Alumnos.objects.filter(tutorId=tutor)
             context = {
@@ -319,6 +319,8 @@ def update_order_status(request):
                 "pendiente": 0,
                 "en preparacion": 1,
                 "finalizado": 2,
+                "entregado": 3,
+                "cancelado": 4,
             }
             if new_status not in status_map:
                 return JsonResponse({"success": False, "error": "Status inválido"}, status=400)

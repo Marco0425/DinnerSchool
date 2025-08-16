@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes, Noticias
+from core.models import Empleados
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -279,10 +280,12 @@ def dashboard(request):
     """
     if request.user.is_authenticated:
         # Aquí podrías obtener información del usuario y pasarla al template
+        
         context = {
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
             'is_employee': request.user.groups.filter(name='Employee').exists(),
+            'is_profesor': Empleados.objects.filter(usuario__user=request.user, puesto='Profesor').exists(),
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
         }

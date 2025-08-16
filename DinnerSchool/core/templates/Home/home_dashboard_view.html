@@ -75,7 +75,8 @@
           >
         </div>
       </a>
-
+      {% endif %}
+      {% if is_admin or is_tutor or is_profesor%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/create/"
@@ -163,7 +164,7 @@
         </div>
       </a>
       {% endif %}
-      {% if is_admin or is_employee%}
+      {% if is_admin or is_employee and not is_profesor%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/"

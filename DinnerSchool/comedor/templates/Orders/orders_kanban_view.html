@@ -29,7 +29,7 @@
     <!-- Columna: Pendiente -->
     <div
       id="pendiente-column"
-      class="kanban-column flex-1 bg-gray-100 p-4 rounded-lg shadow-custom min-w-[280px]"
+      class="kanban-column flex-1 bg-gray-100 p-4 rounded-lg shadow-custom min-w-[250px]"
       ondragover="allowDrop(event)"
       ondrop="drop(event)"
       ondragleave="dragLeave(event)"
@@ -69,7 +69,7 @@
     <!-- Columna: En Preparación -->
     <div
       id="en-preparacion-column"
-      class="kanban-column flex-1 bg-yellow-100 p-4 rounded-lg shadow-custom min-w-[280px]"
+      class="kanban-column flex-1 bg-yellow-100 p-4 rounded-lg shadow-custom min-w-[250px]"
       ondragover="allowDrop(event)"
       ondrop="drop(event)"
       ondragleave="dragLeave(event)"
@@ -85,6 +85,7 @@
           draggable="true"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          {% if order.alumno %}
           <p class="text-sm text-gray-600">
             <strong>Alumno:</strong> {{ order.alumno }}
           </p>
@@ -92,7 +93,15 @@
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
           </p>
-          {% if order.ingredientes %}
+          {% endif %} {% if order.profesor%}
+          <p class="text-sm text-gray-600">
+            <strong>Profesor:</strong> {{ order.profesor }}
+          </p>
+          {% endif %} {% if order.responsable %}
+          <p class="text-xs text-gray-500">
+            <strong>Responsable:</strong>
+          </p>
+          {% endif %} {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
             <strong>Ingredientes:</strong> {{ order.ingredientes }}
           </p>
@@ -109,7 +118,7 @@
     <!-- Columna: Finalizado -->
     <div
       id="finalizado-column"
-      class="kanban-column flex-1 bg-green-100 p-4 rounded-lg shadow-custom min-w-[280px]"
+      class="kanban-column flex-1 bg-blue-100 p-4 rounded-lg shadow-custom min-w-[250px]"
       ondragover="allowDrop(event)"
       ondrop="drop(event)"
       ondragleave="dragLeave(event)"
@@ -125,6 +134,7 @@
           draggable="true"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          {% if order.alumno %}
           <p class="text-sm text-gray-600">
             <strong>Alumno:</strong> {{ order.alumno }}
           </p>
@@ -132,7 +142,64 @@
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
           </p>
-          {% if order.ingredientes %}
+          {% endif %} {% if order.profesor%}
+          <p class="text-sm text-gray-600">
+            <strong>Profesor:</strong> {{ order.profesor }}
+          </p>
+          {% endif %} {% if order.responsable %}
+          <p class="text-xs text-gray-500">
+            <strong>Responsable:</strong>
+          </p>
+          {% endif %} {% if order.ingredientes %}
+          <p class="text-xs text-gray-500">
+            <strong>Ingredientes:</strong> {{ order.ingredientes }}
+          </p>
+          {% endif %} {% if order.nota %}
+          <p class="text-xs text-gray-500">
+            <strong>Nota:</strong> {{ order.nota }}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %} {% endfor %}
+      </div>
+    </div>
+
+    <!-- Columna: Entregado -->
+    <div
+      id="entregado-column"
+      class="kanban-column flex-1 bg-green-100 p-4 rounded-lg shadow-custom min-w-[250px]"
+      ondragover="allowDrop(event)"
+      ondrop="drop(event)"
+      ondragleave="dragLeave(event)"
+    >
+      <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">
+        Entregado
+      </h2>
+      <div id="entregado-cards" class="space-y-4 min-h-[100px]">
+        {% for order in orders %} {% if order.status == 'entregado' %}
+        <div
+          id="{{ order.id }}"
+          class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
+          draggable="true"
+        >
+          <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
+          {% if order.alumno %}
+          <p class="text-sm text-gray-600">
+            <strong>Alumno:</strong> {{ order.alumno }}
+          </p>
+          <p class="text-xs text-gray-500">
+            <strong>Nivel:</strong> {{ order.nivel }} |
+            <strong>Turno:</strong> {{ order.turno }}
+          </p>
+          {% endif %} {% if order.profesor%}
+          <p class="text-sm text-gray-600">
+            <strong>Profesor:</strong> {{ order.profesor }}
+          </p>
+          {% endif %} {% if order.responsable %}
+          <p class="text-xs text-gray-500">
+            <strong>Responsable:</strong>
+          </p>
+          {% endif %} {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
             <strong>Ingredientes:</strong> {{ order.ingredientes }}
           </p>
