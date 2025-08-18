@@ -222,22 +222,22 @@ def createOrder(request):
         HttpResponse: Respuesta HTTP que redirige a la lista de pedidos.
     """
     if request.method == "POST":
-        print(request.POST)
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
         orden = request.POST.get("platillo")
         ordenIngredientes = request.POST.getlist("ingredientes")
         ordenNotas = request.POST.get("notas")
         ordenAlumno = request.POST.get("alumno")
         ordenTurno = request.POST.get("turno")
         precio = request.POST.get("precio")
-        print("ordenTurno", ordenTurno)
 
         platillo = Platillo.objects.get(id=orden)
         nuevaOrden = Pedido.objects.update_or_create(
             platillo=platillo,
             ingredientePlatillo=", ".join(ordenIngredientes),
             nota=ordenNotas,
-            alumnoId=Alumnos.objects.get(id=ordenAlumno),
-            nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo,
+            alumnoId=Alumnos.objects.get(id=ordenAlumno) if not is_profesor else None,
+            nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo if not is_profesor else None,
+            profesorId=Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None,
             turno=ordenTurno,
             total=float(precio)
         )

@@ -1,7 +1,8 @@
 from django.db import models
 
 from .choices import *
-from core.models import Tutor, Alumnos, NivelEducativo, Usuarios    
+from core.models import Tutor, Alumnos, NivelEducativo, Usuarios, Empleados
+from .choices import STATUSPEDIDO, TURNO
 
 # Create your models here.
 class Credito(models.Model):
@@ -42,13 +43,22 @@ class Pedido(models.Model):
     platillo = models.ForeignKey(Platillo, on_delete=models.CASCADE, verbose_name='Platillo')
     ingredientePlatillo = models.CharField(max_length=200, blank=True, null=True, verbose_name='Ingredientes del Platillo')
     nota = models.TextField(max_length=50, blank=True, null=True, verbose_name='Nota')
-    alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno')
-    nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo')
+    alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno', null=True, blank=True)
+    profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True)
+    nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Total')
     fecha = models.DateField(auto_now=True)
     status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado del Pedido')
     turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
     
+    def get_status_label(self):
+        """Devuelve la etiqueta legible del estado del pedido."""
+        return dict(STATUSPEDIDO).get(self.status)
+
+    def get_turno_label(self):
+        """Devuelve la etiqueta legible del turno."""
+        return dict(TURNO).get(self.turno)
+
     class Meta:
         verbose_name = 'Pedido'
         verbose_name_plural = 'Pedidos'

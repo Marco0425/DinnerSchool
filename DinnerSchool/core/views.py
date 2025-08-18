@@ -6,7 +6,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
-from comedor.models import Ingredientes, Noticias
+from comedor.models import Ingredientes, Noticias, Pedido
 from core.models import Empleados
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
@@ -17,6 +17,8 @@ from django.conf import settings
 
 # Imports del core
 from .models import *
+
+from datetime import datetime
 
 # Vista genérica para eliminar
 @require_POST
@@ -227,6 +229,8 @@ def dashboard(request):
     if request.user.is_authenticated:
         # Aquí podrías obtener información del usuario y pasarla al template
         is_profesor = Empleados.objects.filter(usuario__email=request.user.username).exists()
+
+        listaPedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username) if not is_profesor else Pedido.objects.filter(profesorId__usuario__email=request.user.username)
         context = {
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
@@ -234,6 +238,7 @@ def dashboard(request):
             'is_profesor': is_profesor,
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
+            'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
         }
         return render(request, 'HOME/home_dashboard_view.html', context)
     else:
