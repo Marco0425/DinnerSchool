@@ -2,7 +2,7 @@ from django.db import models
 
 from .choices import *
 from core.models import Tutor, Alumnos, NivelEducativo, Usuarios, Empleados
-from .choices import STATUSPEDIDO, TURNO
+from .choices import STATUSPEDIDO, TURNO, TIPOANUNCIO
 
 # Create your models here.
 class Credito(models.Model):
@@ -83,6 +83,7 @@ class CreditoDiario(models.Model):
 class Noticias(models.Model):
     titulo = models.CharField(max_length=100, verbose_name='Título')
     contenido = models.TextField(verbose_name='Contenido')
+    tipoAnuncio = models.PositiveSmallIntegerField(choices=TIPOANUNCIO, default=1, verbose_name='Tipo de Anuncio')
     activo = models.BooleanField(default=True, verbose_name='Activo')
     autor = models.ForeignKey(Usuarios, on_delete=models.CASCADE, verbose_name='Autor')
     fecha = models.DateField(auto_now=True, verbose_name='Fecha')

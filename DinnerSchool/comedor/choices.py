@@ -11,3 +11,9 @@ TURNO = [
     (0, 'Desayuno'),
     (1, 'Comida'),
 ]
+
+TIPOANUNCIO = [
+    (1, 'Aviso'),
+    (2, 'Urgente'),
+    (3, 'Recordatorio'),
+]

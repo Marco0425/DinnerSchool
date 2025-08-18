@@ -148,6 +148,8 @@ def createAds(request):
             if noticia:
                 noticia.titulo = titulo
                 noticia.contenido = contenido
+                noticia.activo = True if request.POST.get("estado") == "1" else False
+                noticia.tipoAnuncio = request.POST.get("tipoAnuncio")
                 noticia.save()
                 messages.success(request, "Anuncio actualizado exitosamente.")
             else:
