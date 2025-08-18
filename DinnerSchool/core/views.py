@@ -81,109 +81,79 @@ def logout_view(request):
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
+def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, registerPassword, userType, userphone):
+    # 1. Crear usuario base
+    user = User.objects.create_user(
+        username=useremail,
+        email=useremail,
+        password=registerPassword,
+        first_name=username,
+        last_name=f"{userlastname} {userlastname2}"
+    )
+
+    group = Group.objects.get(pk=3 if userType in [3, 4] else userType)
+    user.groups.add(group)
+    user.save()
+
+    # 2. Crear usuario extendido
+    usuario = Usuarios.objects.create(
+        user=user,
+        groupId=group,
+        email=useremail,
+        nombre=username,
+        paterno=userlastname,
+        materno=userlastname2,
+        telefono=userphone or ''
+    )
+
+    # 3. Crear perfil según tipo
+    if userType == 1:
+        Tutor.objects.create(usuario=usuario)
+    elif userType in [3, 4]:
+        puesto = 'Cocinero' if userType == 3 else 'Profesor'
+        Empleados.objects.create(usuario=usuario, puesto=puesto)
+
+    return user, usuario
+
 def signInUp(request):
-    """
-    Vista para manejar el registro de usuarios.
-    Esta vista se encarga de recibir los datos del formulario de registro,
-    crear un nuevo usuario en el sistema y asignarlo al grupo correspondiente.
-    
-    Args:
-        request: Objeto HttpRequest que contiene los datos del formulario.
-    Returns:
-        HttpResponse: Respuesta HTTP que indica el resultado del registro.
-    """
-    if request.user.is_authenticated:
-        # Si el usuario es staff, mostrar solo el formulario de registro (sin login)
-        if request.user.is_staff:
-            # Si es POST, procesar registro
-            print(f"[DEBUG] Método recibido: {request.method}")
-            if request.method == "GET" and request.GET.get("username"):
-                print("[DEBUG] Intento de registro por GET, ignorando por seguridad.")
-                messages.error(request, 'El registro debe realizarse mediante POST.')
+    if request.user.is_authenticated and request.user.is_staff:
+        # Staff: solo registro
+        if request.method == "POST":
+            username = request.POST.get("username")
+            userlastname = request.POST.get("userlastname")
+            userlastname2 = request.POST.get("userlastname2")
+            useremail = request.POST.get("useremail")
+            registerPassword = request.POST.get("password")
+            confirmPassword = request.POST.get("confirmPassword")
+            userType = request.POST.get("userType")
+            userphone = request.POST.get("userphone")
+
+            # Validación de campos obligatorios
+            if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
+                messages.error(request, 'Por favor, completa todos los campos obligatorios.')
                 return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-            if request.method == "POST":
-                print("[DEBUG] POST recibido para registro staff")
-                username = request.POST.get("username")
-                userlastname = request.POST.get("userlastname")
-                userlastname2 = request.POST.get("userlastname2")
-                useremail = request.POST.get("useremail")
-                registerPassword = request.POST.get("password")
-                confirmPassword = request.POST.get("confirmPassword")
-                userType = request.POST.get("userType")
-                userphone = request.POST.get("userphone")
-                print(f"[DEBUG] username={username}, userlastname={userlastname}, userlastname2={userlastname2}, useremail={useremail}, userType={userType}, userphone={userphone}")
+            if registerPassword != confirmPassword:
+                messages.error(request, 'Las contraseñas no coinciden.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            if User.objects.filter(username=useremail).exists():
+                messages.error(request, 'Ya existe un usuario con ese correo.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})               
 
-                # Validación de campos obligatorios
-                if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
-                    print("[DEBUG] Faltan campos obligatorios")
-                    messages.error(request, 'Por favor, completa todos los campos obligatorios.')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-                if registerPassword != confirmPassword:
-                    print("[DEBUG] Contraseñas no coinciden")
-                    messages.error(request, 'Las contraseñas no coinciden.')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-                if User.objects.filter(username=useremail).exists():
-                    print("[DEBUG] Usuario ya existe")
-                    messages.error(request, 'Ya existe un usuario con ese correo.')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-
-                try:
-                    group = Group.objects.get(pk=userType) if userType else Group.objects.get(pk=2)
-                    print(f"[DEBUG] Grupo asignado: {group}")
-                except Group.DoesNotExist:
-                    print("[DEBUG] Tipo de usuario inválido")
-                    messages.error(request, 'Tipo de usuario inválido.')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-
-                try:
-                    user = User.objects.create_user(
-                        username=useremail,
-                        email=useremail,
-                        password=registerPassword,
-                        first_name=username,
-                        last_name=f"{userlastname} {userlastname2}"
-                    )
-                    print(f"[DEBUG] User creado: {user}")
-                    user.groups.add(group)
-                    user.save()
-                except Exception as e:
-                    print(f"[DEBUG] Error creando User: {e}")
-                    messages.error(request, f'Error creando usuario: {e}')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-
-                try:
-                    usuario = Usuarios.objects.create(
-                        user=user,
-                        groupId=group,
-                        email=useremail,
-                        nombre=username,
-                        paterno=userlastname,
-                        materno=userlastname2,
-                        telefono=userphone or ''
-                    )
-                    
-                    if userType == 1:
-                        Tutor.objects.create(
-                            usuario=usuario
-                        )
-                    else:
-                        Empleados.objects.create(
-                            usuario=usuario
-                        )
-                    print(f"[DEBUG] Usuarios creado: {usuario}")
-                except Exception as e:
-                    print(f"[DEBUG] Error creando Usuarios: {e}")
-                    messages.error(request, f'Error creando perfil de usuario: {e}')
-                    return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-
-                print(f"[DEBUG] Usuario creado: {useremail}, {registerPassword}")
+            try:
+                userType = int(userType)
+                user, usuario = crearUsuarioYPerfil(
+                    username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
+                )
                 messages.success(request, f'El usuario {useremail} ha sido creado exitosamente.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-            # GET: mostrar solo el registro
+            except Group.DoesNotExist:
+                messages.error(request, 'Tipo de usuario inválido.')
+            except Exception as e:
+                messages.error(request, f'Error creando usuario: {e}')
             return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-        else:
-            # Si está autenticado pero no es staff, redirigir a dashboard
-            return redirect(reverse('core:dashboard'))
+
+        # GET: mostrar solo el registro
+        return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
     else:
         # No autenticado: login y registro normal
         if request.method == "POST":
@@ -194,6 +164,7 @@ def signInUp(request):
             registerPassword = request.POST.get("password")
             confirmPassword = request.POST.get("confirmPassword")
             userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
+            userphone = request.POST.get("userphone")
 
             result = requestReCAPTCHA(request.POST.get('g-recaptcha-response'))
 
@@ -201,58 +172,34 @@ def signInUp(request):
                 messages.error(request, 'Verificación reCAPTCHA fallida.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
-            if useremail == User.objects.filter(email=useremail).exists():
+            if User.objects.filter(email=useremail).exists():
                 messages.error(request, 'El correo electrónico ya está en uso.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
-            # Si no se especifica userType, asignar 'Tutor' por defecto
-            print(f"[DEBUG] userType recibido antes de condicion: {userType}")
-            if not userType:
-                try:
-                    group = Group.objects.get(pk=1)
-                except Group.DoesNotExist:
-                    messages.error(request, 'No existe el grupo Tutor. Contacta al administrador.')
-                    return render(request, 'Login/siginup.html')
-            else:
-                try:
-                    print(f"[DEBUG] userType recibido: {userType}")
-                    group = Group.objects.get(pk=userType)
-                except Group.DoesNotExist:
-                    messages.error(request, 'Tipo de usuario inválido.')
-                    return render(request, 'Login/siginup.html')
-
-            user = User.objects.create_user(
-                username=useremail,
-                email=useremail,
-                password=registerPassword,
-                first_name=username,
-                last_name=f"{userlastname} {userlastname2}"
-            )
-
-            user.set_password(registerPassword)  # Asegurarse de que la contraseña esté encriptada
-
-            group = Group.objects.get(pk=userType) if userType else Group.objects.get(pk=1)
-            user.groups.add(group)
-            user.save()
-
-            usuario = Usuarios.objects.create(
-                user=user,
-                groupId=group,
-                email=useremail,
-                nombre=username,
-                paterno=userlastname,
-                materno=userlastname2,
-            )
-
-            Tutor.objects.create(usuario=usuario)
-                
-            userAuth = authenticate(request, username=useremail, password=registerPassword)
-            if userAuth is not None:
-                login(request, userAuth)
-                return redirect('core:dashboard')
-            else:
-                messages.error(request, 'Credenciales inválidas')
+            if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
+                messages.error(request, 'Por favor, completa todos los campos obligatorios.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+            if registerPassword != confirmPassword:
+                messages.error(request, 'Las contraseñas no coinciden.')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+
+            try:
+                user, usuario = crearUsuarioYPerfil(
+                    username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
+                )
+                # Login automático tras registro
+                userAuth = authenticate(request, username=useremail, password=registerPassword)
+                if userAuth is not None:
+                    login(request, userAuth)
+                    return redirect('core:dashboard')
+                else:
+                    messages.error(request, 'Credenciales inválidas')
+            except Group.DoesNotExist:
+                messages.error(request, 'Tipo de usuario inválido.')
+            except Exception as e:
+                messages.error(request, f'Error creando usuario: {e}')
+
+            return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         elif request.method == "GET":
             correo = request.GET.get("username")
@@ -263,10 +210,9 @@ def signInUp(request):
                 login(request, user)
                 return redirect('core:dashboard')
             else:
-
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
-        return render(request, 'Login/signup.html', {'recaptcha_site_key': settings.SITE_KEY})
+        return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
 def dashboard(request):
     """
@@ -280,12 +226,12 @@ def dashboard(request):
     """
     if request.user.is_authenticated:
         # Aquí podrías obtener información del usuario y pasarla al template
-        
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username).exists()
         context = {
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
-            'is_employee': request.user.groups.filter(name='Employee').exists(),
-            'is_profesor': Empleados.objects.filter(usuario__user=request.user, puesto='Profesor').exists(),
+            'is_employee': request.user.groups.filter(name='Employee').exists() if not is_profesor else False,
+            'is_profesor': is_profesor,
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
         }
