@@ -46,7 +46,11 @@
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           <p class="text-sm text-gray-600">
+            {% if order.is_profesor %}
+            <strong>Profesor:</strong> {{ order.alumno }}
+            {% else %}
             <strong>Alumno:</strong> {{ order.alumno }}
+            {% endif %}
           </p>
           <p class="text-xs text-gray-500">
             <strong>Nivel:</strong> {{ order.nivel }} |
@@ -59,6 +63,11 @@
           {% endif %} {% if order.nota %}
           <p class="text-xs text-gray-500">
             <strong>Nota:</strong> {{ order.nota }}
+          </p>
+          {% endif %}
+          {% if order.encargado %}
+          <p class="text-xs text-gray-500">
+            <strong>Encargado:</strong> {{ order.encargado }}
           </p>
           {% endif %}
         </div>

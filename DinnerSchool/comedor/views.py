@@ -196,15 +196,18 @@ def order(request):
             4: "cancelado",
         }
         for pedido in Pedido.objects.filter(fecha=today):
+            is_profesor = pedido.profesorId is not None
             order = {
                 "id": f"order-{pedido.id}",
                 "platillo": pedido.platillo.nombre,
                 "ingredientes": pedido.ingredientePlatillo,
                 "nota": pedido.nota,
-                "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}",
-                "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel),
-                "turno": "Comida",
+                "is_profesor": is_profesor,
+                "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}" if not is_profesor else f"{pedido.profesorId.usuario} {pedido.profesorId.usuario.paterno}",
+                "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
+                "turno": pedido.get_turno_label(),
                 "status": status_map.get(pedido.status, "pendiente"),
+                "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado"
             }
             orders.append(order)
         print(orders)
