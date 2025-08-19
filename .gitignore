@@ -1,9 +1,82 @@
-# Ignorar archivos de caché de Python
+# Variables de entorno
+.env
+.env.local
+.env.production
+.env.development
+
+# Archivos de configuración sensibles
+secret.json
+secrets.json
+config.json
+
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# Archivos de Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Static files (si usas collectstatic)
+staticfiles/
+static_root/
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archivos de respaldo
+*.bak
+*.backup
 
 # Ignorar entorno virtual
 entorno/
-
-# Ignorar archivos de configuración
-secret.json

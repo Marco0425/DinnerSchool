@@ -13,25 +13,26 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import json
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-03k#nr3le7z*cfeil7#cm_(6d1ks@uc=v!5)m7!0wafn=j8y0&'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-CHANGE-THIS-IN-PRODUCTION')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
-
 INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'comedor.apps.ComedorConfig',
@@ -73,17 +74,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Configuración de base de datos con soporte para PostgreSQL y SQLite
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+# Configuración PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'dinnerschool_db'),
+        'USER': os.getenv('DB_USER', 'dinnerschool_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -103,24 +110,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'es'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
 STATICFILES_DIRS = [
     BASE_DIR / 'static'
 ]
@@ -130,10 +131,21 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECRET = os.path.join(BASE_DIR, 'secret.json')
+# reCAPTCHA configuration (opcional)
+# Solo cargar si existe el archivo secret.json
+SECRET_FILE = os.path.join(BASE_DIR, 'secret.json')
 
-with open(SECRET) as f:
-    recaptcha_config = json.load(f)
-
-SITE_KEY = recaptcha_config['recaptcha_site_key']
-SECRET_KEY = recaptcha_config['recaptcha_secret_key']
+if os.path.exists(SECRET_FILE):
+    try:
+        with open(SECRET_FILE) as f:
+            recaptcha_config = json.load(f)
+        SITE_KEY = recaptcha_config.get('recaptcha_site_key', '')
+        RECAPTCHA_SECRET_KEY = recaptcha_config.get('recaptcha_secret_key', '')
+    except (json.JSONDecodeError, KeyError):
+        # Usar variables de entorno como fallback
+        SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '')
+        RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
+else:
+    # Usar variables de entorno
+    SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '')
+    RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
