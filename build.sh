@@ -14,7 +14,7 @@ echo "📦 Actualizando pip..."
 python -m pip install --upgrade pip
 
 # Instalar setuptools y wheel primero
-echo "🛠️ Instalando herramientas de construcción..."
+echo "🛠️ Instal ando herramientas de construcción..."
 pip install --upgrade setuptools wheel
 
 # Instalar dependencias una por una para debug
