@@ -20,7 +20,7 @@ services:
         value: "mysite.settings"
 
 databases:
-  - name: dinnerschool_db_user
+  - name: dinnerschool_db
     databaseName: dinnerschool_db
-    user: marco_user
+    user: dinnerschool_db_user
     plan: free
