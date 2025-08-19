@@ -259,7 +259,7 @@ def students(request):
 
     if request.user.is_staff:
         students = Alumnos.objects.all()
-        return render(request, 'students/students_list_view.html', {'students': students})
+        return render(request, 'Students/students_list_view.html', {'students': students})
 
     try:
         usuario = Usuarios.objects.get(user=request.user)
@@ -282,10 +282,10 @@ def students(request):
         })
 
     if studentsTutor:
-        return render(request, 'students/students_list_view.html', {'students': studentsTutor})
+        return render(request, 'Students/students_list_view.html', {'students': studentsTutor})
     else:
         messages.warning(request, 'No se encontraron estudiantes.')
-        return render(request, 'students/students_form_view.html')
+        return render(request, 'Students/students_form_view.html')
 
 def createStudents(request):
     """
@@ -329,7 +329,7 @@ def createStudents(request):
 
         if not nivelEducativoAlumno:
             messages.error(request, 'Nivel educativo no válido.')
-            return render(request, 'students/students_form_view.html', context)
+            return render(request, 'Students/students_form_view.html', context)
 
         try:
             if request.user.is_staff:
@@ -356,9 +356,9 @@ def createStudents(request):
             return redirect('core:students')
         except Tutor.DoesNotExist:
             messages.error(request, 'Tutor no encontrado.')
-            return render(request, 'students/students_form_view.html', context)
+            return render(request, 'Students/students_form_view.html', context)
     else:
-        return render(request, 'students/students_form_view.html', context)
+        return render(request, 'Students/students_form_view.html', context)
 
 def employee(request):
     """
@@ -370,7 +370,7 @@ def employee(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de empleados.
     """
     if request.user.is_authenticated:
-        return render(request, 'employees/employees_list_view.html')
+        return render(request, 'Employees/employees_list_view.html')
     else:
         return redirect('core:signInUp')
 

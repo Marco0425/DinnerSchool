@@ -213,7 +213,7 @@ def order(request):
             }
             orders.append(order)
         print(orders)
-        return render(request, 'orders/orders_kanban_view.html', {'orders': orders})
+        return render(request, 'Orders/orders_kanban_view.html', {'orders': orders})
     else:
         return redirect('core:signInUp')
     
@@ -303,7 +303,7 @@ def createOrder(request):
                 ],
             }
         
-        return render(request, 'orders/orders_form_view.html', context)
+        return render(request, 'Orders/orders_form_view.html', context)
 
 @csrf_exempt
 def update_order_status(request):
