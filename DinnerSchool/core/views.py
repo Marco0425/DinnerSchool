@@ -241,7 +241,7 @@ def dashboard(request):
             'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
         }
         print(context)
-        return render(request, 'HOME/home_dashboard_view.html', context)
+        return render(request, 'Home/home_dashboard_view.html', context)
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
