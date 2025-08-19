@@ -21,17 +21,11 @@ pip install --upgrade setuptools wheel
 echo "🔧 Instalando Django..."
 pip install Django==4.1.13
 
-echo "🐘 Instalando PostgreSQL adapter..."
-pip install psycopg2-binary==2.9.5
-
 echo "🌐 Instalando gunicorn..."
 pip install gunicorn==20.1.0
 
 echo "📦 Instalando whitenoise..."
 pip install whitenoise==6.4.0
-
-echo "🔗 Instalando dj-database-url..."
-pip install dj-database-url==2.0.0
 
 echo "🌍 Instalando python-dotenv..."
 pip install python-dotenv==1.0.0
