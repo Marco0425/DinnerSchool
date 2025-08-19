@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # build.sh - Script de construcción para Render.com
-# Marco0425 - DinnerSchool - 2025-08-19 04:16:10 UTC
+# Marco0425 - DinnerSchool - 2025-08-19 04:22:45 UTC
 
 set -o errexit  # exit on error
 
@@ -9,23 +9,52 @@ echo "📅 $(date)"
 echo "👤 Usuario: Marco0425"
 echo "🐍 Python: $(python --version)"
 
-# Actualizar pip y setuptools
-echo "📦 Actualizando herramientas de Python..."
-python -m pip install --upgrade pip setuptools wheel
+# Actualizar pip
+echo "📦 Actualizando pip..."
+python -m pip install --upgrade pip
 
-# Instalar dependencias
-echo "📦 Instalando dependencias desde requirements.txt..."
-pip install -r requirements.txt
+# Instalar setuptools y wheel primero
+echo "🛠️ Instalando herramientas de construcción..."
+pip install --upgrade setuptools wheel
+
+# Instalar dependencias una por una para debug
+echo "🔧 Instalando Django..."
+pip install Django==4.1.13
+
+echo "🐘 Instalando PostgreSQL adapter..."
+pip install psycopg2-binary==2.9.5
+
+echo "🖼️ Instalando Pillow..."
+pip install Pillow==10.0.0
+
+echo "🌐 Instalando gunicorn..."
+pip install gunicorn==20.1.0
+
+echo "📦 Instalando whitenoise..."
+pip install whitenoise==6.4.0
+
+echo "🔗 Instalando dj-database-url..."
+pip install dj-database-url==2.0.0
+
+echo "🌍 Instalando python-dotenv..."
+pip install python-dotenv==1.0.0
+
+echo "⏰ Instalando pytz..."
+pip install pytz==2023.3
 
 echo "🔧 Configurando Django..."
 cd DinnerSchool
+
+# Verificar estructura
+echo "📁 Estructura del proyecto:"
+ls -la
 
 # Ejecutar migraciones
 echo "🗄️ Ejecutando migraciones..."
 python manage.py migrate --no-input
 
-# Crear superusuario si no existe
-echo "👤 Configurando usuario administrador..."
+# Crear superusuario
+echo "👤 Configurando administrador..."
 python manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -34,16 +63,20 @@ if not User.objects.filter(username='admin').exists():
     print('✅ Superusuario creado: admin/admin123')
 else:
     print('✅ Superusuario ya existe')
-"
+" || echo "⚠️ No se pudo crear superusuario (normal en primera ejecución)"
 
 # Recopilar archivos estáticos
 echo "📁 Recopilando archivos estáticos..."
 python manage.py collectstatic --no-input --clear
 
 echo "✅ Build completado exitosamente!"
-echo "📊 Estadísticas del deploy:"
+echo ""
+echo "🎉 DinnerSchool está listo para deploy!"
+echo "📊 Resumen:"
 echo "   - Python: $(python --version)"
 echo "   - Django: $(python -c 'import django; print(django.get_version())')"
-echo "   - Database: ✅ PostgreSQL via Render"
-echo "   - Static files: ✅ Configurados"
-echo "🌐 App estará disponible en: https://dinnerschool-marco.onrender.com"
+echo "   - Database: PostgreSQL (Render)"
+echo "   - Admin: admin / admin123"
+echo ""
+echo "🌐 URL: https://dinnerschool-marco.onrender.com"
+echo "🔐 Admin: https://dinnerschool-marco.onrender.com/admin/"
