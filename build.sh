@@ -24,9 +24,6 @@ pip install Django==4.1.13
 echo "🐘 Instalando PostgreSQL adapter..."
 pip install psycopg2-binary==2.9.5
 
-echo "🖼️ Instalando Pillow..."
-pip install Pillow==10.0.0
-
 echo "🌐 Instalando gunicorn..."
 pip install gunicorn==20.1.0
 
