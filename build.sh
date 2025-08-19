@@ -36,8 +36,8 @@ pip install dj-database-url==2.0.0
 echo "🌍 Instalando python-dotenv..."
 pip install python-dotenv==1.0.0
 
-echo "⏰ Instalando pytz..."
-pip install pytz==2023.3
+echo "🌍 Instalando requerimientos..."
+pip install -r requirements.txt
 
 echo "🔧 Configurando Django..."
 cd DinnerSchool
