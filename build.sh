@@ -31,7 +31,7 @@ echo "🌍 Instalando python-dotenv..."
 pip install python-dotenv==1.0.0
 
 echo "🌍 Instalando requerimientos..."
-pip install -r requirements.txt
+pip install -r DinnerSchool/requirements.txt
 
 echo "🔧 Configurando Django..."
 cd DinnerSchool
