@@ -1,9 +1,11 @@
 services:
   - type: web
     name: dinnerschool
-    env: docker
+    env: python
     plan: free
     branch: main
+    buildCommand: ./build.sh
+    startCommand: gunicorn DinnerSchool.DinnerSchool.mysite.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /admin/
     envVars:
       - key: DATABASE_URL
@@ -17,7 +19,7 @@ services:
       - key: ALLOWED_HOSTS
         value: ".onrender.com,dinnerschool.onrender.com"
       - key: DJANGO_SETTINGS_MODULE
-        value: "mysite.settings"
+        value: "DinnerSchool.DinnerSchool.mysite.settings"
 
 databases:
   - name: dinnerschool_db
