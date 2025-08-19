@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: dinnerschool_postgres
+    environment:
+      POSTGRES_DB: dinnerschool
+      POSTGRES_USER: dinnerschool_user
+      POSTGRES_PASSWORD: dinnerschool_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: dinnerschool_web
+    command: python manage.py runserver 0.0.0.0:8000
+    working_dir: /app/DinnerSchool
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://dinnerschool_user:dinnerschool_password@postgres:5432/dinnerschool
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-for-development
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
