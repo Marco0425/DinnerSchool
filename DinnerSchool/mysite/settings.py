@@ -124,5 +124,3 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     ALLOWED_HOSTS.extend(['.onrender.com'])
-    
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
