@@ -19,7 +19,7 @@ services:
       - key: ALLOWED_HOSTS
         value: ".onrender.com,dinnerschool.onrender.com"
       - key: DJANGO_SETTINGS_MODULE
-        value: "DinnerSchool.DinnerSchool.mysite.settings"
+        value: "DinnerSchool.mysite.settings"
 
 databases:
   - name: dinnerschool_db
