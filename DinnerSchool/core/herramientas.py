@@ -17,7 +17,7 @@ def getChoiceValue(choices, value):
 
 def requestReCAPTCHA(recaptcha_response):
     data = {
-        'secret': settings.SECRET_KEY,
+        'secret': settings.RCSECRET_KEY,
         'response': recaptcha_response
     }
     r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)

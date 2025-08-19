@@ -1,5 +1,6 @@
 # Imports de Django
-from django.http import HttpResponse
+import logging
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
@@ -19,6 +20,8 @@ from django.conf import settings
 from .models import *
 
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # Vista genérica para eliminar
 @require_POST
@@ -267,7 +270,7 @@ def students(request):
         students = Alumnos.objects.filter(tutorId=tutor)
     except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
         messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
-        return render(request, 'students/students_form_view.html')
+        return render(request, 'Students/students_form_view.html')
 
     studentsTutor = []
     for student in students:
@@ -468,3 +471,22 @@ def account_settings_form_view(request):
     # GET: mostrar datos actuales
     return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
             
+def custom_404(request, exception):
+    """Vista personalizada para error 404"""
+    logger.warning(f"Error 404: {request.path} - IP: {request.META.get('REMOTE_ADDR')}")
+    return render(request, 'errors/404.html', status=404)
+
+def custom_500(request):
+    """Vista personalizada para error 500"""
+    logger.error(f"Error 500 en: {request.path} - IP: {request.META.get('REMOTE_ADDR')}")
+    return render(request, 'errors/500.html', status=500)
+
+def custom_403(request, exception):
+    """Vista personalizada para error 403"""
+    logger.warning(f"Error 403: {request.path} - IP: {request.META.get('REMOTE_ADDR')}")
+    return render(request, 'errors/403.html', status=403)
+
+def custom_400(request, exception):
+    """Vista personalizada para error 400"""
+    logger.warning(f"Error 400: {request.path} - IP: {request.META.get('REMOTE_ADDR')}")
+    return render(request, 'errors/400.html', status=400)
