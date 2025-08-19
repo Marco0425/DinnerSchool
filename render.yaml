@@ -2,7 +2,7 @@ build:
   pythonVersion: 3.10.12
 services:
   - type: web
-    name: dinnerschool-marco
+    name: dinnerschool
     runtime: python3
     buildCommand: "./build.sh"
     startCommand: "gunicorn --bind 0.0.0.0:$PORT DinnerSchool.mysite.wsgi:application"
@@ -19,7 +19,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: ".onrender.com,dinnerschool-marco.onrender.com"
+        value: ".onrender.com,dinnerschool.onrender.com"
       - key: DJANGO_SETTINGS_MODULE
         value: "mysite.settings"
 
