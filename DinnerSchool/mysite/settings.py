@@ -23,13 +23,13 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '.onrender.com',  # Para Render.com
-    'dinnerschool-marco.onrender.com',  # Tu dominio específico
+    'dinnerschool.onrender.com',  # Tu dominio específico
 ]
 
 # Configuración CSRF y seguridad
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
-    'https://dinnerschool-marco.onrender.com',
+    'https://dinnerschool.onrender.com',
 ]
 
 # Application definition

@@ -1,32 +1,20 @@
 #!/usr/bin/env bash
 # build.sh - Script de construcción para Render.com
-# Marco0425 - DinnerSchool - 2025-08-19 04:08:39 UTC
+# Marco0425 - DinnerSchool - 2025-08-19 04:16:10 UTC
 
 set -o errexit  # exit on error
 
 echo "🚀 Iniciando build de DinnerSchool..."
 echo "📅 $(date)"
 echo "👤 Usuario: Marco0425"
+echo "🐍 Python: $(python --version)"
 
-# Instalar dependencias del sistema para PostgreSQL
-echo "🔧 Instalando dependencias del sistema..."
-apt-get update
-apt-get install -y postgresql-client libpq-dev gcc python3-dev
+# Actualizar pip y setuptools
+echo "📦 Actualizando herramientas de Python..."
+python -m pip install --upgrade pip setuptools wheel
 
-# Actualizar pip
-echo "📦 Actualizando pip..."
-python -m pip install --upgrade pip
-
-# Instalar wheel primero
-echo "🛠️ Instalando wheel..."
-pip install wheel
-
-# Instalar psycopg2 específicamente
-echo "🐘 Instalando PostgreSQL adapter..."
-pip install psycopg2==2.9.7
-
-# Instalar resto de dependencias
-echo "📦 Instalando dependencias restantes..."
+# Instalar dependencias
+echo "📦 Instalando dependencias desde requirements.txt..."
 pip install -r requirements.txt
 
 echo "🔧 Configurando Django..."
@@ -36,12 +24,26 @@ cd DinnerSchool
 echo "🗄️ Ejecutando migraciones..."
 python manage.py migrate --no-input
 
+# Crear superusuario si no existe
+echo "👤 Configurando usuario administrador..."
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@dinnerschool.com', 'admin123')
+    print('✅ Superusuario creado: admin/admin123')
+else:
+    print('✅ Superusuario ya existe')
+"
+
 # Recopilar archivos estáticos
 echo "📁 Recopilando archivos estáticos..."
 python manage.py collectstatic --no-input --clear
 
 echo "✅ Build completado exitosamente!"
 echo "📊 Estadísticas del deploy:"
-echo "   - Python version: $(python --version)"
-echo "   - Django version: $(python -c 'import django; print(django.get_version())')"
-echo "   - PostgreSQL: ✅ Conectado"
+echo "   - Python: $(python --version)"
+echo "   - Django: $(python -c 'import django; print(django.get_version())')"
+echo "   - Database: ✅ PostgreSQL via Render"
+echo "   - Static files: ✅ Configurados"
+echo "🌐 App estará disponible en: https://dinnerschool-marco.onrender.com"

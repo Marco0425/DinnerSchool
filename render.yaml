@@ -6,6 +6,7 @@ services:
     startCommand: "gunicorn --bind 0.0.0.0:$PORT DinnerSchool.mysite.wsgi:application"
     plan: free
     branch: main
+    healthCheckPath: /admin/
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -16,10 +17,12 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: ".onrender.com"
+        value: ".onrender.com,dinnerschool-marco.onrender.com"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "mysite.settings"
 
 databases:
-  - name: dinnerschool-db
+  - name: dinnerschool_db
     databaseName: dinnerschool_production
-    user: dinnerschool_user
+    user: marco_user
     plan: free
