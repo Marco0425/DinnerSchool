@@ -1,26 +1,25 @@
 services:
   - type: web
-    name: dinnerschool
+    name: dinnerschool-marco
     runtime: python3
     buildCommand: "./build.sh"
     startCommand: "gunicorn --bind 0.0.0.0:$PORT DinnerSchool.mysite.wsgi:application"
     plan: free
     branch: main
-    healthCheckPath: /
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: dinnerschool-db
+          name: dinnerschool_db
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
-        value: False
+        value: "False"
       - key: ALLOWED_HOSTS
-        value: "*"
+        value: ".onrender.com"
 
 databases:
   - name: dinnerschool-db
-    databaseName: dinnerschool_db
+    databaseName: dinnerschool_production
     user: dinnerschool_user
     plan: free
