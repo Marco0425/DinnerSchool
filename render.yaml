@@ -1,3 +1,5 @@
+build:
+  pythonVersion: 3.11.6
 services:
   - type: web
     name: dinnerschool-marco
