@@ -2,6 +2,12 @@
 # build.sh - Script de construcción para Render.com
 # Marco0425 - DinnerSchool - 2025-08-19 04:22:45 UTC
 
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+
+pyenv install 3.11.6
+pyenv global 3.11.6
+
 set -o errexit  # exit on error
 
 echo "🚀 Iniciando build de DinnerSchool..."
