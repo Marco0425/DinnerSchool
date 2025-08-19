@@ -4,7 +4,7 @@ Marco0425 - 2025-08-19 03:28:33 UTC
 """
 
 import os
-# import dj_database_url
+import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -80,20 +80,20 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 # Database - PostgreSQL en Render
 # Comentar en local
-# DATABASES = {
-#     'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
-# }
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'dinnerschool_db'),
-        'USER': os.getenv('DB_USER', 'dinnerschool_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME', 'dinnerschool_db'),
+#         'USER': os.getenv('DB_USER', 'dinnerschool_user'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', ''),
+#         'HOST': os.getenv('DB_HOST', 'localhost'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#     }
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
