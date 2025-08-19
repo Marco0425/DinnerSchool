@@ -60,6 +60,8 @@ else:
 echo "📁 Recopilando archivos estáticos..."
 python manage.py collectstatic --no-input --clear
 
+python -c "import mysite.wsgi; print('✅ Importación exitosa')"
+
 echo "✅ Build completado exitosamente!"
 echo ""
 echo "🎉 DinnerSchool está listo para deploy!"
