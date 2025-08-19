@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 📥 Copia archivos de requerimientos
+# 📥 Copia archivos de requerimientos (ajusta la ruta si es necesario)
 COPY DinnerSchool/requirements.txt .
 
 # 📦 Instala dependencias de Python
@@ -27,8 +27,11 @@ RUN pip install --upgrade pip \
 # 📁 Copia el resto del proyecto
 COPY . .
 
-# ⚙️ Recoge archivos estáticos (si usas collectstatic)
-RUN python manage.py collectstatic --noinput
+# 🐍 Mensaje opcional para debug
+RUN echo "Archivos copiados y dependencias instaladas correctamente"
+
+# ⚙️ Recoge archivos estáticos (Django)
+RUN python DinnerSchool/manage.py collectstatic --noinput
 
 # 🚀 Comando de arranque con Gunicorn
-CMD ["gunicorn", "mysite.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "DinnerSchool.mysite.wsgi:application"]
