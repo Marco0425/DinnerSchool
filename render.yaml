@@ -5,7 +5,7 @@ services:
     plan: free
     branch: main
     buildCommand: ./build.sh
-    startCommand: gunicorn mysite.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: gunicorn DinnerSchool.mysite.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /admin/
     envVars:
       - key: DATABASE_URL
