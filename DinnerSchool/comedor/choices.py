@@ -13,7 +13,7 @@ TURNO = [
 ]
 
 TIPOANUNCIO = [
-    (0, 'Aviso'),
+    (0, 'Recordatorio'),
     (1, 'Urgente'),
-    (2, 'Recordatorio'),
+    (2, 'Aviso'),
 ]
