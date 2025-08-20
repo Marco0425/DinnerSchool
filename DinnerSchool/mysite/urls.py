@@ -19,7 +19,7 @@ from django.urls import include, path
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='core/dashboard/', permanent=True)),
+    path('', RedirectView.as_view(url='/core/dashboard/', permanent=True)),
     path("comedor/", include("comedor.urls")),
     path("core/", include("core.urls")),
     path('admin/', admin.site.urls),
