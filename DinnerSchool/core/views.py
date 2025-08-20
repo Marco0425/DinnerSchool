@@ -132,17 +132,23 @@ def signInUp(request):
             confirmPassword = request.POST.get("confirmPassword")
             userType = request.POST.get("userType")
             userphone = request.POST.get("userphone")
-
-            # Validación de campos obligatorios
+            
+            # Validaciones consolidadas
+            if User.objects.filter(email=useremail).exists():
+                messages.error(request, 'El correo electrónico ya está en uso.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            
             if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
                 messages.error(request, 'Por favor, completa todos los campos obligatorios.')
                 return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            
             if registerPassword != confirmPassword:
                 messages.error(request, 'Las contraseñas no coinciden.')
                 return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+
             if User.objects.filter(username=useremail).exists():
                 messages.error(request, 'Ya existe un usuario con ese correo.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})               
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
 
             try:
                 userType = int(userType)
@@ -150,11 +156,13 @@ def signInUp(request):
                     username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
                 )
                 messages.success(request, f'El usuario {useremail} ha sido creado exitosamente.')
+                return redirect('core:signInUp')  # CAMBIO: redirect después del éxito
             except Group.DoesNotExist:
                 messages.error(request, 'Tipo de usuario inválido.')
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
             except Exception as e:
                 messages.error(request, f'Error creando usuario: {e}')
-            return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
 
         # GET: mostrar solo el registro
         return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
@@ -171,19 +179,15 @@ def signInUp(request):
             userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
             userphone = request.POST.get("userphone")
 
-            # result = requestReCAPTCHA(request.POST.get('g-recaptcha-response'))
-
-            # if not result.get('success'):
-            #     messages.error(request, 'Verificación reCAPTCHA fallida.')
-            #     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-
+            # Validaciones
             if User.objects.filter(email=useremail).exists():
                 messages.error(request, 'El correo electrónico ya está en uso.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-
+            
             if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
                 messages.error(request, 'Por favor, completa todos los campos obligatorios.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+            
             if registerPassword != confirmPassword:
                 messages.error(request, 'Las contraseñas no coinciden.')
                 return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
@@ -196,26 +200,31 @@ def signInUp(request):
                 userAuth = authenticate(request, username=useremail, password=registerPassword)
                 if userAuth is not None:
                     login(request, userAuth)
+                    messages.success(request, 'Registro exitoso. ¡Bienvenido!')
                     return redirect('core:dashboard')
                 else:
-                    messages.error(request, 'Credenciales inválidas')
+                    messages.error(request, 'Error en la autenticación después del registro.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
             except Group.DoesNotExist:
                 messages.error(request, 'Tipo de usuario inválido.')
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
             except Exception as e:
                 messages.error(request, f'Error creando usuario: {e}')
-
-            return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         elif request.method == "GET":
             correo = request.GET.get("username")
             contrasena = request.GET.get("password")
 
-            user = authenticate(request, username=correo, password=contrasena)
-            if user is not None:
-                login(request, user)
-                return redirect('core:dashboard')
-            else:
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+            if correo and contrasena:  # Solo intentar login si hay credenciales
+                user = authenticate(request, username=correo, password=contrasena)
+                if user is not None:
+                    login(request, user)
+                    messages.success(request, 'Inicio de sesión exitoso.')
+                    return redirect('core:dashboard')
+                else:
+                    messages.error(request, 'Credenciales inválidas.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
@@ -270,7 +279,7 @@ def students(request):
         students = Alumnos.objects.filter(tutorId=tutor)
     except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
         messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
-        return render(request, 'Students/students_form_view.html')
+        return redirect('core:createStudents')  # CAMBIO: redirect en lugar de render
 
     studentsTutor = []
     for student in students:
@@ -287,8 +296,8 @@ def students(request):
     if studentsTutor:
         return render(request, 'Students/students_list_view.html', {'students': studentsTutor})
     else:
-        messages.warning(request, 'No se encontraron estudiantes.')
-        return render(request, 'Students/students_form_view.html')
+        messages.info(request, 'No tienes estudiantes registrados. Crea uno nuevo.')
+        return redirect('core:createStudents')  # CAMBIO: redirect en lugar de render
 
 def createStudents(request):
     """

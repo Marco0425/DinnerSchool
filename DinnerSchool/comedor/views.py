@@ -64,12 +64,12 @@ def createIngredient(request):
                 nuevoIngrediente = Ingredientes(nombre=nombre)
                 nuevoIngrediente.save()
                 messages.success(request, "Ingrediente creado exitosamente.")
-            return redirect('comedor:ingredients')
+            return redirect('comedor:ingredients')  # SIEMPRE redirect después del mensaje
         else:
             messages.error(request, "Por favor, ingresa un nombre para el ingrediente.")
-        return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
-    else:
-        return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
+            return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
+    
+    return render(request, 'Ingredients/ingredients_form_view.html', {'ingrediente': ingrediente})
 
 def credit(request):
     """
@@ -98,16 +98,23 @@ def createCredit(request):
         tutor_id = request.POST.get("tutor")
         credito = request.POST.get("credito")
         if tutor_id and credito:
-            tutor = Tutor.objects.get(id=tutor_id)
-            nuevoCredito = CreditoDiario(tutor=tutor, credito=credito)
-            nuevoCredito.save()
-            messages.success(request, "Crédito creado exitosamente.")
-            return redirect('comedor:credit')
+            try:
+                tutor = Tutor.objects.get(id=tutor_id)
+                nuevoCredito = CreditoDiario(tutor=tutor, credito=credito)
+                nuevoCredito.save()
+                messages.success(request, "Crédito creado exitosamente.")
+                return redirect('comedor:credit')
+            except Tutor.DoesNotExist:
+                messages.error(request, "Tutor no encontrado.")
         else:
             messages.error(request, "Por favor, completa todos los campos.")
-    else:
+        
+        # Si hay error, volver a mostrar el form con los tutores
         tutors = Tutor.objects.all()
         return render(request, 'Credit/credit_form_view.html', {'tutors': tutors})
+    
+    tutors = Tutor.objects.all()
+    return render(request, 'Credit/credit_form_view.html', {'tutors': tutors})
     
 def ads(request):
     """
@@ -152,29 +159,30 @@ def createAds(request):
                 noticia.tipoAnuncio = request.POST.get("tipoAnuncio")
                 noticia.save()
                 messages.success(request, "Anuncio actualizado exitosamente.")
+                return redirect('comedor:ads')
             else:
                 try:
                     usuario = Usuarios.objects.get(user=request.user)
+                    nueva_noticia = Noticias(
+                        titulo=titulo,
+                        contenido=contenido,
+                        activo=True,
+                        autor=usuario,
+                    )
+                    nueva_noticia.save()
+                    messages.success(request, "Anuncio creado exitosamente.")
+                    return redirect('comedor:ads')
                 except Usuarios.DoesNotExist:
                     messages.error(request, "No existe un perfil de usuario asociado a este usuario. Contacta al administrador.")
-                    return render(request, 'Ads/ads_form_view.html', {'noticia': None})
-                nueva_noticia = Noticias(
-                    titulo=titulo,
-                    contenido=contenido,
-                    activo=True,
-                    autor=usuario,
-                )
-                nueva_noticia.save()
-                print('Nueva noticia creada:', nueva_noticia)
-                messages.success(request, "Anuncio creado exitosamente.")
-            return redirect('comedor:ads')
         else:
             messages.error(request, "Por favor, completa todos los campos.")
+        
+        # Si hay error, mostrar el form con el contexto
         context = {'noticia': noticia}
         return render(request, 'Ads/ads_form_view.html', context)
-    else:
-        context = {'noticia': noticia}
-        return render(request, 'Ads/ads_form_view.html', context)
+    
+    context = {'noticia': noticia}
+    return render(request, 'Ads/ads_form_view.html', context)
 
 def order(request):
     """
@@ -246,7 +254,7 @@ def createOrder(request):
             turno=ordenTurno,
             total=float(precio)
         )
-        
+        messages.success(request, "Pedido creado exitosamente.")
         return redirect('core:dashboard')
     else:
         platillos = Platillo.objects.all()
@@ -360,7 +368,6 @@ def saucers(request):
                 'precio': platillo.precio
             })
 
-        print(platillos)
         return render(request, 'Saucer/saucer_list_view.html', {'saucers': platillos})
     else:
         return redirect('core:signInUp')
@@ -388,6 +395,9 @@ def createSaucer(request):
         nombre = request.POST.get("platillo")
         ingredientes_ids = request.POST.getlist("ingredientes")
         precio = request.POST.get("precio")
+        if not precio:
+            messages.error(request, "Por favor, ingresa un precio para el platillo.")
+            return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
         if nombre and ingredientes_ids:
             if platillo:
                 platillo.nombre = nombre
@@ -402,6 +412,8 @@ def createSaucer(request):
             return redirect('comedor:saucers')
         else:
             messages.error(request, "Por favor, ingresa un nombre para el platillo y selecciona ingredientes.")
+        
+        # Si hay error, mostrar el form con el contexto
         return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
-    else:
-        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
+    
+    return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
