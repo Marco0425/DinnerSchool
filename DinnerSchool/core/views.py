@@ -171,11 +171,11 @@ def signInUp(request):
             userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
             userphone = request.POST.get("userphone")
 
-            result = requestReCAPTCHA(request.POST.get('g-recaptcha-response'))
+            # result = requestReCAPTCHA(request.POST.get('g-recaptcha-response'))
 
-            if not result.get('success'):
-                messages.error(request, 'Verificación reCAPTCHA fallida.')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+            # if not result.get('success'):
+            #     messages.error(request, 'Verificación reCAPTCHA fallida.')
+            #     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
             if User.objects.filter(email=useremail).exists():
                 messages.error(request, 'El correo electrónico ya está en uso.')
