@@ -53,8 +53,12 @@
             {% endif %}
           </p>
           <p class="text-xs text-gray-500">
+            {% if order.is_profesor%}
+            <strong>Turno:</strong> {{ order.turno }}
+            {% else %}
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
+            {% endif%}
           </p>
           {% if order.ingredientes %}
           <p class="text-xs text-gray-500">

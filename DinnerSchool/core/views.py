@@ -271,7 +271,19 @@ def students(request):
 
     if request.user.is_staff:
         students = Alumnos.objects.all()
-        return render(request, 'Students/students_list_view.html', {'students': students})
+        
+        studentsTutor = []
+        for student in students:
+            studentsTutor.append({
+                'id': student.id,
+                'nombre': student.nombre,
+                'paterno': student.paterno,
+                'materno': student.materno,
+                'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
+                'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
+                'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
+            })
+        return render(request, 'Students/students_list_view.html', {'students': studentsTutor})
 
     try:
         usuario = Usuarios.objects.get(user=request.user)
@@ -328,6 +340,7 @@ def createStudents(request):
         grado = request.POST.get("grado")
         grupo = request.POST.get("grupo")
         nivelEducativo = request.POST.get("nivelEducativo")
+        print(f"[createStudents] Datos recibidos: nombre={nombre}, paterno={paterno}, materno={materno}, grado={grado}, grupo={grupo}, nivelEducativo={nivelEducativo}")
         tutor_id = request.POST.get("tutor") if request.user.is_staff else None
 
         try:
