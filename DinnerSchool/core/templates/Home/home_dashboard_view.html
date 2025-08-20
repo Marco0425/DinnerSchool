@@ -342,8 +342,8 @@
         {% if statusPedidos %}
           {% for statusPedido in statusPedidos %}
           <li>
-            <span class="font-semibold">{{ statusPedido.fecha }}</span> Pedido #{{ statusPedido.id }}
-            {{ statusPedido.get_status_label }}. - {{ statusPedido.get_turno_label }}.
+            Pedido # {{ statusPedido.id }} - {{ statusPedido.get_turno_label }}
+            - {{ statusPedido.fecha }} - <span class="font-semibold">{{ statusPedido.get_status_label }}</span>
           </li>
           {% endfor %}
         </ul>
