@@ -16,7 +16,9 @@
     <!-- Información del usuario (ejemplo) -->
     {% if user.is_authenticated %}
     <div class="text-right">
-      <p class="text-gray-700 font-semibold">Bienvenido, {{ user.first_name }}</p>
+      <p class="text-gray-700 font-semibold">
+        Bienvenido, {{ user.first_name }}
+      </p>
       <p class="text-gray-500 text-sm">Tipo: {{ user.groups.all|join:", " }}</p>
       <a
         href="{% url 'core:logout' %}"
@@ -75,8 +77,7 @@
           >
         </div>
       </a>
-      {% endif %}
-      {% if is_admin or is_tutor or is_profesor%}
+      {% endif %} {% if is_admin or is_tutor or is_profesor%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/create/"
@@ -104,9 +105,7 @@
           >
         </div>
       </a>
-      {% endif %}
-
-      {% if is_admin %}
+      {% endif %} {% if is_admin %}
 
       <!-- Tarjeta de Ingredientes con icono SVG y nombre claro -->
       <a
@@ -163,8 +162,7 @@
           >
         </div>
       </a>
-      {% endif %}
-      {% if is_admin or is_employee and not is_profesor%}
+      {% endif %} {% if is_admin or is_employee and not is_profesor%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/"
@@ -172,29 +170,27 @@
       >
         <div class="flex flex-col items-center">
           <!-- Icono de Pedidos (SVG de hoja) -->
-        <svg
-          class="w-12 h-12 text-red-600 mb-3 transition-colors duration-300"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-4M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 5h.01M9 10h.01M9 14h.01M13 14h4M13 10h4"
-          ></path>
-        </svg>
+          <svg
+            class="w-12 h-12 text-red-600 mb-3 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-4M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 5h.01M9 10h.01M9 14h.01M13 14h4M13 10h4"
+            ></path>
+          </svg>
           <span
             class="text-lg font-semibold text-gray-700 group-hover:text-gray-900"
             >Pedidos</span
           >
         </div>
       </a>
-      {% endif %}
-
-      {% if is_admin %}
+      {% endif %} {% if is_admin %}
       <!-- Tarjeta de Anuncios con icono SVG y nombre -->
       <a
         href="/comedor/ads/"
@@ -297,7 +293,7 @@
         </div>
       </a>
       {% endif %}
-      
+
       <!-- Tarjeta de Configuración de cuenta con icono SVG y nombre -->
       <a
         href="/core/account_settings/"
@@ -333,23 +329,23 @@
       </a>
     </div>
   </div>
-
+  {%if is_profesor or is_tutor%}
   <!-- Sección del estado de Pedidos -->
   <div class="mb-8">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">Estado de Pedidos</h2>
     <div class="bg-gray-100 p-4 rounded-lg text-gray-700 text-sm">
       <ul class="list-disc list-inside space-y-2">
-        {% if statusPedidos %}
-          {% for statusPedido in statusPedidos %}
-          <li>
-            Pedido # {{ statusPedido.id }} - {{ statusPedido.get_turno_label }}
-            - {{ statusPedido.fecha }} - <span class="font-semibold">{{ statusPedido.get_status_label }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-          <p>No hay pedidos en curso.</p>
-        {% endif %}
+        {% if statusPedidos %} {% for statusPedido in statusPedidos %}
+        <li>
+          Pedido # {{ statusPedido.id }} - {{ statusPedido.get_turno_label }} -
+          {{ statusPedido.fecha }} -
+          <span class="font-semibold">{{ statusPedido.get_status_label }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>No hay pedidos en curso.</p>
+      {% endif %}
     </div>
   </div>
 
@@ -358,25 +354,15 @@
     <h2 class="text-2xl font-bold text-gray-800 mb-4">Anuncios Importantes</h2>
     {% for noticia in noticias %}
     <div
-      class="
-        {% if noticia.tipoAnuncio == 0 %}
-            bg-blue-100 border-blue-500 text-blue-700
-        {% elif noticia.tipoAnuncio == 1 %}
-            bg-red-100 border-red-500 text-red-700
-        {% elif noticia.tipoAnuncio == 2 %}
-            bg-yellow-100 border-yellow-500 text-yellow-700
-        {% else %}
-            bg-gray-100 border-gray-300 text-gray-800
-        {% endif %}
-        border-l-4 p-4 rounded-lg
-      "
+      class="{% if noticia.tipoAnuncio == 0 %} bg-blue-100 border-blue-500 text-blue-700 {% elif noticia.tipoAnuncio == 1 %} bg-red-100 border-red-500 text-red-700 {% elif noticia.tipoAnuncio == 2 %} bg-yellow-100 border-yellow-500 text-yellow-700 {% else %} bg-gray-100 border-gray-300 text-gray-800 {% endif %} border-l-4 p-4 rounded-lg"
       role="alert"
     >
       <p class="font-bold">{{ noticia.titulo }}</p>
       <p class="text-sm">{{ noticia.contenido }}</p>
     </div>
-    <br/>
+    <br />
     {% endfor %}
   </div>
+  {% endif %}
 </div>
 {% endblock %}
