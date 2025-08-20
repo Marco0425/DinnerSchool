@@ -32,7 +32,7 @@
     {% csrf_token %}
     <div>
       <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1"
-        >Nombre</label
+        >Nombre*</label
       >
       <input
         type="text"
@@ -49,7 +49,7 @@
       <label
         for="apellidoPaterno"
         class="block text-sm font-medium text-gray-700 mb-1"
-        >Apellido Paterno</label
+        >Apellido Paterno*</label
       >
       <input
         type="text"
@@ -80,12 +80,13 @@
 
     <div>
       <label for="correo" class="block text-sm font-medium text-gray-700 mb-1"
-        >Correo Electrónico</label
+        >Correo Electrónico*</label
       >
       <input
         type="text"
         id="correo"
         name="correo"
+        required
         placeholder="Correo Electronico"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
         value="{{ usuario.email|default:'' }}"

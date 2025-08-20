@@ -18,7 +18,7 @@
   <form id="employeeForm" class="space-y-4">
     <div>
       <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1"
-        >Nombre</label
+        >Nombre*</label
       >
       <input
         type="text"
@@ -34,7 +34,7 @@
       <label
         for="apellidoPaterno"
         class="block text-sm font-medium text-gray-700 mb-1"
-        >Apellido Paterno</label
+        >Apellido Paterno*</label
       >
       <input
         type="text"
@@ -63,13 +63,14 @@
 
     <div>
       <label for="correo" class="block text-sm font-medium text-gray-700 mb-1"
-        >Correo Electrónico</label
+        >Correo Electrónico*</label
       >
       <input
         type="text"
         id="correo"
         name="correo"
         placeholder="Correo Electronico"
+        required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
       />
     </div>
@@ -89,7 +90,7 @@
 
     <div>
       <label for="puesto" class="block text-sm font-medium text-gray-700 mb-1"
-        >Puesto</label
+        >Puesto*</label
       >
       <select
         id="puesto"
@@ -99,8 +100,7 @@
       >
         <option value="">Selecciona el puesto</option>
         <option value="A">Cocinero</option>
-        <option value="B">Mesero</option>
-        <option value="C">Cajero</option>
+        <option value="B">Profesor</option>
       </select>
     </div>
 

@@ -31,7 +31,7 @@
       <input type="hidden" name="id" value="{{ platillo.id }}" />
     {% endif %}
     <div>
-      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo</label>
+      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo*</label>
       <input
         type="text"
         id="platillo"
@@ -42,9 +42,10 @@
       />
     </div>
     <div>
-      <label for="ingredientes" class="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
+      <label for="ingredientes" class="block text-sm font-medium text-gray-700 mb-1">Ingredientes*</label>
       <select
         id="ingredientes"
+        required
         name="ingredientes"
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
         multiple
@@ -55,11 +56,12 @@
       </select>
     </div>
     <div>
-      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Precio*</label>
       <input
         type="number"
         id="precio"
         name="precio"
+        required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
         value="{{ platillo.precio|default:'' }}"
       />
