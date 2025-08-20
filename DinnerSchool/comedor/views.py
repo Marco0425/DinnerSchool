@@ -81,7 +81,7 @@ def credit(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
     """
     if request.user.is_authenticated:
-        return render(request, 'credit/credit_list_view.html')
+        return render(request, 'Credit/credit_list_view.html')
     else:
         return redirect('core:signInUp')
     
@@ -107,7 +107,7 @@ def createCredit(request):
             messages.error(request, "Por favor, completa todos los campos.")
     else:
         tutors = Tutor.objects.all()
-        return render(request, 'credit/credit_form_view.html', {'tutors': tutors})
+        return render(request, 'Credit/credit_form_view.html', {'tutors': tutors})
     
 def ads(request):
     """
