@@ -240,7 +240,7 @@ def dashboard(request):
     """
     if request.user.is_authenticated:
         # Aquí podrías obtener información del usuario y pasarla al template
-        is_profesor = Empleados.objects.filter(usuario__email=request.user.username).exists()
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
 
         listaPedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username) if not is_profesor else Pedido.objects.filter(profesorId__usuario__email=request.user.username)
         context = {
