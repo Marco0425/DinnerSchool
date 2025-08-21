@@ -246,7 +246,7 @@ def dashboard(request):
         context = {
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
-            'is_employee': request.user.groups.filter(name='Employee').exists() if not is_profesor else False,
+            'is_employee': request.user.groups.filter(name='Empleado').exists() if not is_profesor else False,
             'is_profesor': is_profesor,
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
