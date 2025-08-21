@@ -178,6 +178,9 @@ def signInUp(request):
             confirmPassword = request.POST.get("confirmPassword")
             userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
             userphone = request.POST.get("userphone")
+            
+            if '@liceoemperadores.edu.mx' in useremail:
+                userType = 4  # Profesor
 
             # Validaciones
             if User.objects.filter(email=useremail).exists():
