@@ -105,7 +105,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          {% for student in students %}
+          {% for student in students_list %}
           <tr
             class="hover:bg-gray-50 cursor-pointer"
             onclick="window.location.href='{% url 'core:createStudents' %}?id={{ student.id }}'"
@@ -148,14 +148,14 @@
 
   <!-- Sección de paginación -->
   <!-- Se muestra solo si hay más de una página -->
-  {% if students.has_other_pages %}
+  {% if students_page_obj.has_other_pages %}
   <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
     <ul class="flex items-center space-x-2">
       <!-- Enlace a la página anterior -->
-      {% if students.has_previous %}
+      {% if students_page_obj.has_previous %}
       <li>
         <a
-          href="?page={{ students.previous_page_number }}"
+          href="?page={{ students_page_obj.previous_page_number }}"
           class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
         >
           Anterior
@@ -164,9 +164,9 @@
       {% endif %}
 
       <!-- Itera sobre todas las páginas -->
-      {% for i in students.paginator.page_range %}
+      {% for i in students_page_obj.paginator.page_range %}
       <li>
-        {% if students.number == i %}
+        {% if students_page_obj.number == i %}
         <!-- Página actual -->
         <span
           class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
@@ -186,10 +186,10 @@
       {% endfor %}
 
       <!-- Enlace a la página siguiente -->
-      {% if students.has_next %}
+      {% if students_page_obj.has_next %}
       <li>
         <a
-          href="?page={{ students.next_page_number }}"
+          href="?page={{ students_page_obj.next_page_number }}"
           class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
         >
           Siguiente

@@ -280,33 +280,27 @@ def students(request):
     if not request.user.is_authenticated:
         return redirect('core:signInUp')
 
+    # Obtener el queryset de estudiantes basado en el tipo de usuario
     if request.user.is_staff:
-        students = Alumnos.objects.all()
-        
-        studentsTutor = []
-        for student in students:
-            studentsTutor.append({
-                'id': student.id,
-                'nombre': student.nombre,
-                'paterno': student.paterno,
-                'materno': student.materno,
-                'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
-                'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
-                'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
-            })
-        return render(request, 'Students/students_list_view.html', {'students': studentsTutor})
+        students_queryset = Alumnos.objects.all()
+    else:
+        try:
+            usuario = Usuarios.objects.get(user=request.user)
+            tutor = Tutor.objects.get(usuario=usuario)
+            students_queryset = Alumnos.objects.filter(tutorId=tutor)
+        except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
+            messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
+            return redirect('core:createStudents')
 
-    try:
-        usuario = Usuarios.objects.get(user=request.user)
-        tutor = Tutor.objects.get(usuario=usuario)
-        students = Alumnos.objects.filter(tutorId=tutor)
-    except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
-        messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
-        return redirect('core:createStudents')  # CAMBIO: redirect en lugar de render
+    # Aplicar la paginación al queryset
+    paginator = Paginator(students_queryset, 1)
+    page_number = request.GET.get('page')
+    students_page_obj = paginator.get_page(page_number)
 
-    studentsTutor = []
-    for student in students:
-        studentsTutor.append({
+    # Procesar solo los alumnos de la página actual
+    students_list = []
+    for student in students_page_obj:
+        students_list.append({
             'id': student.id,
             'nombre': student.nombre,
             'paterno': student.paterno,
@@ -316,11 +310,15 @@ def students(request):
             'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
         })
 
-    if studentsTutor:
-        return render(request, 'Students/students_list_view.html', {'students': studentsTutor})
+    if students_list:
+        context = {
+            'students_list': students_list,
+            'students_page_obj': students_page_obj,
+        }
+        return render(request, 'Students/students_list_view.html', context)
     else:
         messages.info(request, 'No tienes estudiantes registrados. Crea uno nuevo.')
-        return redirect('core:createStudents')  # CAMBIO: redirect en lugar de render
+        return redirect('core:createStudents')
 
 def createStudents(request):
     """
@@ -435,7 +433,7 @@ def user_list_view(request):
     """
     if request.user.is_authenticated:
         users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Employee"])
-        paginator = Paginator(users, 10) # Muestra 10 usuarios por página
+        paginator = Paginator(users, 1) # Muestra 10 usuarios por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         context = {
