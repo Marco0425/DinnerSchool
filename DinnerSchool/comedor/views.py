@@ -485,7 +485,7 @@ def saucers(request):
         all_saucers = Platillo.objects.all()
 
         # 2. Aplica la paginación a la lista completa de objetos.
-        paginator = Paginator(all_saucers, 10)
+        paginator = Paginator(all_saucers, 1)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
