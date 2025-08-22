@@ -367,7 +367,7 @@ def createOrder(request):
             messages.success(request, "Pedido creado exitosamente.")
             return redirect('core:dashboard')
             
-        except (Platillo.DoesNotExist, Alumnos.DoesNotExist, Empleados.DoesNotExist, Tutor.DoesNotExist) as e:
+        except (Platillo.DoesNotExist) as e:
             messages.error(request, f"Error al crear el pedido: {str(e)}")
             return redirect('comedor:createOrder')
         except Exception as e:
