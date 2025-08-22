@@ -19,7 +19,7 @@ from core.choices import *
 from .choices import *
 from core.herramientas import *
 
-from datetime import datetime
+from datetime import datetime, date
 import json
 
 def ingredients(request):
@@ -261,7 +261,7 @@ def order(request):
     if request.user.is_authenticated:
         orders = []
         
-        today = datetime.now().today()
+        today = date.today()
         
         status_map = {
             0: "pendiente",
@@ -282,7 +282,7 @@ def order(request):
                 "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
                 "turno": pedido.get_turno_label(),
                 "status": status_map.get(pedido.status, "pendiente"),
-                "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado"
+                "encargado": f"{pedido.emepladoId.usuario.nombre} {pedido.emepladoId.usuario.paterno}" if pedido.emepladoId else "No asignado"
             }
             orders.append(order)
         print(orders)
