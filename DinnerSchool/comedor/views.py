@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+rom django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
@@ -288,7 +288,7 @@ def order(request):
                     "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado"
                 }
                 orders.append(order)
-            print(orders)
+            return render(request, 'Orders/orders_kanban_view.html', {'orders': orders})
         except Exception as e:
             print("Error en la vista order:")
             traceback.print_exc()
