@@ -21,6 +21,7 @@ from core.herramientas import *
 
 from datetime import datetime, date
 import json
+import traceback
 
 def ingredients(request):
     """
@@ -270,23 +271,27 @@ def order(request):
             3: "entregado",
             4: "cancelado",
         }
-        for pedido in Pedido.objects.filter(fecha=today):
-            is_profesor = pedido.profesorId is not None
-            order = {
-                "id": f"order-{pedido.id}",
-                "platillo": pedido.platillo.nombre,
-                "ingredientes": pedido.ingredientePlatillo,
-                "nota": pedido.nota,
-                "is_profesor": is_profesor,
-                "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}" if not is_profesor else f"{pedido.profesorId.usuario} {pedido.profesorId.usuario.paterno}",
-                "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
-                "turno": pedido.get_turno_label(),
-                "status": status_map.get(pedido.status, "pendiente"),
-                "encargado": f"{pedido.emepladoId.usuario.nombre} {pedido.emepladoId.usuario.paterno}" if pedido.emepladoId else "No asignado"
-            }
-            orders.append(order)
-        print(orders)
-        return render(request, 'Orders/orders_kanban_view.html', {'orders': orders})
+                
+        try:
+            for pedido in Pedido.objects.filter(fecha=today):
+                is_profesor = pedido.profesorId is not None
+                order = {
+                    "id": f"order-{pedido.id}",
+                    "platillo": pedido.platillo.nombre,
+                    "ingredientes": pedido.ingredientePlatillo,
+                    "nota": pedido.nota,
+                    "is_profesor": is_profesor,
+                    "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}" if not is_profesor else f"{pedido.profesorId.usuario} {pedido.profesorId.usuario.paterno}",
+                    "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
+                    "turno": pedido.get_turno_label(),
+                    "status": status_map.get(pedido.status, "pendiente"),
+                    "encargado": f"{pedido.emepladoId.usuario.nombre} {pedido.emepladoId.usuario.paterno}" if pedido.emepladoId else "No asignado"
+                }
+                orders.append(order)
+            print(orders)
+        except Exception as e:
+            print("Error en la vista order:")
+            traceback.print_exc()
     else:
         return redirect('core:signInUp')
     
