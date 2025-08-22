@@ -261,7 +261,7 @@ def order(request):
     if request.user.is_authenticated:
         orders = []
         
-        today = datetime.date.today()
+        today = datetime.now().today()
         
         status_map = {
             0: "pendiente",
