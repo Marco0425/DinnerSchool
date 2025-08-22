@@ -1,5 +1,4 @@
 {% extends "main.html" %} {% load static %}{% block content %}
-<script src="{% static 'js/kanban.js' %}"></script>
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-6xl w-full border-t-8 border-primary-red mb-8"
 >
@@ -42,23 +41,19 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
-          draggable="true"
+          draggable="{{ user.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           <p class="text-sm text-gray-600">
             {% if order.is_profesor %}
-            <strong>Profesor:</strong> {{ order.alumno }}
-            {% else %}
-            <strong>Alumno:</strong> {{ order.alumno }}
-            {% endif %}
+            <strong>Profesor:</strong> {{ order.alumno }} {% else %}
+            <strong>Alumno:</strong> {{ order.alumno }} {% endif %}
           </p>
           <p class="text-xs text-gray-500">
             {% if order.is_profesor%}
-            <strong>Turno:</strong> {{ order.turno }}
-            {% else %}
+            <strong>Turno:</strong> {{ order.turno }} {% else %}
             <strong>Nivel:</strong> {{ order.nivel }} |
-            <strong>Turno:</strong> {{ order.turno }}
-            {% endif%}
+            <strong>Turno:</strong> {{ order.turno }} {% endif%}
           </p>
           {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
@@ -68,8 +63,7 @@
           <p class="text-xs text-gray-500">
             <strong>Nota:</strong> {{ order.nota }}
           </p>
-          {% endif %}
-          {% if order.encargado %}
+          {% endif %} {% if order.encargado %}
           <p class="text-xs text-gray-500">
             <strong>Encargado:</strong> {{ order.encargado }}
           </p>
@@ -95,7 +89,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
-          draggable="true"
+          draggable="{{ user.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
@@ -144,7 +138,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
-          draggable="true"
+          draggable="{{ user.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
@@ -193,7 +187,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
-          draggable="true"
+          draggable="{{ user.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
