@@ -71,7 +71,8 @@ class Pedido(models.Model):
 class CreditoDiario(models.Model):
     fecha = models.DateField(auto_now=True, verbose_name='Fecha')
     monto = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Monto')
-    tutorId = models.ForeignKey(Tutor, on_delete=models.CASCADE, verbose_name='Tutor')
+    tutorId = models.ForeignKey(Tutor, on_delete=models.CASCADE, verbose_name='Tutor', null=True, blank=True)
+    profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True)
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, default=None, null=True, blank=True, verbose_name='Pedido')
 
     class Meta:

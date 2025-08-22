@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.apps import apps
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from decimal import Decimal
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
 from core.models import Alumnos, Usuarios, Tutor, Empleados
@@ -17,6 +18,7 @@ from core.choices import *
 from .choices import *
 from core.herramientas import *
 
+from datetime import datetime
 import json
 
 def ingredients(request):
@@ -252,8 +254,8 @@ def order(request):
     if request.user.is_authenticated:
         orders = []
         
-        from datetime import date
-        today = date.today()
+        today = datetime.date.today()
+        
         status_map = {
             0: "pendiente",
             1: "en preparacion",
@@ -299,75 +301,133 @@ def createOrder(request):
         ordenTurno = request.POST.get("turno")
         precio = request.POST.get("precio")
 
-        platillo = Platillo.objects.get(id=orden)
-        nuevaOrden = Pedido.objects.update_or_create(
-            platillo=platillo,
-            ingredientePlatillo=", ".join(ordenIngredientes),
-            nota=ordenNotas,
-            alumnoId=Alumnos.objects.get(id=ordenAlumno) if not is_profesor else None,
-            nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo if not is_profesor else None,
-            profesorId=Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None,
-            turno=ordenTurno,
-            total=float(precio)
-        )
-        messages.success(request, "Pedido creado exitosamente.")
+        try:
+            platillo = Platillo.objects.get(id=orden)
+            
+            # Convertir precio a Decimal
+            precio_decimal = Decimal(str(precio))
+            
+            nuevaOrden = Pedido.objects.update_or_create(
+                platillo=platillo,
+                ingredientePlatillo=", ".join(ordenIngredientes),
+                nota=ordenNotas,
+                alumnoId=Alumnos.objects.get(id=ordenAlumno) if not is_profesor else None,
+                nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo if not is_profesor else None,
+                profesorId=Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None,
+                turno=ordenTurno,
+                total=precio_decimal  # Usar Decimal aquí también
+            )
+            
+            if nuevaOrden:
+                if is_profesor:
+                    profesor = Empleados.objects.get(usuario__email=request.user.username)
+                    tutor = None
+                else:
+                    tutor = Tutor.objects.get(usuario__email=request.user.username)
+                    profesor = None
+
+                # Crear crédito diario
+                creditoDiario = CreditoDiario.objects.create(
+                    pedido=nuevaOrden[0],
+                    tutorId=tutor,
+                    profesorId=profesor,
+                    monto=precio_decimal,  # Usar Decimal
+                    fecha=datetime.now().today()
+                )
+
+                # Actualizar crédito total
+                try:
+                    if is_profesor:
+                        creditoTotal = Credito.objects.get(profesorId=profesor)
+                    else:
+                        creditoTotal = Credito.objects.get(tutorId=tutor)
+                    
+                    creditoTotal.monto -= precio_decimal  # Ahora ambos son Decimal
+                    creditoTotal.save()
+
+                except Credito.DoesNotExist:
+                    messages.error(request, "No se encontró crédito disponible para este usuario.")
+                    return redirect('comedor:createOrder')
+            if creditoTotal.monto <= 0:
+                    messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
+            elif 0 < creditoTotal.monto <= 100:
+                messages.info(request, f"Tu crédito actual es ${creditoTotal.monto}. Te recomendamos recargar pronto.")
+            messages.success(request, "Pedido creado exitosamente.")
+            return redirect('core:dashboard')
+            
+        except (Platillo.DoesNotExist, Alumnos.DoesNotExist, Empleados.DoesNotExist, Tutor.DoesNotExist) as e:
+            messages.error(request, f"Error al crear el pedido: {str(e)}")
+            return redirect('comedor:createOrder')
+        except Exception as e:
+            messages.error(request, f"Error inesperado: {str(e)}")
+            return redirect('comedor:createOrder')
+    
+    creditoTutor = Credito.objects.filter(tutorId__usuario__email=request.user.username).first()
+    if creditoTutor and creditoTutor.monto < -200:
+        messages.error(request, "No tienes crédito suficiente para realizar un pedido.")
         return redirect('core:dashboard')
-    else:
-        platillos = Platillo.objects.all()
-        if request.user.groups.filter(name='Tutor').exists():
-            tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
-            students = Alumnos.objects.filter(tutorId=tutor)
-            context = {
-                "Platillos": [
-                    {
-                        "id": platillo.id,
-                        "nombre": platillo.nombre,
-                        "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
-                        "precio": float(platillo.precio)
-                    } for platillo in platillos
-                ],
-                "Alumnos": [
-                    {
-                        "id": alumno.id,
-                        "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
-                        
-                    } for alumno in students
-                ],
-                'is_tutor': request.user.groups.filter(name='Tutor').exists(),
-                'is_employee': request.user.groups.filter(name='Employee').exists(),
-                'is_admin': request.user.is_staff,
-            }
-        else:
-            tutors = Tutor.objects.all()
-            students = Alumnos.objects.all()
-            context = {
-                "Platillos": [
-                    {
-                        "id": platillo.id,
-                        "nombre": platillo.nombre,
-                        "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
-                        "precio": float(platillo.precio)
-                    } for platillo in platillos
-                ],
-                'is_tutor': request.user.groups.filter(name='Tutor').exists(),
-                'is_employee': request.user.groups.filter(name='Employee').exists(),
-                'is_admin': request.user.is_staff,
-                "tutors": [
-                    {
-                        "id": tutor.id,
-                        "nombre": tutor.usuario.user.first_name + " " + tutor.usuario.user.last_name,
-                    } for tutor in tutors
-                ],
-                "Alumnos": [
-                    {
-                        "id": alumno.id,
-                        "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
-                        "tutor_id": alumno.tutorId.id
-                    } for alumno in students
-                ],
-            }
+
+    creditoProfesor = Credito.objects.filter(profesorId__usuario__email=request.user.username).first()
+    if creditoProfesor and creditoProfesor.monto < -200:
+        messages.error(request, "No tienes crédito suficiente para realizar un pedido.")
+        return redirect('core:dashboard')
+    
+    platillos = Platillo.objects.all()
+    if request.user.groups.filter(name='Tutor').exists():
         
-        return render(request, 'Orders/orders_form_view.html', context)
+        tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+        students = Alumnos.objects.filter(tutorId=tutor)
+        context = {
+            "Platillos": [
+                {
+                    "id": platillo.id,
+                    "nombre": platillo.nombre,
+                    "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                    "precio": float(platillo.precio)
+                } for platillo in platillos
+            ],
+            "Alumnos": [
+                {
+                    "id": alumno.id,
+                    "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                    
+                } for alumno in students
+            ],
+            'is_tutor': request.user.groups.filter(name='Tutor').exists(),
+            'is_employee': request.user.groups.filter(name='Employee').exists(),
+            'is_admin': request.user.is_staff,
+        }
+    else:
+        tutors = Tutor.objects.all()
+        students = Alumnos.objects.all()
+        context = {
+            "Platillos": [
+                {
+                    "id": platillo.id,
+                    "nombre": platillo.nombre,
+                    "ingredientes":json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                    "precio": float(platillo.precio)
+                } for platillo in platillos
+            ],
+            'is_tutor': request.user.groups.filter(name='Tutor').exists(),
+            'is_employee': request.user.groups.filter(name='Employee').exists(),
+            'is_admin': request.user.is_staff,
+            "tutors": [
+                {
+                    "id": tutor.id,
+                    "nombre": tutor.usuario.user.first_name + " " + tutor.usuario.user.last_name,
+                } for tutor in tutors
+            ],
+            "Alumnos": [
+                {
+                    "id": alumno.id,
+                    "nombre": f"{alumno.nombre} {alumno.paterno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}",
+                    "tutor_id": alumno.tutorId.id
+                } for alumno in students
+            ],
+        }
+    
+    return render(request, 'Orders/orders_form_view.html', context)
 
 @csrf_exempt
 def update_order_status(request):
