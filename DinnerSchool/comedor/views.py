@@ -285,7 +285,7 @@ def order(request):
                     "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
                     "turno": pedido.get_turno_label(),
                     "status": status_map.get(pedido.status, "pendiente"),
-                    "encargado": f"{pedido.emepladoId.usuario.nombre} {pedido.emepladoId.usuario.paterno}" if pedido.emepladoId else "No asignado"
+                    "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado"
                 }
                 orders.append(order)
             print(orders)
