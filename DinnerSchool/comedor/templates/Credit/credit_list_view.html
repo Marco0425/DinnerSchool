@@ -28,12 +28,12 @@
       >
         Volver
       </a>
-      <button
-        onclick="alert('Redirigir a formulario de empleado')"
+      <a
+        href="{% url 'comedor:createCredit' %}"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         + Añadir Credito
-      </button>
+      </a>
     </div>
   </div>
 
@@ -71,44 +71,58 @@
             Apellido Materno
           </th>
           <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
           >
             Credito Disponible
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+          >
+            Perfil
           </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200">
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Ana
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            García
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            López
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            450.00
-          </td>
-        </tr>
-        <tr class="hover:bg-gray-50">
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            Laura
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            González
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            Ramírez
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            300.00
-          </td>
+          {% for credito in creditos %}
+            {% if credito.tutorId %}
+            <tr class="hover:bg-gray-50">
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.tutorId.usuario.nombre }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.tutorId.usuario.paterno }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.tutorId.usuario.materno }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                ${{ credito.monto|floatformat:2 }}
+              </td>
+              {% if user.is_superuser %}
+              <td class="py-4 px-4 text-sm text-gray-700">
+                Tutor
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.profesorId.usuario.nombre }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.profesorId.usuario.paterno }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                {{ credito.profesorId.usuario.materno }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                ${{ credito.monto|floatformat:2 }}
+              </td>
+              <td class="py-4 px-4 text-sm text-gray-700">
+                Profesor
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
         </tr>
       </tbody>
     </table>

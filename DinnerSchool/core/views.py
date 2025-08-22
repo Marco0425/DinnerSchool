@@ -7,7 +7,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
-from comedor.models import Ingredientes, Noticias, Pedido
+from comedor.models import Ingredientes, Noticias, Pedido, Credito
 from core.models import Empleados
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
@@ -246,6 +246,12 @@ def dashboard(request):
         is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
 
         listaPedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username) if not is_profesor else Pedido.objects.filter(profesorId__usuario__email=request.user.username)
+
+        if is_profesor:
+            credito = Credito.objects.filter(profesorId__usuario__email=request.user.username).first()
+        else:
+            credito = Credito.objects.filter(tutorId__usuario__email=request.user.username).first()
+
         context = {
             'user': request.user,
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
@@ -254,6 +260,7 @@ def dashboard(request):
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
             'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
+            'credito'   : credito,
         }
         print(context)
         return render(request, 'Home/home_dashboard_view.html', context)

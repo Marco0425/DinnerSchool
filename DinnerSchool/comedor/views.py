@@ -81,7 +81,8 @@ def credit(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
     """
     if request.user.is_authenticated:
-        return render(request, 'Credit/credit_list_view.html')
+        creditos = Credito.objects.all()
+        return render(request, 'Credit/credit_list_view.html', {'creditos': creditos})
     else:
         return redirect('core:signInUp')
     
@@ -97,24 +98,79 @@ def createCredit(request):
     if request.method == "POST":
         tutor_id = request.POST.get("tutor")
         credito = request.POST.get("credito")
-        if tutor_id and credito:
+        print(tutor_id, credito)
+        if "tutor_" in tutor_id and credito:
             try:
-                tutor = Tutor.objects.get(id=tutor_id)
-                nuevoCredito = CreditoDiario(tutor=tutor, credito=credito)
+                tutor = Tutor.objects.get(id=int(tutor_id.split('_')[1]))
+                nuevoCredito = Credito(tutorId=tutor, monto=credito)
                 nuevoCredito.save()
                 messages.success(request, "Crédito creado exitosamente.")
                 return redirect('comedor:credit')
             except Tutor.DoesNotExist:
                 messages.error(request, "Tutor no encontrado.")
+        elif "profesor_" in tutor_id and credito:
+            print(tutor_id, credito)
+            print(Empleados.objects.get(id=int(tutor_id.split('_')[1])))
+            try:
+                profesor = Empleados.objects.get(id=int(tutor_id.split('_')[1]))
+                nuevoCredito = Credito(profesorId=profesor, monto=credito)
+                nuevoCredito.save()
+                messages.success(request, "Crédito creado exitosamente.")
+                return redirect('comedor:credit')
+            except Empleados.DoesNotExist:
+                messages.error(request, "Profesor no encontrado.")
+                return redirect('comedor:createCredit')
         else:
             messages.error(request, "Por favor, completa todos los campos.")
+            return redirect('comedor:createCredit')
         
-        # Si hay error, volver a mostrar el form con los tutores
+        # Unir ambos querysets
         tutors = Tutor.objects.all()
-        return render(request, 'Credit/credit_form_view.html', {'tutors': tutors})
+        profesores = Empleados.objects.filter(puesto='Profesor')
     
+        # Crear lista combinada con estructura uniforme
+        all_users = []
+        
+        # Agregar tutores
+        for tutor in tutors:
+            all_users.append({
+                'id': f'tutor_{tutor.id}',
+                'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
+                'tipo': 'Tutor'
+            })
+        
+        # Agregar profesores
+        for profesor in profesores:
+            all_users.append({
+                'id': f'profesor_{profesor.id}',
+                'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} - Profesor",
+                'tipo': 'Profesor'
+            })
+        
+        return render(request, 'Credit/credit_form_view.html', {'users': all_users})
+    
+    # GET request - mismo proceso
     tutors = Tutor.objects.all()
-    return render(request, 'Credit/credit_form_view.html', {'tutors': tutors})
+    profesores = Empleados.objects.filter(puesto='Profesor')
+    
+    all_users = []
+    # Agregar tutores
+    for tutor in tutors:
+        all_users.append({
+            'id': f'tutor_{tutor.id}',
+            'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
+            'tipo': 'Tutor'
+        })
+    
+    # Agregar profesores
+    for profesor in profesores:
+        all_users.append({
+            'id': f'profesor_{profesor.id}',
+            'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} - Profesor",
+            'tipo': 'Profesor'
+        })
+    
+    return render(request, 'Credit/credit_form_view.html', {'users': all_users})
     
 def ads(request):
     """

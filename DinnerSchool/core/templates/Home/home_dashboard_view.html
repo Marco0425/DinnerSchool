@@ -50,10 +50,24 @@
   >
     <h2 class="text-2xl font-semibold mb-2">Crédito Disponible</h2>
     <p class="text-5xl font-extrabold">
-      $<span id="creditAmount">150.75</span>
+      $<span id="creditAmount">{{ credito.monto }}</span>
     </p>
     <p class="text-sm mt-2">
-      Última actualización: <span id="lastUpdated">27/07/2025</span>
+      Última actualización: <span id="lastUpdated">{{ credito.fecha }}</span>
+    </p>
+  </div>
+  {%endif%}
+
+  {% if is_profesor %}
+  <div
+    class="bg-primary-red text-white p-6 rounded-lg shadow-custom mb-8 text-center"
+  >
+    <h2 class="text-2xl font-semibold mb-2">Crédito Disponible</h2>
+    <p class="text-5xl font-extrabold">
+      $<span id="creditAmount">{{ credito.monto }}</span>
+    </p>
+    <p class="text-sm mt-2">
+      Última actualización: <span id="lastUpdated">{{ credito.fecha }}</span>
     </p>
   </div>
   {%endif%}
