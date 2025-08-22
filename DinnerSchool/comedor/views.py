@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.apps import apps
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from decimal import Decimal
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
@@ -34,7 +35,13 @@ def ingredients(request):
     if request.user.is_authenticated:
         # Aquí podrías obtener los ingredientes y pasarlos al template
         ingredients = Ingredientes.objects.all()
-        return render(request, 'Ingredients/ingredients_list_view.html', {'ingredientes': ingredients})
+        paginator = Paginator(ingredients, 10) # Muestra 10 ingredientes por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context = {
+            'ingredientes': page_obj # Aquí es donde pasas el objeto paginado a la plantilla
+        }
+        return render(request, 'Ingredients/ingredients_list_view.html', context)
     else:
         return redirect('core:signInUp')
 
