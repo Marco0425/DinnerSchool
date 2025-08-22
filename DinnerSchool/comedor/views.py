@@ -481,17 +481,34 @@ def saucers(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
     """
     if request.user.is_authenticated:
-        saucers = Platillo.objects.all()
-        platillos = []
-        for platillo in saucers:
-            platillos.append({
+        # 1. Obtiene todos los platillos, sin procesarlos aún.
+        all_saucers = Platillo.objects.all()
+
+        # 2. Aplica la paginación a la lista completa de objetos.
+        paginator = Paginator(all_saucers, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        # 3. Procesa solo los platillos de la página actual.
+        saucers_for_template = []
+        for platillo in page_obj:
+            # Convierte la cadena de ingredientes en una lista de nombres.
+            ingredient_ids = platillo.ingredientes.strip('[]').replace("'", "").split(', ')
+            ingredient_names = [Ingredientes.objects.get(id=int(ing)).nombre for ing in ingredient_ids if ing]
+            
+            saucers_for_template.append({
                 'id': platillo.id,
                 'nombre': platillo.nombre,
-                'ingredientes': [Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing],
+                'ingredientes': ingredient_names,
                 'precio': platillo.precio
             })
+            
+        context = {
+            'saucers_list': saucers_for_template, # Lista procesada para el bucle
+            'saucers_page_obj': page_obj          # Objeto de paginación
+        }
 
-        return render(request, 'Saucer/saucer_list_view.html', {'saucers': platillos})
+        return render(request, 'Saucer/saucer_list_view.html', context)
     else:
         return redirect('core:signInUp')
     

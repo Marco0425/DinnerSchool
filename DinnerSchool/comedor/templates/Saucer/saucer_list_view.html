@@ -90,7 +90,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          {% for platillo in saucers %}
+          {% for platillo in saucers_list %}
           <tr
             class="hover:bg-gray-50 cursor-pointer"
             onclick="window.location.href='{% url 'comedor:createSaucer' %}?id={{ platillo.id }}'"
@@ -121,6 +121,60 @@
       </table>
     </form>
   </div>
+
+  <!-- Sección de paginación -->
+  <!-- Se muestra solo si hay más de una página -->
+  {% if saucers_page_obj.has_other_pages %}
+  <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
+    <ul class="flex items-center space-x-2">
+      <!-- Enlace a la página anterior -->
+      {% if saucers_page_obj.has_previous %}
+      <li>
+        <a
+          href="?page={{ saucers_page_obj.previous_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Anterior
+        </a>
+      </li>
+      {% endif %}
+
+      <!-- Itera sobre todas las páginas -->
+      {% for i in saucers_page_obj.paginator.page_range %}
+      <li>
+        {% if saucers_page_obj.number == i %}
+        <!-- Página actual -->
+        <span
+          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
+        >
+          {{ i }}
+        </span>
+        {% else %}
+        <!-- Enlaces a otras páginas -->
+        <a
+          href="?page={{ i }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          {{ i }}
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+
+      <!-- Enlace a la página siguiente -->
+      {% if saucers_page_obj.has_next %}
+      <li>
+        <a
+          href="?page={{ saucers_page_obj.next_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Siguiente
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 <script src="{% static 'js/list.js' %}"></script>
 {% endblock %}
