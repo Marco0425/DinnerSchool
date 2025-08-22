@@ -31,7 +31,7 @@
 
   <!-- Tabla de Usuarios -->
   <div class="overflow-x-auto">
-        <form
+    <form
       id="deleteForm"
       method="post"
       action="{% url 'core:bulk_delete' 'Usuarios' 'core:user_list_view' %}"
@@ -49,69 +49,123 @@
           Eliminar seleccionados
         </button>
       </div>
-    <table class="min-w-full bg-white rounded-lg shadow-custom">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="py-3 px-2 text-center rounded-tl-lg">
+      <table class="min-w-full bg-white rounded-lg shadow-custom">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="py-3 px-2 text-center rounded-tl-lg">
               <input
                 type="checkbox"
                 id="selectAll"
                 class="form-checkbox h-4 w-4 text-primary-red"
               />
             </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Nombre(s)
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Apellidos
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Correo Electrónico
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
-          >
-            Tipo de Usuario
-          </th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        {% for user in users %}
-        <tr class="hover:bg-gray-50">
-          <td class="py-3 px-2 text-center">
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Nombre(s)
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Apellidos
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Correo Electrónico
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+            >
+              Tipo de Usuario
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for user in users %}
+          <tr class="hover:bg-gray-50">
+            <td class="py-3 px-2 text-center">
               <input
                 type="checkbox"
                 name="selected_ids"
                 value="{{ user.id }}"
                 class="rowCheckbox form-checkbox h-4 w-4 text-primary-red"
               />
-          </td>
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            {{ user.nombre }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ user.paterno }} {{ user.materno }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ user.email }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ user.groupId|join:", " }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+            <td
+              class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+            >
+              {{ user.nombre }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ user.paterno }} {{ user.materno }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ user.email }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ user.groupId|join:", " }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
   </div>
-</form>
+
+  <!-- Sección de paginación -->
+  <!-- Se muestra solo si hay más de una página -->
+  {% if users.has_other_pages %}
+  <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
+    <ul class="flex items-center space-x-2">
+      <!-- Enlace a la página anterior -->
+      {% if users.has_previous %}
+      <li>
+        <a
+          href="?page={{ users.previous_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Anterior
+        </a>
+      </li>
+      {% endif %}
+
+      <!-- Itera sobre todas las páginas -->
+      {% for i in users.paginator.page_range %}
+      <li>
+        {% if users.number == i %}
+        <!-- Página actual -->
+        <span
+          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
+        >
+          {{ i }}
+        </span>
+        {% else %}
+        <!-- Enlaces a otras páginas -->
+        <a
+          href="?page={{ i }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          {{ i }}
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+
+      <!-- Enlace a la página siguiente -->
+      {% if users.has_next %}
+      <li>
+        <a
+          href="?page={{ users.next_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Siguiente
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 <script src="{% static 'js/list.js' %}"></script>
 {% endblock %}

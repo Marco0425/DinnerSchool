@@ -435,7 +435,7 @@ def user_list_view(request):
     """
     if request.user.is_authenticated:
         users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Employee"])
-        paginator = Paginator(users, 1) # Muestra 10 usuarios por página
+        paginator = Paginator(users, 10) # Muestra 10 usuarios por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         context = {
