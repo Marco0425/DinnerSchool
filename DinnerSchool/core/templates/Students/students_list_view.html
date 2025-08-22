@@ -50,64 +50,67 @@
       action="{% url 'core:bulk_delete' 'Alumnos' 'core:students' %}"
     >
       {% csrf_token %}
-    <div
-      class="flex justify-end mb-2"
-      id="deleteBtnContainer"
-      style="display: none"
-    >
-      <button
-        type="submit"
-        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+      <div
+        class="flex justify-end mb-2"
+        id="deleteBtnContainer"
+        style="display: none"
       >
-        Eliminar seleccionados
-      </button>
-    </div>
-    <table class="min-w-full bg-white rounded-lg shadow-custom">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="py-3 px-2 text-center rounded-tl-lg">
-            <input
-              type="checkbox"
-              id="selectAll"
-              class="form-checkbox h-4 w-4 text-primary-red"
-            />
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+        <button
+          type="submit"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+        >
+          Eliminar seleccionados
+        </button>
+      </div>
+      <table class="min-w-full bg-white rounded-lg shadow-custom">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="py-3 px-2 text-center rounded-tl-lg">
+              <input
+                type="checkbox"
+                id="selectAll"
+                class="form-checkbox h-4 w-4 text-primary-red"
+              />
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Nombre(s)
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Apellido Paterno
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Apellido Materno
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Nivel Educativo
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+            >
+              Grado
+            </th>
+            <th
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+            >
+              Grupo
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for student in students %}
+          <tr
+            class="hover:bg-gray-50 cursor-pointer"
+            onclick="window.location.href='{% url 'core:createStudents' %}?id={{ student.id }}'"
           >
-            Nombre(s)
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Apellido Paterno
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Apellido Materno
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Nivel Educativo
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
-          >
-            Grado
-          </th>
-          <th
-            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
-          >
-            Grupo
-          </th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        {% for student in students %}
-        <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='{% url 'core:createStudents' %}?id={{ student.id }}'">
-          <td class="py-3 px-2 text-center">
+            <td class="py-3 px-2 text-center">
               <input
                 type="checkbox"
                 name="selected_ids"
@@ -115,32 +118,87 @@
                 class="rowCheckbox form-checkbox h-4 w-4 text-primary-red"
                 onclick="event.stopPropagation();"
               />
-          </td>
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            {{ student.nombre }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ student.paterno }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ student.materno }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ student.nivel }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ student.grado }}
-          </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ student.grupo }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+            <td
+              class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
+            >
+              {{ student.nombre }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ student.paterno }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ student.materno }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ student.nivel }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ student.grado }}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {{ student.grupo }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
   </div>
+
+  <!-- Sección de paginación -->
+  <!-- Se muestra solo si hay más de una página -->
+  {% if students.has_other_pages %}
+  <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
+    <ul class="flex items-center space-x-2">
+      <!-- Enlace a la página anterior -->
+      {% if students.has_previous %}
+      <li>
+        <a
+          href="?page={{ students.previous_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Anterior
+        </a>
+      </li>
+      {% endif %}
+
+      <!-- Itera sobre todas las páginas -->
+      {% for i in students.paginator.page_range %}
+      <li>
+        {% if students.number == i %}
+        <!-- Página actual -->
+        <span
+          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
+        >
+          {{ i }}
+        </span>
+        {% else %}
+        <!-- Enlaces a otras páginas -->
+        <a
+          href="?page={{ i }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          {{ i }}
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+
+      <!-- Enlace a la página siguiente -->
+      {% if students.has_next %}
+      <li>
+        <a
+          href="?page={{ students.next_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Siguiente
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 <script src="{% static 'js/list.js' %}"></script>
 {% endblock %}

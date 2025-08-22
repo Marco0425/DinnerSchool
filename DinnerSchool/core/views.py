@@ -12,6 +12,7 @@ from core.models import Empleados
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 from django.apps import apps
+from django.core.paginator import Paginator
 from .choices import *
 from .herramientas import *
 from django.conf import settings
@@ -434,7 +435,13 @@ def user_list_view(request):
     """
     if request.user.is_authenticated:
         users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Employee"])
-        return render(request, 'Users/users_list_view.html', {'users': users})
+        paginator = Paginator(users, 1) # Muestra 10 usuarios por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context = {
+            'users': page_obj # Aquí es donde pasas el objeto paginado a la plantilla
+        }
+        return render(request, 'Users/users_list_view.html', context)
     else:
         return redirect('core:signInUp')
     
