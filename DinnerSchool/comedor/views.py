@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
@@ -18,10 +18,12 @@ from core.models import Alumnos, Usuarios, Tutor, Empleados
 from core.choices import *
 from .choices import *
 from core.herramientas import *
+from .reports import generar_reporte_gastos_diarios, generar_reporte_rango_fechas
 
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import json
 import traceback
+import os
 
 def ingredients(request):
     """
@@ -638,3 +640,49 @@ def createSaucer(request):
         return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
     
     return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
+
+def ejemplo_uso_reportes():
+    """Ejemplos de cómo usar las funciones de reportes."""
+    
+    # 1. Generar reporte para el día actual
+    print("Generando reporte para hoy...")
+    archivo_hoy = generar_reporte_gastos_diarios()
+    print(f"Reporte generado: {archivo_hoy}")
+    
+    # 2. Generar reporte para una fecha específica
+    fecha_especifica = date(2025, 8, 20)
+    print(f"Generando reporte para {fecha_especifica}...")
+    archivo_fecha = generar_reporte_gastos_diarios(
+        fecha_reporte=fecha_especifica,
+        nombre_archivo="reporte_especial.xlsx"
+    )
+    print(f"Reporte generado: {archivo_fecha}")
+    
+    # 3. Generar reporte para un rango de fechas (última semana)
+    fecha_fin = date.today()
+    fecha_inicio = fecha_fin - timedelta(days=7)
+    print(f"Generando reporte desde {fecha_inicio} hasta {fecha_fin}...")
+    archivo_rango = generar_reporte_rango_fechas(fecha_inicio, fecha_fin)
+    print(f"Reporte generado: {archivo_rango}")
+
+def generarReporte(request):
+    """Vista para generar y descargar reporte desde Django."""
+    # try:
+    # Generar reporte
+    archivo = generar_reporte_gastos_diarios()
+    
+    # Servir archivo para descarga
+    if os.path.exists(archivo):
+        response = FileResponse(
+            open(archivo, 'rb'),
+            as_attachment=True,
+            filename=os.path.basename(archivo)
+        )
+        return redirect('comedor:credit')
+    else:
+        messages.error(request, "No se pudo generar el reporte.")
+        return redirect('comedor:credit')
+    
+    # except Exception as e:
+    #     messages.error(request, f"Error: {str(e)}")
+    #     return redirect('comedor:credit')
