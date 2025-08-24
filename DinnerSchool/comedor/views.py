@@ -667,22 +667,22 @@ def ejemplo_uso_reportes():
 
 def generarReporte(request):
     """Vista para generar y descargar reporte desde Django."""
-    # try:
-    # Generar reporte
-    archivo = generar_reporte_gastos_diarios()
+    try:
+        # Generar reporte
+        archivo = generar_reporte_gastos_diarios()
+        
+        # Servir archivo para descarga
+        if os.path.exists(archivo):
+            response = FileResponse(
+                open(archivo, 'rb'),
+                as_attachment=True,
+                filename=os.path.basename(archivo)
+            )
+            return response
+        else:
+            messages.error(request, "No se pudo generar el reporte.")
+            return redirect('comedor:credit')
     
-    # Servir archivo para descarga
-    if os.path.exists(archivo):
-        response = FileResponse(
-            open(archivo, 'rb'),
-            as_attachment=True,
-            filename=os.path.basename(archivo)
-        )
+    except Exception as e:
+        messages.error(request, f"Error: {str(e)}")
         return redirect('comedor:credit')
-    else:
-        messages.error(request, "No se pudo generar el reporte.")
-        return redirect('comedor:credit')
-    
-    # except Exception as e:
-    #     messages.error(request, f"Error: {str(e)}")
-    #     return redirect('comedor:credit')

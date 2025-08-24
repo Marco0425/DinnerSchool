@@ -1,4 +1,5 @@
 {% extends "main.html" %} {% load static %}{% block content %}
+<script src="{% static 'js/credit.js' %}"></script>
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red mb-8"
 >
@@ -16,12 +17,12 @@
     </div>
     <!-- Botón para volver o añadir Credito a tutor-->
     <div class="text-right">
-      <a
-        href="{% url 'comedor:generarReporte' %}"
+      <button
+        id="generateReportBtn"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         Reporte
-      </a>
+      </button>
       <a
         href="/core/dashboard"
         class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out mr-2"

@@ -17,5 +17,5 @@ urlpatterns = [
     path("ads/", views.ads, name="ads"),
     path("ads/create/", views.createAds, name="createAds"),
     path("order/update-status/", views.update_order_status, name="updateOrderStatus"),
-    path("report/generate/", views.generarReporte, name="generarReporte"),
+    path("credit/report/generate/", views.generarReporte, name="generarReporte"),
 ]
