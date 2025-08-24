@@ -14,6 +14,19 @@
     <p class="text-gray-600 text-center">Ingresa los datos del nuevo pedido</p>
   </div>
 
+  <!-- Bloque para mensajes -->
+  {% if messages %}
+  <div class="mb-4" style="margin-top: 1.5rem">
+    {% for message in messages %}
+    <div
+      class="p-3 rounded-md text-center text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200{% elif message.tags == 'info' %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}"
+    >
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <form
     action="{% url 'comedor:createOrder' %}"
     method="post"
@@ -76,7 +89,7 @@
       />
     </div>
 
-    {% if is_tutor%}
+    {% if is_tutor %}
     <!-- Alumno -->
     <div>
       <label
@@ -96,7 +109,9 @@
         {% endfor %}
       </select>
     </div>
-    {% endif %} {% if is_admin %}
+    {% endif %} 
+    
+    {% if is_admin %}
     <div>
       <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1"
         >Tutor*</label
@@ -107,12 +122,13 @@
         required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
       >
-        <option value="">Selecciona el Tutor</option>
+        <option value="">Selecciona el tutor/profesor</option>
         {% for tutor in tutors %}
         <option value="{{ tutor.id }}">{{ tutor.nombre }}</option>
         {% endfor %}
       </select>
     </div>
+    
     <div>
       <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
         >Alumno*</label
@@ -120,7 +136,6 @@
       <select
         id="alumno"
         name="alumno"
-        required
         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
       >
         <option value="">Selecciona un tutor primero</option>
@@ -130,6 +145,7 @@
         </option>
         {% endfor %}
       </select>
+      <span class="help-block" style="color: red;"><small>Recuerda que si seleccionas un Tutor, este campo es obligatorio.</small></span>
     </div>
     {% endif %}
 
@@ -145,8 +161,9 @@
         required
       >
         <option value="">Selecciona el Horario de Comida</option>
-        <option value="0">Desayuno</option>
-        <option value="1">Comida</option>
+        <option value="0">Receso 1</option>
+        <option value="1">Receso 2</option>
+        <option value="2">Comida</option>
       </select>
     </div>
 

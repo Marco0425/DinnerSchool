@@ -6,11 +6,11 @@ import ast
 
 @admin.register(Credito)
 class CreditoAdmin(admin.ModelAdmin):
-    list_display = ('id','monto', 'tutorId')
+    list_display = ('id','monto', 'tutorId', 'profesorId', 'fecha')
     
 @admin.register(CreditoDiario)
 class CreditoDiarioAdmin(admin.ModelAdmin):
-    list_display = ('id', 'fecha', 'monto', 'tutorId', 'pedido')
+    list_display = ('id', 'fecha', 'monto', 'tutorId', 'profesorId', 'pedido')
     search_fields = ('tutorId__usuario__nombre', 'tutorId__usuario__paterno', 'tutorId__usuario__materno', 'pedido__platillo__nombre')
 
 @admin.register(Ingredientes)
@@ -41,7 +41,7 @@ class PlatilloAdmin(admin.ModelAdmin):
 
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'alumnoId', 'platillo', 'total', 'fecha', 'status', 'turno')
+    list_display = ('id', 'alumnoId', 'profesorId', 'platillo', 'total', 'fecha', 'status', 'turno')
     search_fields = ('alumnoId__usuario__nombre', 'alumnoId__usuario__paterno', 'alumnoId__usuario__materno', 'platillo__nombre')
 
 @admin.register(Noticias)

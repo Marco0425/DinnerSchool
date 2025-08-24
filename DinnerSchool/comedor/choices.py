@@ -8,8 +8,9 @@ STATUSPEDIDO = [
 ]
 
 TURNO = [
-    (0, 'Desayuno'),
-    (1, 'Comida'),
+    (0, 'Reseso 1'),
+    (1, 'Reseso 2'),
+    (2, 'Comida'),
 ]
 
 TIPOANUNCIO = [
