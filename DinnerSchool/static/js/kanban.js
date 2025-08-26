@@ -36,6 +36,8 @@ function drop(event) {
   const cardId = event.dataTransfer.getData("text/plain");
   const draggedCard = document.getElementById(cardId);
   const isEmployee = draggedCard.draggable;
+  console.log("Card ID:", cardId);
+  console.log("Is Employee:", isEmployee);
 
   // Solo permitimos el drop si el usuario es un empleado
   if (!isEmployee) {
