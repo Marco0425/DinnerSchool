@@ -38,6 +38,7 @@
       </h2>
       <div id="pendiente-cards" class="space-y-4 min-h-[100px]">
         {% for order in orders %} {% if order.status == 'pendiente' %}
+        <strong>ES EMPLEADO{{ order.is_employee }}</strong>
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
