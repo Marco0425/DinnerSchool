@@ -540,7 +540,7 @@ def update_order_status(request):
             
             pedido_id = int(order_id.replace("order-", ""))
             pedido = Pedido.objects.get(id=pedido_id)
-            empleado = Empleados.objects.filter(usuario__email=request.user.username).exists()
+            empleado = Empleados.objects.filter(usuario__email=request.user.username).first()
             
             # Asigna el encargado solo si se encontró un empleado
             pedido.encargadoId = empleado
