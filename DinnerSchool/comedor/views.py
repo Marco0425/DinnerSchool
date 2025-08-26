@@ -524,7 +524,7 @@ def update_order_status(request):
             data = json.loads(request.body.decode("utf-8"))
             order_id = data.get("order_id")
             new_status = data.get("new_status")
-            assigned_employee_id = data.get("assigned_employee_id")
+            assigned_employee_id = request.user.id
 
             if not order_id or not new_status:
                 return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
@@ -539,23 +539,25 @@ def update_order_status(request):
             if new_status not in status_map:
                 return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
             
-            # Extraer el ID numérico
             pedido_id = int(order_id.replace("order-", ""))
             pedido = Pedido.objects.get(id=pedido_id)
             
+            empleado = None
             if assigned_employee_id:
-                try:
-                    # Busca el objeto Empleados usando el ID del usuario
-                    empleado = Empleados.objects.get(usuario__id=assigned_employee_id)
-                    pedido.encargadoId = empleado
-                except Empleados.DoesNotExist:
-                    return JsonResponse({"success": False, "error": "Empleado no encontrado"}, status=404)
-            else:
-                pedido.encargadoId = None
-
+                # Usa filter() para una búsqueda más segura
+                empleados_encontrados = Empleados.objects.filter(usuario__id=assigned_employee_id)
+                if empleados_encontrados.exists():
+                    empleado = empleados_encontrados.first()
+            
+            # Asigna el encargado solo si se encontró un empleado
+            pedido.encargadoId = empleado
+            
             pedido.status = status_map[new_status]
             pedido.save()
-            return JsonResponse({"success": True, "encargado": f"{empleado.usuario.nombre} {empleado.usuario.paterno}" if assigned_employee_id else "No asignado"})
+
+            # Devuelve el nombre del encargado para que el frontend lo actualice
+            encargado_nombre = f"{empleado.usuario.nombre} {empleado.usuario.paterno}" if empleado else "No asignado"
+            return JsonResponse({"success": True, "encargado": encargado_nombre})
             
         except Pedido.DoesNotExist:
             return JsonResponse({"success": False, "error": "Pedido no encontrado"}, status=404)
