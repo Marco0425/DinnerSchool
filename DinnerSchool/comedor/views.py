@@ -524,7 +524,6 @@ def update_order_status(request):
             data = json.loads(request.body.decode("utf-8"))
             order_id = data.get("order_id")
             new_status = data.get("new_status")
-            assigned_employee_id = request.user.id
 
             if not order_id or not new_status:
                 return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
@@ -541,13 +540,7 @@ def update_order_status(request):
             
             pedido_id = int(order_id.replace("order-", ""))
             pedido = Pedido.objects.get(id=pedido_id)
-            
-            empleado = None
-            if assigned_employee_id:
-                # Usa filter() para una búsqueda más segura
-                empleados_encontrados = Empleados.objects.filter(usuario__id=assigned_employee_id)
-                if empleados_encontrados.exists():
-                    empleado = empleados_encontrados.first()
+            empleado = Empleados.objects.filter(usuario__email=request.user.username).exists()
             
             # Asigna el encargado solo si se encontró un empleado
             pedido.encargadoId = empleado
