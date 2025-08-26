@@ -65,8 +65,10 @@ function drop(event) {
         newStatus = "finalizado";
 
       if (newStatus) {
-        // Asignar el ID del usuario como encargado si la tarjeta se movió a 'en preparacion' o 'finalizado'
-        const userId = "{{ user.id }}";
+        // --- Solución: Obtener el ID del usuario desde un elemento HTML ---
+        const userIdElement = document.getElementById("user-id-data");
+        const userId = userIdElement ? userIdElement.dataset.userId : null;
+
         const assignedEmployeeId =
           newStatus === "en preparacion" || newStatus === "finalizado"
             ? userId
@@ -90,7 +92,6 @@ function drop(event) {
             if (!data.success) {
               alert("Error al actualizar el estado: " + (data.error || ""));
             } else {
-              // Actualizar el HTML para mostrar el nombre del encargado
               const encargadoElement =
                 draggedCard.querySelector(".encargado-field");
               if (encargadoElement && data.encargado) {
@@ -119,7 +120,6 @@ function getCookie(name) {
   return cookieValue ? cookieValue.pop() : "";
 }
 
-// Asignar listeners a las tarjetas existentes
 document.addEventListener("DOMContentLoaded", function () {
   document
     .querySelectorAll('.kanban-column [draggable="true"]')
