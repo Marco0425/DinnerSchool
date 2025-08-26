@@ -90,10 +90,11 @@ function drop(event) {
             if (!data.success) {
               alert("Error al actualizar el estado: " + (data.error || ""));
             } else {
-              // Opcional: actualizar el HTML para mostrar el nombre del encargado
-              const encargadoElement = draggedCard.querySelector("p strong");
-              if (encargadoElement && assignedEmployeeId) {
-                encargadoElement.textContent = `Encargado: ${assignedEmployeeId}`;
+              // Actualizar el HTML para mostrar el nombre del encargado
+              const encargadoElement =
+                draggedCard.querySelector(".encargado-field");
+              if (encargadoElement && data.encargado) {
+                encargadoElement.textContent = `Encargado: ${data.encargado}`;
               }
             }
           })

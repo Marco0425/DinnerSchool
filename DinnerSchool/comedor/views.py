@@ -516,45 +516,53 @@ def createOrder(request):
 
 @csrf_exempt
 def update_order_status(request):
-  """
-  Vista para actualizar el status de un pedido vía AJAX.
-  Espera POST con 'order_id', 'new_status', y opcionalmente 'assigned_employee_id'.
-  """
-  if request.method == "POST":
-    try:
-      data = json.loads(request.body.decode("utf-8"))
-      order_id = data.get("order_id")
-      new_status = data.get("new_status")
-      assigned_employee_id = data.get("assigned_employee_id") # Nuevo campo
+    """
+    Vista para actualizar el status de un pedido vía AJAX.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            order_id = data.get("order_id")
+            new_status = data.get("new_status")
+            assigned_employee_id = data.get("assigned_employee_id")
 
-      if not order_id or not new_status:
-        return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
+            if not order_id or not new_status:
+                return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
 
-      # Mapear status string a valor entero de STATUSPEDIDO
-      status_map = {
-        "pendiente": 0,
-        "en preparacion": 1,
-        "finalizado": 2,
-        "entregado": 3,
-        "cancelado": 4,
-      }
-      if new_status not in status_map:
-        return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
+            status_map = {
+                "pendiente": 0,
+                "en preparacion": 1,
+                "finalizado": 2,
+                "entregado": 3,
+                "cancelado": 4,
+            }
+            if new_status not in status_map:
+                return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
+            
+            # Extraer el ID numérico
+            pedido_id = int(order_id.replace("order-", ""))
+            pedido = Pedido.objects.get(id=pedido_id)
+            
+            if assigned_employee_id:
+                try:
+                    # Busca el objeto Empleados usando el ID del usuario
+                    empleado = Empleados.objects.get(usuario__id=assigned_employee_id)
+                    pedido.encargadoId = empleado
+                except Empleados.DoesNotExist:
+                    return JsonResponse({"success": False, "error": "Empleado no encontrado"}, status=404)
+            else:
+                pedido.encargadoId = None
 
-      pedido_id = int(order_id.replace("order-", ""))
-      from comedor.models import Pedido
-      pedido = Pedido.objects.get(id=pedido_id)
-
-      # Asignar el encargado si se recibe el ID del empleado
-      if assigned_employee_id:
-        pedido.encargado = assigned_employee_id
-
-      pedido.status = status_map[new_status]
-      pedido.save()
-      return JsonResponse({"success": True})
-    except Exception as e:
-      return JsonResponse({"success": False, "error": str(e)}, status=500)
-  return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
+            pedido.status = status_map[new_status]
+            pedido.save()
+            return JsonResponse({"success": True, "encargado": f"{empleado.usuario.nombre} {empleado.usuario.paterno}" if assigned_employee_id else "No asignado"})
+            
+        except Pedido.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Pedido no encontrado"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
+    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
 def saucers(request):
     """

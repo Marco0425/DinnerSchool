@@ -1,9 +1,8 @@
-{% extends "main.html" %} {% load static %}{% block content %}
+{% extends "main.html" %} {% load static %} {% block content %}
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-6xl w-full border-t-8 border-primary-red mb-8"
 >
   <div class="flex flex-col md:flex-row items-center justify-between mb-6">
-    <!-- Logo de la cafetería -->
     <div class="flex items-center mb-4 md:mb-0">
       <img
         src="{% static 'img/logos/logo.png' %}"
@@ -12,7 +11,6 @@
       />
       <h1 class="text-3xl font-bold text-gray-800">Gestión de Pedidos</h1>
     </div>
-    <!-- Botón para volver -->
     <div class="text-right">
       <a
         href="/core/dashboard"
@@ -23,9 +21,7 @@
     </div>
   </div>
 
-  <!-- Contenedor del tablero Kanban -->
   <div class="flex flex-col md:flex-row gap-6 justify-center">
-    <!-- Columna: Pendiente -->
     <div
       id="pendiente-column"
       class="kanban-column flex-1 bg-gray-100 p-4 rounded-lg shadow-custom min-w-[250px]"
@@ -50,10 +46,10 @@
             <strong>Alumno:</strong> {{ order.alumno }} {% endif %}
           </p>
           <p class="text-xs text-gray-500">
-            {% if order.is_profesor%}
+            {% if order.is_profesor %}
             <strong>Turno:</strong> {{ order.turno }} {% else %}
             <strong>Nivel:</strong> {{ order.nivel }} |
-            <strong>Turno:</strong> {{ order.turno }} {% endif%}
+            <strong>Turno:</strong> {{ order.turno }} {% endif %}
           </p>
           {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
@@ -63,17 +59,15 @@
           <p class="text-xs text-gray-500">
             <strong>Nota:</strong> {{ order.nota }}
           </p>
-          {% endif %} {% if order.encargado %}
-          <p class="text-xs text-gray-500">
+          {% endif %}
+          <p class="text-xs text-gray-500 encargado-field">
             <strong>Encargado:</strong> {{ order.encargado }}
           </p>
-          {% endif %}
         </div>
         {% endif %} {% endfor %}
       </div>
     </div>
 
-    <!-- Columna: En Preparación -->
     <div
       id="en-preparacion-column"
       class="kanban-column flex-1 bg-yellow-100 p-4 rounded-lg shadow-custom min-w-[250px]"
@@ -100,15 +94,15 @@
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
           </p>
-          {% endif %} {% if order.profesor%}
+          {% endif %} {% if order.profesor %}
           <p class="text-sm text-gray-600">
             <strong>Profesor:</strong> {{ order.profesor }}
           </p>
-          {% endif %} {% if order.responsable %}
-          <p class="text-xs text-gray-500">
-            <strong>Responsable:</strong>
+          {% endif %}
+          <p class="text-xs text-gray-500 encargado-field">
+            <strong>Encargado:</strong> {{ order.encargado }}
           </p>
-          {% endif %} {% if order.ingredientes %}
+          {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
             <strong>Ingredientes:</strong> {{ order.ingredientes }}
           </p>
@@ -122,7 +116,6 @@
       </div>
     </div>
 
-    <!-- Columna: Finalizado -->
     <div
       id="finalizado-column"
       class="kanban-column flex-1 bg-blue-100 p-4 rounded-lg shadow-custom min-w-[250px]"
@@ -149,15 +142,15 @@
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
           </p>
-          {% endif %} {% if order.profesor%}
+          {% endif %} {% if order.profesor %}
           <p class="text-sm text-gray-600">
             <strong>Profesor:</strong> {{ order.profesor }}
           </p>
-          {% endif %} {% if order.responsable %}
-          <p class="text-xs text-gray-500">
-            <strong>Responsable:</strong>
+          {% endif %}
+          <p class="text-xs text-gray-500 encargado-field">
+            <strong>Encargado:</strong> {{ order.encargado }}
           </p>
-          {% endif %} {% if order.ingredientes %}
+          {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
             <strong>Ingredientes:</strong> {{ order.ingredientes }}
           </p>
@@ -171,7 +164,6 @@
       </div>
     </div>
 
-    <!-- Columna: Entregado -->
     <div
       id="entregado-column"
       class="kanban-column flex-1 bg-green-100 p-4 rounded-lg shadow-custom min-w-[250px]"
@@ -198,15 +190,15 @@
             <strong>Nivel:</strong> {{ order.nivel }} |
             <strong>Turno:</strong> {{ order.turno }}
           </p>
-          {% endif %} {% if order.profesor%}
+          {% endif %} {% if order.profesor %}
           <p class="text-sm text-gray-600">
             <strong>Profesor:</strong> {{ order.profesor }}
           </p>
-          {% endif %} {% if order.responsable %}
-          <p class="text-xs text-gray-500">
-            <strong>Responsable:</strong>
+          {% endif %}
+          <p class="text-xs text-gray-500 encargado-field">
+            <strong>Encargado:</strong> {{ order.encargado }}
           </p>
-          {% endif %} {% if order.ingredientes %}
+          {% if order.ingredientes %}
           <p class="text-xs text-gray-500">
             <strong>Ingredientes:</strong> {{ order.ingredientes }}
           </p>
