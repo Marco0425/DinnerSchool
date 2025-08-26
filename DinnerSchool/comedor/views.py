@@ -110,7 +110,7 @@ def createCredit(request):
     if request.method == "POST":
         tutor_id = request.POST.get("tutor")
         credito = request.POST.get("credito")
-        print(tutor_id, credito)
+        
         if "tutor_" in tutor_id and credito:
             try:
                 tutor = Tutor.objects.get(id=int(tutor_id.split('_')[1]))
@@ -121,13 +121,13 @@ def createCredit(request):
             except Tutor.DoesNotExist:
                 messages.error(request, "Tutor no encontrado.")
         elif "profesor_" in tutor_id and credito:
-            print(tutor_id, credito)
-            print(Empleados.objects.get(id=int(tutor_id.split('_')[1])))
             try:
                 profesor = Empleados.objects.get(id=int(tutor_id.split('_')[1]))
-                nuevoCredito = Credito(profesorId=profesor, monto=credito)
-                nuevoCredito.save()
-                messages.success(request, "Crédito creado exitosamente.")
+                nuevoCredito, created = Credito.objects.update_or_create(profesorId=profesor, defaults={'monto': credito})
+                if created:
+                    messages.success(request, "Crédito creado exitosamente.")
+                else:
+                    messages.info(request, "Crédito actualizado exitosamente.")
                 return redirect('comedor:credit')
             except Empleados.DoesNotExist:
                 messages.error(request, "Profesor no encontrado.")

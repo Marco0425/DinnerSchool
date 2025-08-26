@@ -114,10 +114,13 @@ def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, regist
 
     # 3. Crear perfil según tipo
     if userType == 1:
-        Tutor.objects.create(usuario=usuario)
+        tutor = Tutor.objects.create(usuario=usuario)
+        Credito.objects.create(tutorId=tutor, monto=0)
     elif userType in [3, 4]:
         puesto = 'Cocinero' if userType == 3 else 'Profesor'
-        Empleados.objects.create(usuario=usuario, puesto=puesto)
+        empleado = Empleados.objects.create(usuario=usuario, puesto=puesto)
+        if userType == 4:
+            Credito.objects.create(profesorId=empleado, monto=0)
 
     return user, usuario
 
@@ -432,7 +435,7 @@ def user_list_view(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
     """
     if request.user.is_authenticated:
-        users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Employee"])
+        users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Empleado"])
         paginator = Paginator(users, 10) # Muestra 10 usuarios por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
