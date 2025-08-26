@@ -273,6 +273,7 @@ def order(request):
             3: "entregado",
             4: "cancelado",
         }
+        is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
                 
         try:
             for pedido in Pedido.objects.filter(fecha=today):
@@ -283,6 +284,7 @@ def order(request):
                     "ingredientes": pedido.ingredientePlatillo,
                     "nota": pedido.nota,
                     "is_profesor": is_profesor,
+                    "is_employee": is_employee,
                     "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}" if not is_profesor else f"{pedido.profesorId.usuario} {pedido.profesorId.usuario.paterno}",
                     "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
                     "turno": pedido.get_turno_label(),

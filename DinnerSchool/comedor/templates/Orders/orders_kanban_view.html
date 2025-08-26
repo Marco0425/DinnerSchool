@@ -41,7 +41,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
-          draggable="{{ user.is_employee|yesno:'true,false' }}"
+          draggable="{{ order.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           <p class="text-sm text-gray-600">
@@ -89,7 +89,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing"
-          draggable="{{ user.is_employee|yesno:'true,false' }}"
+          draggable="{{ order.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
@@ -138,7 +138,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
-          draggable="{{ user.is_employee|yesno:'true,false' }}"
+          draggable="{{ order.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
@@ -187,7 +187,7 @@
         <div
           id="{{ order.id }}"
           class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing opacity-80"
-          draggable="{{ user.is_employee|yesno:'true,false' }}"
+          draggable="{{ order.is_employee|yesno:'true,false' }}"
         >
           <h3 class="font-bold text-gray-900 mb-1">{{ order.platillo }}</h3>
           {% if order.alumno %}
