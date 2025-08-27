@@ -42,9 +42,11 @@
         Pendiente
       </h2>
       <div id="pendiente-cards" class="space-y-4 w-full">
-        {% for order in orders %} {% if order.status == 'pendiente' %} {%include
-        'Orders/order_card_grouped.html' with order=order %} {% endif %}
-        {%endfor %}
+          {% for order in orders %} 
+            {% if order.status == 'pendiente' %}
+              {% include 'Orders/order_card_grouped.html' with order=order %}
+            {% endif %} 
+          {% endfor %}
       </div>
     </div>
 
@@ -60,9 +62,11 @@
         En Preparación
       </h2>
       <div id="en-preparacion-cards" class="space-y-4 w-full">
-        {% for order in orders %} {% if order.status == 'en preparacion' %}
-        {%include 'Orders/order_card_grouped.html' with order=order %} {% endif
-        %} {% endfor %}
+          {% for order in orders %} 
+            {% if order.status == 'en preparacion' %}
+              {% include 'Orders/order_card_grouped.html' with order=order %}
+            {% endif %} 
+          {% endfor %}
       </div>
     </div>
 
@@ -78,9 +82,11 @@
         Finalizado
       </h2>
       <div id="finalizado-cards" class="space-y-4 w-full">
-        {% for order in orders %} {% if order.status == 'finalizado' %}
-        {%include 'Orders/order_card_grouped.html' with order=order %} {% endif
-        %} {% endfor %}
+          {% for order in orders %} 
+            {% if order.status == 'finalizado' %}
+              {% include 'Orders/order_card_grouped.html' with order=order %}
+            {% endif %} 
+          {% endfor %}
       </div>
     </div>
 
@@ -96,9 +102,11 @@
         Entregado
       </h2>
       <div id="entregado-cards" class="space-y-4 w-full">
-        {% for order in orders %} {% if order.status == 'entregado' %} {%include
-        'Orders/order_card_grouped.html' with order=order %} {% endif %}
-        {%endfor %}
+          {% for order in orders %} 
+            {% if order.status == 'entregado' %}
+              {% include 'Orders/order_card_grouped.html' with order=order %}
+            {% endif %} 
+          {% endfor %}
       </div>
     </div>
   </div>
