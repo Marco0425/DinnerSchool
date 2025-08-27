@@ -1,0 +1,78 @@
+<div
+  id="order-{{ order.id }}"
+  class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing {% if order.status == 'finalizado' or order.status == 'entregado' %}opacity-80{% endif %}"
+  draggable="{{ order.is_employee|yesno:'true,false' }}"
+  data-pedido-ids="{{ order.pedido_ids|join:',' }}"
+>
+  <!-- Header de la orden con usuario y turno -->
+  <div class="flex justify-between items-start mb-3">
+    <div>
+      <h3 class="font-bold text-gray-900 mb-1">{{ order.user_name }}</h3>
+      <p class="text-sm text-gray-600">
+        {% if order.is_profesor %}
+          <strong>Profesor</strong>
+        {% else %}
+          <strong>{{ order.user_level }}</strong>
+        {% endif %}
+      </p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-gray-500">
+        <strong>Turno:</strong> {{ order.turno }}
+      </p>
+      {% if order.platillos|length > 1 %}
+        <span class="inline-block px-2 py-1 bg-primary-red text-white text-xs rounded-full mt-1">
+          {{ order.platillos|length }} platillos
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Lista de platillos -->
+  <div class="space-y-2 mb-3">
+    {% for platillo in order.platillos %}
+      <div class="bg-gray-50 p-2 rounded border-l-2 border-primary-red">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="font-medium text-gray-800">{{ platillo.nombre }}</span>
+            {% if platillo.cantidad > 1 %}
+              <span class="text-primary-red font-semibold ml-1">x{{ platillo.cantidad }}</span>
+            {% endif %}
+          </div>
+          <span class="text-sm text-gray-600">${{ platillo.precio|floatformat:2 }}</span>
+        </div>
+        
+        {% if platillo.ingredientes %}
+          <p class="text-xs text-gray-500 mt-1">
+            <strong>Ingredientes:</strong> {{ platillo.ingredientes|join:", "|truncatechars:50  }}
+          </p>
+        {% endif %}
+        
+        {% if platillo.nota %}
+          <p class="text-xs text-blue-600 mt-1">
+            <strong>Nota:</strong> {{ platillo.nota }}
+          </p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Resumen de la orden -->
+  <div class="border-t pt-2 mb-2">
+    <div class="flex justify-between text-sm">
+      <span class="text-gray-600">Total items:</span>
+      <span class="font-semibold">{{ order.total_cantidad }}</span>
+    </div>
+    <div class="flex justify-between text-sm">
+      <span class="text-gray-600">Total:</span>
+      <span class="font-bold text-primary-red">${{ order.total_precio|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  <!-- Información del encargado -->
+  {% if order.is_employee %}
+    <p class="text-xs text-gray-500 encargado-field">
+      <strong>Encargado:</strong> {{ order.encargado }}
+    </p>
+  {% endif %}
+</div>

@@ -1,7 +1,7 @@
 {% extends "main.html" %} {% load static %} {% block content %}
 <script src="{% static 'js/orders.js' %}"></script>
 <div
-  class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
+  class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red"
 >
   <div class="flex flex-col items-center mb-6">
     <!-- Logo -->
@@ -10,8 +10,8 @@
       alt="Logo de la Cafetería Certo"
       class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
     />
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nuevo Pedido</h1>
-    <p class="text-gray-600 text-center">Ingresa los datos del nuevo pedido</p>
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Crear Nueva Orden</h1>
+    <p class="text-gray-600 text-center">Agrega platillos a tu carrito de compras</p>
   </div>
 
   <!-- Bloque para mensajes -->
@@ -27,68 +27,130 @@
   </div>
   {% endif %}
 
-  <form
-    action="{% url 'comedor:createOrder' %}"
-    method="post"
-    id="ordersForm"
-    class="space-y-4"
-  >
-    {% csrf_token %}
-    <!-- Platillo -->
-    <div>
-      <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1"
-        >Platillo*</label
-      >
-      <select
-        id="platillo"
-        name="platillo"
-        required
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      >
-        <option value="">Selecciona el Platillo</option>
-        {% for platillo in Platillos %}
-        <option
-          value="{{ platillo.id }}"
-          data-precio="{{ platillo.precio }}"
-          data-ingredientes="{{ platillo.ingredientes}}"
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Formulario para agregar platillos -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Agregar Platillo</h2>
+      
+      <!-- Platillo -->
+      <div>
+        <label for="platillo" class="block text-sm font-medium text-gray-700 mb-1"
+          >Platillo*</label
         >
-          {{ platillo.nombre }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
+        <select
+          id="platillo"
+          name="platillo"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        >
+          <option value="">Selecciona el Platillo</option>
+          {% for platillo in Platillos %}
+          <option
+            value="{{ platillo.id }}"
+            data-precio="{{ platillo.precio }}"
+            data-ingredientes="{{ platillo.ingredientes}}"
+            data-nombre="{{ platillo.nombre }}"
+          >
+            {{ platillo.nombre }} - ${{ platillo.precio }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <!-- Ingredientes -->
-    <div>
-      <label
-        for="ingredientes-display"
-        class="block text-sm font-medium text-gray-700 mb-1"
-        >Ingredientes</label
+      <!-- Ingredientes -->
+      <div>
+        <label
+          for="ingredientes-display"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Ingredientes</label
+        >
+        <textarea
+          id="ingredientes-display"
+          rows="3"
+          readonly
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm"
+          placeholder="Los ingredientes aparecerán aquí..."
+        ></textarea>
+      </div>
+
+      <!-- Notas -->
+      <div>
+        <label for="notas" class="block text-sm font-medium text-gray-700 mb-1"
+          >Notas</label
+        >
+        <input
+          type="text"
+          id="notas"
+          name="notas"
+          placeholder="Ejemplo: Sin cebolla"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        />
+      </div>
+
+      <!-- Cantidad -->
+      <div>
+        <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-1"
+          >Cantidad*</label
+        >
+        <input
+          type="number"
+          id="cantidad"
+          name="cantidad"
+          min="1"
+          value="1"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        />
+      </div>
+
+      <!-- Turno -->
+      <div>
+        <label for="turno" class="block text-sm font-medium text-gray-700 mb-1"
+          >Turno*</label
+        >
+        <select
+          id="turno"
+          name="turno"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        >
+          <option value="">Selecciona el Horario de Comida</option>
+          <option value="0">Receso 1</option>
+          <option value="1">Receso 2</option>
+          <option value="2">Comida</option>
+        </select>
+      </div>
+
+      <!-- Botón para agregar al carrito -->
+      <button
+        type="button"
+        id="addToCart"
+        class="w-full px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-green-600 hover:bg-green-700"
       >
-      <textarea
-        id="ingredientes-display"
-        rows="4"
-        readonly
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm"
-        placeholder="Los ingredientes aparecerán aquí..."
-      ></textarea>
-      <input type="hidden" id="ingredientes-hidden" name="ingredientes" />
+        Agregar al Carrito
+      </button>
     </div>
 
-    <!-- Notas -->
-    <div>
-      <label for="notas" class="block text-sm font-medium text-gray-700 mb-1"
-        >Notas</label
-      >
-      <input
-        type="text"
-        id="notas"
-        name="notas"
-        placeholder="Ejemplo: Sin cebolla"
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      />
-    </div>
+    <!-- Carrito de compras -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Carrito de Compras</h2>
+      
+      <div id="cart-items" class="space-y-2 max-h-96 overflow-y-auto">
+        <p class="text-gray-500 text-center py-8">El carrito está vacío</p>
+      </div>
 
+      <!-- Total -->
+      <div class="border-t pt-4">
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-lg font-semibold">Total:</span>
+          <span id="total-amount" class="text-xl font-bold text-primary-red">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información del pedido (fuera del grid) -->
+   {% if is_admin or is_tutor %}
+  <div class="mt-8 pt-6 border-t space-y-4">
+    <h3 class="text-lg font-semibold text-gray-800">Información del Pedido</h3>
+    
     {% if is_tutor %}
     <!-- Alumno -->
     <div>
@@ -112,91 +174,84 @@
     {% endif %} 
     
     {% if is_admin %}
-    <div>
-      <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1"
-        >Tutor*</label
-      >
-      <select
-        id="tutor"
-        name="tutor"
-        required
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      >
-        <option value="">Selecciona el tutor/profesor</option>
-        {% for tutor in tutors %}
-        <option value="{{ tutor.id }}">{{ tutor.nombre }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    
-    <div>
-      <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
-        >Alumno*</label
-      >
-      <select
-        id="alumno"
-        name="alumno"
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      >
-        <option value="">Selecciona un tutor primero</option>
-        {% for alumno in Alumnos %}
-        <option value="{{ alumno.id }}" data-tutor-id="{{ alumno.tutor_id }}">
-          {{ alumno.nombre }}
-        </option>
-        {% endfor %}
-      </select>
-      <span class="help-block" style="color: red;"><small>Recuerda que si seleccionas un Tutor, este campo es obligatorio.</small></span>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1"
+          >Tutor*</label
+        >
+        <select
+          id="tutor"
+          name="tutor"
+          required
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        >
+          <option value="">Selecciona el tutor/profesor</option>
+          {% for tutor in tutors %}
+          <option value="{{ tutor.id }}">{{ tutor.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div>
+        <label for="alumno" class="block text-sm font-medium text-gray-700 mb-1"
+          >Alumno*</label
+        >
+        <select
+          id="alumno"
+          name="alumno"
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+        >
+          <option value="">Selecciona un tutor primero</option>
+          {% for alumno in Alumnos %}
+          <option value="{{ alumno.id }}" data-tutor-id="{{ alumno.tutor_id }}">
+            {{ alumno.nombre }}
+          </option>
+          {% endfor %}
+        </select>
+        <span class="help-block" style="color: red;"><small>Recuerda que si seleccionas un Tutor, este campo es obligatorio.</small></span>
+      </div>
     </div>
     {% endif %}
+  </div>
+  {% endif %}
 
-    <!-- Turno -->
-    <div>
-      <label for="turno" class="block text-sm font-medium text-gray-700 mb-1"
-        >Turno*</label
-      >
-      <select
-        id="turno"
-        name="turno"
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-        required
-      >
-        <option value="">Selecciona el Horario de Comida</option>
-        <option value="0">Receso 1</option>
-        <option value="1">Receso 2</option>
-        <option value="2">Comida</option>
-      </select>
-    </div>
+  <!-- Botones finales -->
+  <div class="flex justify-end space-x-4 pt-6 mt-6 border-t">
+    <a
+      href="{% url 'core:dashboard' %}"
+      class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+    >
+      Descartar
+    </a>
+    <button
+      type="button"
+      id="clearCart"
+      class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+    >
+      Limpiar Carrito
+    </button>
+    <button
+      type="button"
+      id="submitOrder"
+      class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700"
+      disabled
+    >
+      Solicitar Orden
+    </button>
+  </div>
 
-    <!-- Total -->
-    <div>
-      <label for="precio" class="block text-sm font-medium text-gray-700 mb-1"
-        >Total</label
-      >
-      <input
-        type="number"
-        id="precio"
-        name="precio"
-        readonly
-        value=""
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      />
-    </div>
-
-    <!-- Botones -->
-    <div class="flex justify-end space-x-4 pt-4">
-      <a
-        href="{% url 'core:dashboard' %}"
-        class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
-      >
-        Descartar
-      </a>
-      <button
-        type="submit"
-        class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700"
-      >
-        Solicitar Pedido
-      </button>
-    </div>
+  <!-- Formulario oculto para envío -->
+  <form
+    action="{% url 'comedor:createOrder' %}"
+    method="post"
+    id="ordersForm"
+    style="display: none;"
+  >
+    {% csrf_token %}
+    <input type="hidden" id="cart-data" name="cart_data" />
+    <input type="hidden" id="final-alumno" name="alumno" />
+    <input type="hidden" id="final-tutor" name="tutor" />
+    <input type="hidden" id="final-total" name="total" />
   </form>
 
   <div

@@ -24,6 +24,7 @@ from datetime import datetime, date, timedelta
 import json
 import traceback
 import os
+import ast
 
 def ingredients(request):
     """
@@ -254,15 +255,15 @@ def createAds(request):
 
 def order(request):
     """
-    Vista para manejar los pedidos.
-    Esta vista se encarga de mostrar y gestionar los pedidos realizados por los estudiantes.
+    Vista para manejar los pedidos agrupados por usuario, turno y fecha.
+    Esta vista se encarga de mostrar y gestionar los pedidos realizados agrupados como órdenes.
     Args:
         request: Objeto HttpRequest que contiene la solicitud del usuario.
     Returns:
-        HttpResponse: Respuesta HTTP que renderiza la lista de pedidos.
+        HttpResponse: Respuesta HTTP que renderiza la vista kanban con órdenes agrupadas.
     """
     if request.user.is_authenticated:
-        orders = []
+        grouped_orders = []
         
         today = date.today()
         
@@ -276,134 +277,225 @@ def order(request):
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
                 
         try:
-            for pedido in Pedido.objects.filter(fecha=today):
+            # Obtener todos los pedidos del día
+            pedidos_hoy = Pedido.objects.filter(fecha=today).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+            
+            # Diccionario para agrupar pedidos
+            orders_dict = {}
+            
+            for pedido in pedidos_hoy:
                 is_profesor = pedido.profesorId is not None
-                order = {
-                    "id": f"order-{pedido.id}",
-                    "platillo": pedido.platillo.nombre,
+                
+                # Crear clave única para agrupar: usuario + turno + fecha
+                if is_profesor:
+                    user_key = f"profesor_{pedido.profesorId.id}"
+                    user_name = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
+                    user_level = "Profesor"
+                else:
+                    user_key = f"alumno_{pedido.alumnoId.id}"
+                    user_name = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
+                    user_level = getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)
+                
+                group_key = f"{user_key}_{pedido.turno}_{pedido.fecha}"
+                
+                # Si el grupo no existe, crearlo
+                if group_key not in orders_dict:
+                    orders_dict[group_key] = {
+                        "id": group_key,
+                        "user_name": user_name,
+                        "user_level": user_level,
+                        "turno": pedido.get_turno_label(),
+                        "turno_num": pedido.turno,
+                        "fecha": pedido.fecha,
+                        "is_profesor": is_profesor,
+                        "is_employee": is_employee,
+                        "status": status_map.get(pedido.status, "pendiente"),
+                        "status_num": pedido.status,
+                        "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado",
+                        "encargado_id": pedido.encargadoId.id if pedido.encargadoId else None,
+                        "platillos": [],
+                        "total_cantidad": 0,
+                        "total_precio": Decimal('0'),
+                        "pedido_ids": []  # Para trackear los IDs individuales
+                    }
+                
+                # Agregar platillo al grupo
+                pedido.ingredientePlatillo = ast.literal_eval(pedido.ingredientePlatillo)
+                platillo_info = {
+                    "id": pedido.id,
+                    "nombre": pedido.platillo.nombre,
                     "ingredientes": pedido.ingredientePlatillo,
                     "nota": pedido.nota,
-                    "is_profesor": is_profesor,
-                    "is_employee": is_employee,
-                    "alumno": f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}" if not is_profesor else f"{pedido.profesorId.usuario} {pedido.profesorId.usuario.paterno}",
-                    "nivel": getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel) if not is_profesor else "Profesor",
-                    "turno": pedido.get_turno_label(),
-                    "status": status_map.get(pedido.status, "pendiente"),
-                    "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado"
+                    "cantidad": pedido.cantidad if hasattr(pedido, 'cantidad') else 1,
+                    "precio": pedido.total
                 }
-                orders.append(order)
-            return render(request, 'Orders/orders_kanban_view.html', {'orders': orders})
+                
+                orders_dict[group_key]["platillos"].append(platillo_info)
+                orders_dict[group_key]["total_cantidad"] += platillo_info["cantidad"]
+                orders_dict[group_key]["total_precio"] += platillo_info["precio"]
+                orders_dict[group_key]["pedido_ids"].append(pedido.id)
+                
+                # El status de la orden será el menor status de todos los pedidos
+                # (si hay uno pendiente, toda la orden está pendiente)
+                if pedido.status < orders_dict[group_key]["status_num"]:
+                    orders_dict[group_key]["status"] = status_map.get(pedido.status, "pendiente")
+                    orders_dict[group_key]["status_num"] = pedido.status
+            
+            # Convertir diccionario a lista y ordenar
+            grouped_orders = list(orders_dict.values())
+            
+            # Ordenar por: estado, turno, fecha de creación
+            grouped_orders.sort(key=lambda x: (x["status_num"], x["turno_num"], x["fecha"]))
+            
+            return render(request, 'Orders/orders_kanban_view.html', {'orders': grouped_orders})
+            
         except Exception as e:
             print("Error en la vista order:")
+            print(f"Error: {str(e)}")
             traceback.print_exc()
+            return render(request, 'Orders/orders_kanban_view.html', {'orders': []})
     else:
         return redirect('core:signInUp')
     
 def createOrder(request):
     """
-    Vista para crear un nuevo pedido.
-    Esta vista se encarga de manejar la creación de un nuevo pedido.
+    Vista para crear un nuevo pedido desde carrito de compras.
+    Esta vista se encarga de manejar la creación de múltiples pedidos desde un carrito.
     Args:
         request: Objeto HttpRequest que contiene la solicitud del usuario.
     Returns:
-        HttpResponse: Respuesta HTTP que redirige a la lista de pedidos.
-    """
+        HttpResponse: Respuesta HTTP que redirige al dashboard.
+    """    
     if request.method == "POST":
-        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
-        orden = request.POST.get("platillo")
-        ordenIngredientes = request.POST.getlist("ingredientes")
-        ordenNotas = request.POST.get("notas")
-        ordenAlumno = request.POST.get("alumno")
-        ordenTurno = request.POST.get("turno")
-        precio = request.POST.get("precio")
-        tutorProfesor = request.POST.get("tutor")
-
-        profesorRequest = Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None
-        tutor, profesor = None, None
-        if request.user.is_staff:
-            if tutorProfesor.startswith("Tutor_"):
-                tutor = Tutor.objects.get(id=tutorProfesor.split("_")[1])
-            elif tutorProfesor.startswith("Profesor_"):
-                profesor = Empleados.objects.get(id=tutorProfesor.split("_")[1])
-                
-        is_admin = True if request.user.is_staff else False
-
         try:
-            platillo = Platillo.objects.get(id=orden)
+            # Obtener datos del carrito
+            cart_data = request.POST.get("cart_data")
+            alumno_id = request.POST.get("alumno")
+            tutor_profesor = request.POST.get("tutor")
+            total_carrito = Decimal(request.POST.get("total", "0"))
             
-            # Convertir precio a Decimal
-            precio_decimal = Decimal(str(precio))
+            if not cart_data:
+                messages.error(request, "El carrito está vacío.")
+                return redirect('comedor:createOrder')
             
-            if not is_admin:
-                nuevaOrden = Pedido(
-                    platillo=platillo,
-                    ingredientePlatillo=", ".join(ordenIngredientes),
-                    nota=ordenNotas,
-                    alumnoId=Alumnos.objects.get(id=ordenAlumno) if not is_profesor else None,
-                    nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo if not is_profesor else None,
-                    profesorId=Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None,
-                    turno=ordenTurno,
-                    total=precio_decimal  # Usar Decimal aquí también
-                )
-                nuevaOrden.save()
-            else:
-                nuevaOrden = Pedido(
-                    platillo=platillo,
-                    ingredientePlatillo=", ".join(ordenIngredientes),
-                    nota=ordenNotas,
-                    alumnoId=Alumnos.objects.get(id=ordenAlumno) if tutor else None,
-                    nivelEducativo=Alumnos.objects.get(id=ordenAlumno).nivelEducativo if tutor else None,
-                    profesorId=profesor if profesor else None,
-                    turno=ordenTurno,
-                    total=precio_decimal  # Usar Decimal aquí también
-                )
-                nuevaOrden.save()
+            # Parsear datos del carrito
+            cart_items = json.loads(cart_data)
             
-            if nuevaOrden and not is_admin:
+            if not cart_items:
+                messages.error(request, "No hay items en el carrito.")
+                return redirect('comedor:createOrder')
+            
+            # Determinar tipo de usuario
+            is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
+            is_admin = request.user.is_staff
+            
+            # Variables para el usuario actual
+            profesorRequest = Empleados.objects.get(usuario__email=request.user.username) if is_profesor else None
+            tutor_actual, profesor_actual = None, None
+            
+            # Procesar información del usuario según el tipo
+            if is_admin and tutor_profesor:
+                if tutor_profesor.startswith("Tutor_"):
+                    tutor_actual = Tutor.objects.get(id=tutor_profesor.split("_")[1])
+                elif tutor_profesor.startswith("Profesor_"):
+                    profesor_actual = Empleados.objects.get(id=tutor_profesor.split("_")[1])
+            elif not is_admin:
                 if is_profesor:
-                    profesor = Empleados.objects.get(usuario__email=request.user.username)
-                    tutor = None
+                    profesor_actual = profesorRequest
                 else:
-                    tutor = Tutor.objects.get(usuario__email=request.user.username)
-                    profesor = None
-
-                # Crear crédito diario
-                
-            creditoDiario = CreditoDiario.objects.create(
-                pedido=nuevaOrden,
-                tutorId=tutor,
-                profesorId=profesor,
-                monto=precio_decimal,  # Usar Decimal
-                fecha=date.today()
-            )
-
-            # Actualizar crédito total
+                    tutor_actual = Tutor.objects.get(usuario__email=request.user.username)
+            
+            # Obtener alumno si aplica
+            alumno_obj = None
+            if alumno_id and (tutor_actual or not is_profesor):
+                alumno_obj = Alumnos.objects.get(id=alumno_id)
+            
+            # Lista para almacenar los pedidos creados
+            pedidos_creados = []
+            total_calculado = Decimal('0')
+            
+            # Crear cada pedido del carrito
+            for item in cart_items:
+                try:
+                    platillo = Platillo.objects.get(id=item['platillo_id'])
+                    subtotal = Decimal(str(item['subtotal']))
+                    total_calculado += subtotal;
+                    
+                    # Crear el pedido
+                    nuevo_pedido = Pedido(
+                        platillo=platillo,
+                        ingredientePlatillo=item.get('ingredientes', ''),
+                        nota=item.get('notas', ''),
+                        cantidad=item['cantidad'],  # Asumiendo que tienes este campo
+                        alumnoId=alumno_obj if not is_profesor else None,
+                        nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
+                        profesorId=profesor_actual if profesor_actual else None,
+                        turno=item['turno'],
+                        total=subtotal
+                    )
+                    nuevo_pedido.save()
+                    pedidos_creados.append(nuevo_pedido)
+                    
+                except Platillo.DoesNotExist:
+                    messages.error(request, f"Platillo con ID {item['platillo_id']} no encontrado.")
+                    return redirect('comedor:createOrder')
+                except Exception as e:
+                    messages.error(request, f"Error al crear pedido: {str(e)}")
+                    return redirect('comedor:createOrder')
+            
+            # Verificar que el total calculado coincida
+            if abs(total_calculado - total_carrito) > Decimal('0.01'):
+                messages.error(request, "Error en el cálculo del total del carrito.")
+                return redirect('comedor:createOrder')
+            
+            # Crear los créditos diarios para cada pedido
+            for pedido in pedidos_creados:
+                CreditoDiario.objects.create(
+                    pedido=pedido,
+                    tutorId=tutor_actual,
+                    profesorId=profesor_actual,
+                    monto=pedido.total,
+                    fecha=date.today()
+                )
+            
+            # Actualizar crédito total (descontar el total del carrito)
             try:
-                if not is_admin:
-                    creditoTotal = Credito.objects.get(profesorId=profesorRequest) if is_profesor else Credito.objects.get(tutorId=tutor)
+                if is_admin:
+                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual) 
+                                     if profesor_actual 
+                                     else Credito.objects.get(tutorId=tutor_actual))
                 else:
-                    creditoTotal = Credito.objects.get(profesorId=profesor) if profesor else Credito.objects.get(tutorId=tutor)
-
-                creditoTotal.monto -= precio_decimal  # Ahora ambos son Decimal
-                creditoTotal.save()
-
+                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest) 
+                                     if is_profesor 
+                                     else Credito.objects.get(tutorId=tutor_actual))
+                
+                credito_usuario.monto -= total_carrito
+                credito_usuario.save()
+                
+                # Mensajes de advertencia sobre el crédito
+                if credito_usuario.monto <= 0:
+                    messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
+                elif 0 < credito_usuario.monto <= 100:
+                    messages.info(request, f"Tu crédito actual es ${credito_usuario.monto}. Te recomendamos recargar pronto.")
+                
             except Credito.DoesNotExist:
                 messages.error(request, "No se encontró crédito disponible para este usuario.")
+                # Eliminar pedidos creados si no hay crédito
+                for pedido in pedidos_creados:
+                    pedido.delete()
                 return redirect('comedor:createOrder')
-            if creditoTotal.monto <= 0:
-                    messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
-            elif 0 < creditoTotal.monto <= 100:
-                messages.info(request, f"Tu crédito actual es ${creditoTotal.monto}. Te recomendamos recargar pronto.")
-            messages.success(request, "Pedido creado exitosamente.")
+            
+            messages.success(request, f"¡Orden creada exitosamente! Se procesaron {len(pedidos_creados)} platillos por un total de ${total_carrito}.")
             return redirect('core:dashboard')
             
-        except (Platillo.DoesNotExist) as e:
-            messages.error(request, f"Error al crear el pedido: {str(e)}")
+        except json.JSONDecodeError:
+            messages.error(request, "Error al procesar los datos del carrito.")
             return redirect('comedor:createOrder')
         except Exception as e:
             messages.error(request, f"Error inesperado: {str(e)}")
             return redirect('comedor:createOrder')
     
+    # GET request - código existente para mostrar el formulario
     # Verificar crédito
     creditoTutor = Credito.objects.filter(tutorId__usuario__email=request.user.username).first()
     if creditoTutor and creditoTutor.monto < -200:
@@ -436,7 +528,7 @@ def createOrder(request):
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
-            'user_type': 'tutor',  # Enviar el tipo de usuario
+            'user_type': 'tutor',
             'is_tutor': True,
             'is_employee': False,
             'is_admin': False,
@@ -460,7 +552,7 @@ def createOrder(request):
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
-            'user_type': 'profesor',  # Enviar el tipo de usuario
+            'user_type': 'profesor',
             'is_tutor': False,
             'is_employee': True,
             'is_admin': False,
@@ -477,14 +569,14 @@ def createOrder(request):
         
         for tutor in tutors:
             combined_users.append({
-                "id": f"Tutor_{tutor.id}",  # ✅ Cambiar formato para coincidir con el POST
+                "id": f"Tutor_{tutor.id}",
                 "type": "Tutor",
                 "nombre": f"{tutor.usuario.user.first_name} {tutor.usuario.user.last_name} - Tutor",
             })
         
         for profesor in profesores:
             combined_users.append({
-                "id": f"Profesor_{profesor.id}",  # ✅ Cambiar formato para coincidir con el POST
+                "id": f"Profesor_{profesor.id}",
                 "type": "Profesor", 
                 "nombre": f"{profesor.usuario.user.first_name} {profesor.usuario.user.last_name} - Profesor",
             })
@@ -498,7 +590,7 @@ def createOrder(request):
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
-            'user_type': 'admin',  # Enviar el tipo de usuario
+            'user_type': 'admin',
             'is_tutor': False,
             'is_employee': False,
             'is_admin': True,
@@ -650,25 +742,19 @@ def ejemplo_uso_reportes():
     """Ejemplos de cómo usar las funciones de reportes."""
     
     # 1. Generar reporte para el día actual
-    print("Generando reporte para hoy...")
     archivo_hoy = generar_reporte_gastos_diarios()
-    print(f"Reporte generado: {archivo_hoy}")
     
     # 2. Generar reporte para una fecha específica
     fecha_especifica = date(2025, 8, 20)
-    print(f"Generando reporte para {fecha_especifica}...")
     archivo_fecha = generar_reporte_gastos_diarios(
         fecha_reporte=fecha_especifica,
         nombre_archivo="reporte_especial.xlsx"
     )
-    print(f"Reporte generado: {archivo_fecha}")
     
     # 3. Generar reporte para un rango de fechas (última semana)
     fecha_fin = date.today()
     fecha_inicio = fecha_fin - timedelta(days=7)
-    print(f"Generando reporte desde {fecha_inicio} hasta {fecha_fin}...")
     archivo_rango = generar_reporte_rango_fechas(fecha_inicio, fecha_fin)
-    print(f"Reporte generado: {archivo_rango}")
 
 def generarReporte(request):
     """Vista para generar y descargar reporte desde Django."""
