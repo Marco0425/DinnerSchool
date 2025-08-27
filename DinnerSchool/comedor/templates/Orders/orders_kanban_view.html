@@ -1,9 +1,6 @@
-{% extends "main.html" %}
-{% load static %}
-
-{% block content %}
+{% extends "main.html" %} {% load static %} {% block content %}
 <div
-  class="bg-white p-8 rounded-lg shadow-xl w-full border-t-8 border-primary-red mb-8"
+  class="bg-white p-8 rounded-lg shadow-xl border-t-8 border-primary-red mb-8"
 >
   <div class="flex flex-col md:flex-row items-center justify-between mb-6">
     <div class="flex items-center mb-4 md:mb-0">
@@ -44,11 +41,9 @@
           Pendiente
         </h2>
         <div id="pendiente-cards" class="space-y-4 min-h-[100px]">
-          {% for order in orders %} 
-            {% if order.status == 'pendiente' %}
-              {% include 'Orders/order_card_grouped.html' with order=order %}
-            {% endif %} 
-          {% endfor %}
+          {% for order in orders %} {% if order.status == 'pendiente' %} {%
+          include 'Orders/order_card_grouped.html' with order=order %} {% endif
+          %} {% endfor %}
         </div>
       </div>
 
@@ -64,11 +59,9 @@
           En Preparación
         </h2>
         <div id="en-preparacion-cards" class="space-y-4 min-h-[100px]">
-          {% for order in orders %} 
-            {% if order.status == 'en preparacion' %}
-              {% include 'Orders/order_card_grouped.html' with order=order %}
-            {% endif %} 
-          {% endfor %}
+          {% for order in orders %} {% if order.status == 'en preparacion' %} {%
+          include 'Orders/order_card_grouped.html' with order=order %} {% endif
+          %} {% endfor %}
         </div>
       </div>
 
@@ -84,11 +77,9 @@
           Finalizado
         </h2>
         <div id="finalizado-cards" class="space-y-4 min-h-[100px]">
-          {% for order in orders %} 
-            {% if order.status == 'finalizado' %}
-              {% include 'Orders/order_card_grouped.html' with order=order %}
-            {% endif %} 
-          {% endfor %}
+          {% for order in orders %} {% if order.status == 'finalizado' %} {%
+          include 'Orders/order_card_grouped.html' with order=order %} {% endif
+          %} {% endfor %}
         </div>
       </div>
 
@@ -104,11 +95,9 @@
           Entregado
         </h2>
         <div id="entregado-cards" class="space-y-4 min-h-[100px]">
-          {% for order in orders %} 
-            {% if order.status == 'entregado' %}
-              {% include 'Orders/order_card_grouped.html' with order=order %}
-            {% endif %} 
-          {% endfor %}
+          {% for order in orders %} {% if order.status == 'entregado' %} {%
+          include 'Orders/order_card_grouped.html' with order=order %} {% endif
+          %} {% endfor %}
         </div>
       </div>
     </div>
