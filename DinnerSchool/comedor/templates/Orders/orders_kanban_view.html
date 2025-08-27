@@ -111,26 +111,6 @@
           {% endfor %}
         </div>
       </div>
-
-      <!-- Columna Cancelado -->
-      <div
-        id="cancelado-column"
-        class="kanban-column flex-shrink-0 w-64 bg-red-100 p-4 rounded-lg shadow-custom"
-        ondragover="allowDrop(event)"
-        ondrop="drop(event)"
-        ondragleave="dragLeave(event)"
-      >
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">
-          Cancelado
-        </h2>
-        <div id="cancelado-cards" class="space-y-4 min-h-[100px]">
-          {% for order in orders %} 
-            {% if order.status == 'cancelado' %}
-              {% include 'Orders/order_card_grouped.html' with order=order %}
-            {% endif %} 
-          {% endfor %}
-        </div>
-      </div>
     </div>
   </div>
 </div>

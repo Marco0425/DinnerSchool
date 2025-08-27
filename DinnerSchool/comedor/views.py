@@ -272,7 +272,6 @@ def order(request):
             1: "en preparacion",
             2: "finalizado",
             3: "entregado",
-            4: "cancelado",
         }
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
                 
@@ -625,7 +624,6 @@ def update_order_status(request):
                 "en preparacion": 1,
                 "finalizado": 2,
                 "entregado": 3,
-                "cancelado": 4,
             }
             if new_status not in status_map:
                 return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
