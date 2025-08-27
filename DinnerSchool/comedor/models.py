@@ -52,6 +52,7 @@ class Pedido(models.Model):
     status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado del Pedido')
     turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
     encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_pedidos')
+    cantidad = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
 
     def get_status_label(self):
         """Devuelve la etiqueta legible del estado del pedido."""
