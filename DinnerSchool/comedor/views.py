@@ -115,20 +115,28 @@ def createCredit(request):
         if "tutor_" in tutor_id and credito:
             try:
                 tutor = Tutor.objects.get(id=int(tutor_id.split('_')[1]))
-                nuevoCredito = Credito(tutorId=tutor, monto=credito)
-                nuevoCredito.save()
-                messages.success(request, "Crédito creado exitosamente.")
+                nuevoCredito, created = Credito.objects.get_or_create(tutorId=tutor, defaults={'monto': credito})
+                if created:
+                    messages.success(request, "Crédito creado exitosamente.")
+                else:
+                    # Si ya existía, sumar el nuevo monto al existente
+                    nuevoCredito.monto += Decimal(str(credito))
+                    nuevoCredito.save()
+                    messages.info(request, f"Crédito actualizado exitosamente. Nuevo saldo: ${nuevoCredito.monto}")
                 return redirect('comedor:credit')
             except Tutor.DoesNotExist:
                 messages.error(request, "Tutor no encontrado.")
         elif "profesor_" in tutor_id and credito:
             try:
                 profesor = Empleados.objects.get(id=int(tutor_id.split('_')[1]))
-                nuevoCredito, created = Credito.objects.update_or_create(profesorId=profesor, defaults={'monto': credito})
+                nuevoCredito, created = Credito.objects.get_or_create(profesorId=profesor, defaults={'monto': credito})
                 if created:
                     messages.success(request, "Crédito creado exitosamente.")
                 else:
-                    messages.info(request, "Crédito actualizado exitosamente.")
+                    # Si ya existía, sumar el nuevo monto al existente
+                    nuevoCredito.monto += Decimal(str(credito))
+                    nuevoCredito.save()
+                    messages.info(request, f"Crédito actualizado exitosamente. Nuevo saldo: ${nuevoCredito.monto}")
                 return redirect('comedor:credit')
             except Empleados.DoesNotExist:
                 messages.error(request, "Profesor no encontrado.")
