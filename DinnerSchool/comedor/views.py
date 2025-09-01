@@ -94,8 +94,20 @@ def credit(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
     """
     if request.user.is_authenticated:
+        userCreditos = []
         creditos = Credito.objects.all()
-        return render(request, 'Credit/credit_list_view.html', {'creditos': creditos})
+        for user in creditos:
+            userCreditos.append({
+                'id': user.id,
+                'nombre': user.tutorId.usuario.nombre if user.tutorId else user.profesorId.usuario.nombre,
+                'paterno': user.tutorId.usuario.paterno if user.tutorId else user.profesorId.usuario.paterno,
+                'materno': user.tutorId.usuario.materno if user.tutorId else user.profesorId.usuario.materno,
+                'monto': float(user.monto) if isinstance(user.monto, Decimal) else '0.00',
+                'tipo': 'Profesor' if user.profesorId else 'Tutor',
+                'alumnos': Alumnos.objects.filter(tutorId=user.tutorId).all() if user.tutorId else '',
+            })
+        print(userCreditos)
+        return render(request, 'Credit/credit_list_view.html', {'creditos': userCreditos})
     else:
         return redirect('core:signInUp')
     
@@ -426,7 +438,7 @@ def createOrder(request):
                 try:
                     platillo = Platillo.objects.get(id=item['platillo_id'])
                     subtotal = Decimal(str(item['subtotal']))
-                    total_calculado += subtotal;
+                    total_calculado += subtotal
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(

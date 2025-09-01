@@ -41,7 +41,7 @@ class Platillo(models.Model):
         return self.nombre
     
 class Pedido(models.Model):
-    platillo = models.ForeignKey(Platillo, on_delete=models.CASCADE, verbose_name='Platillo')
+    platillo = models.ForeignKey(Platillo, on_delete=models.PROTECT, verbose_name='Platillo')
     ingredientePlatillo = models.CharField(max_length=200, blank=True, null=True, verbose_name='Ingredientes del Platillo')
     nota = models.TextField(max_length=50, blank=True, null=True, verbose_name='Nota')
     alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno', null=True, blank=True)

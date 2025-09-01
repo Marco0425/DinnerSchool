@@ -436,11 +436,30 @@ def user_list_view(request):
     """
     if request.user.is_authenticated:
         users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Empleado"])
-        paginator = Paginator(users, 10) # Muestra 10 usuarios por página
+        
+        usersData = []
+        for user in users:
+            if user.groupId.name == 'Tutor':
+                grupo = user.groupId.name
+            elif user.groupId.name == 'Empleado':
+                empleado = Empleados.objects.get(usuario=user)
+                grupo = user.groupId.name if empleado.puesto == 'Cocinero' else empleado.puesto
+            usersData.append({
+                'id': user.id,
+                'nombre': user.nombre,
+                'paterno': user.paterno,
+                'materno': user.materno,
+                'email': user.email,
+                'tipo': grupo,
+                'alumnos': Alumnos.objects.filter(tutorId__usuario=user).all() if user.groupId.name == 'Tutor' else '',
+            })
+
+        paginator = Paginator(usersData, 10) # Muestra 10 usuarios por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+        
         context = {
-            'users': page_obj # Aquí es donde pasas el objeto paginado a la plantilla
+            'users': page_obj
         }
         return render(request, 'Users/users_list_view.html', context)
     else:
