@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar el select con búsqueda del tutor
     initializeTutorSearch();
+    
+    // Inicializar filtros de tabla
+    initializeTableFilters();
 });
 
 /**
@@ -321,6 +324,171 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
             }, 300);
         }
     }, 5000);
+}
+
+/**
+ * Función para inicializar los filtros de la tabla de créditos
+ */
+function initializeTableFilters() {
+    const searchName = document.getElementById('search-name');
+    const filterType = document.getElementById('filter-type');
+    const filterCredit = document.getElementById('filter-credit');
+    const clearFilters = document.getElementById('clear-filters');
+    const tableBody = document.getElementById('credit-table-body');
+    const noResults = document.getElementById('no-results');
+    const resultsCount = document.getElementById('results-count');
+    const totalCount = document.getElementById('total-count');
+    
+    // Verificar que los elementos existan
+    if (!searchName || !filterType || !filterCredit) {
+        return; // No estamos en la página de lista de créditos
+    }
+    
+    const allRows = document.querySelectorAll('.credit-row');
+    const sortHeaders = document.querySelectorAll('[data-sort]');
+    let currentSort = { column: null, direction: 'asc' };
+    
+    // Eventos para filtros
+    searchName.addEventListener('input', applyFilters);
+    filterType.addEventListener('change', applyFilters);
+    filterCredit.addEventListener('change', applyFilters);
+    clearFilters.addEventListener('click', clearAllFilters);
+    
+    // Eventos para ordenamiento
+    sortHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.dataset.sort;
+            sortTable(column);
+        });
+    });
+    
+    function applyFilters() {
+        const nameQuery = searchName.value.toLowerCase().trim();
+        const typeFilter = filterType.value;
+        const creditFilter = filterCredit.value;
+        
+        let visibleCount = 0;
+        
+        allRows.forEach(row => {
+            let shouldShow = true;
+            
+            // Filtro por nombre (busca en nombre, paterno y materno)
+            if (nameQuery) {
+                const nombre = row.dataset.nombre;
+                const paterno = row.dataset.paterno;
+                const materno = row.dataset.materno;
+                const fullName = `${nombre} ${paterno} ${materno}`;
+                
+                if (!fullName.includes(nameQuery)) {
+                    shouldShow = false;
+                }
+            }
+            
+            // Filtro por tipo
+            if (typeFilter && row.dataset.tipo !== typeFilter) {
+                shouldShow = false;
+            }
+            
+            // Filtro por crédito
+            if (creditFilter) {
+                const monto = parseFloat(row.dataset.monto);
+                switch (creditFilter) {
+                    case 'positive':
+                        if (monto <= 0) shouldShow = false;
+                        break;
+                    case 'negative':
+                        if (monto >= 0) shouldShow = false;
+                        break;
+                    case 'zero':
+                        if (monto !== 0) shouldShow = false;
+                        break;
+                }
+            }
+            
+            // Mostrar/ocultar fila
+            if (shouldShow) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Actualizar contador y mostrar/ocultar mensaje de "no resultados"
+        resultsCount.textContent = visibleCount;
+        
+        if (visibleCount === 0) {
+            tableBody.parentElement.style.display = 'none';
+            noResults.classList.remove('hidden');
+        } else {
+            tableBody.parentElement.style.display = '';
+            noResults.classList.add('hidden');
+        }
+    }
+    
+    function clearAllFilters() {
+        searchName.value = '';
+        filterType.value = '';
+        filterCredit.value = '';
+        applyFilters();
+    }
+    
+    function sortTable(column) {
+        // Determinar dirección del ordenamiento
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+        
+        // Obtener filas visibles
+        const visibleRows = Array.from(allRows).filter(row => row.style.display !== 'none');
+        
+        // Ordenar filas
+        visibleRows.sort((a, b) => {
+            let aValue, bValue;
+            
+            if (column === 'monto') {
+                aValue = parseFloat(a.dataset[column]);
+                bValue = parseFloat(b.dataset[column]);
+            } else {
+                aValue = a.dataset[column].toLowerCase();
+                bValue = b.dataset[column].toLowerCase();
+            }
+            
+            if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+        
+        // Reordenar en el DOM
+        visibleRows.forEach(row => {
+            tableBody.appendChild(row);
+        });
+        
+        // Actualizar indicadores de ordenamiento
+        updateSortIndicators(column);
+    }
+    
+    function updateSortIndicators(activeColumn) {
+        sortHeaders.forEach(header => {
+            const indicator = header.querySelector('.sort-indicator svg');
+            if (header.dataset.sort === activeColumn) {
+                // Cambiar el path del SVG para mostrar flecha arriba o abajo
+                if (currentSort.direction === 'asc') {
+                    indicator.innerHTML = '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18"/>';
+                } else {
+                    indicator.innerHTML = '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"/>';
+                }
+                indicator.style.color = '#dc2626'; // text-red-600
+            } else {
+                // Restaurar icono original de doble flecha
+                indicator.innerHTML = '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 20V7m0 13-4-4m4 4 4-4m4-12v13m0-13 4 4m-4-4-4 4"/>';
+                indicator.style.color = '';
+            }
+        });
+    }
 }
 
 /**
