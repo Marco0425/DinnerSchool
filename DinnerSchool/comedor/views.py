@@ -248,7 +248,7 @@ def cancelOrder(request, pedido_id):
             
             # Buscar el crédito correspondiente
             credito = None
-            if pedido.alumnoId.tutorId:
+            if pedido.alumnoId:
                 credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
             elif pedido.profesorId:
                 credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
