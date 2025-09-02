@@ -5,7 +5,161 @@ document.addEventListener('DOMContentLoaded', function() {
     if (reportButton) {
         reportButton.addEventListener('click', generarReporte);
     }
+    
+    // Inicializar el select con búsqueda del tutor
+    initializeTutorSearch();
 });
+
+/**
+ * Función para inicializar el select con búsqueda del tutor
+ */
+function initializeTutorSearch() {
+    const searchInput = document.getElementById('tutor-search');
+    const hiddenSelect = document.getElementById('tutor');
+    const dropdown = document.getElementById('tutor-dropdown');
+    const optionsContainer = document.getElementById('tutor-options');
+    const noResults = document.getElementById('no-results');
+    
+    // Verificar que los elementos existan antes de continuar
+    if (!searchInput || !hiddenSelect || !dropdown) {
+        return; // No hacer nada si no estamos en la página de créditos
+    }
+    
+    const allOptions = document.querySelectorAll('.tutor-option');
+
+    // Mostrar/ocultar dropdown
+    searchInput.addEventListener('focus', function() {
+        dropdown.classList.remove('hidden');
+        filterOptions('');
+    });
+
+    // Ocultar dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#tutor-search') && !e.target.closest('#tutor-dropdown')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Filtrar opciones mientras se escribe
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterOptions(searchTerm);
+        
+        // Limpiar selección si se modifica el texto
+        if (hiddenSelect.value && !this.value) {
+            hiddenSelect.value = '';
+        }
+    });
+
+    // Manejar selección de opción
+    allOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const value = this.dataset.value;
+            const text = this.querySelector('div').textContent;
+            
+            searchInput.value = text;
+            hiddenSelect.value = value;
+            dropdown.classList.add('hidden');
+            
+            // Remover highlight de todas las opciones
+            allOptions.forEach(opt => opt.classList.remove('bg-blue-100'));
+        });
+    });
+
+    // Función para filtrar opciones
+    function filterOptions(searchTerm) {
+        let hasVisibleOptions = false;
+        
+        allOptions.forEach(option => {
+            const searchText = option.dataset.search;
+            const isVisible = searchText.includes(searchTerm);
+            
+            option.style.display = isVisible ? 'block' : 'none';
+            if (isVisible) hasVisibleOptions = true;
+            
+            // Remover highlight al filtrar
+            option.classList.remove('bg-blue-100');
+        });
+        
+        // Mostrar/ocultar mensaje de "no resultados"
+        if (hasVisibleOptions) {
+            if (noResults) noResults.classList.add('hidden');
+            if (optionsContainer) optionsContainer.classList.remove('hidden');
+        } else {
+            if (noResults) noResults.classList.remove('hidden');
+            if (optionsContainer) optionsContainer.classList.add('hidden');
+        }
+    }
+
+    // Navegación con teclado
+    searchInput.addEventListener('keydown', function(e) {
+        const visibleOptions = Array.from(allOptions).filter(opt => opt.style.display !== 'none');
+        let currentIndex = visibleOptions.findIndex(opt => opt.classList.contains('bg-blue-100'));
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (visibleOptions.length === 0) return;
+                
+                // Remover highlight actual
+                if (currentIndex >= 0) {
+                    visibleOptions[currentIndex].classList.remove('bg-blue-100');
+                }
+                
+                // Mover al siguiente o al primero
+                const nextIndex = currentIndex < visibleOptions.length - 1 ? currentIndex + 1 : 0;
+                visibleOptions[nextIndex].classList.add('bg-blue-100');
+                
+                // Scroll para mantener visible
+                visibleOptions[nextIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                if (visibleOptions.length === 0) return;
+                
+                // Remover highlight actual
+                if (currentIndex >= 0) {
+                    visibleOptions[currentIndex].classList.remove('bg-blue-100');
+                }
+                
+                // Mover al anterior o al último
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : visibleOptions.length - 1;
+                visibleOptions[prevIndex].classList.add('bg-blue-100');
+                
+                // Scroll para mantener visible
+                visibleOptions[prevIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (currentIndex >= 0 && visibleOptions[currentIndex]) {
+                    visibleOptions[currentIndex].click();
+                }
+                break;
+                
+            case 'Escape':
+                dropdown.classList.add('hidden');
+                searchInput.blur();
+                // Limpiar highlights
+                allOptions.forEach(opt => opt.classList.remove('bg-blue-100'));
+                break;
+                
+            case 'Tab':
+                dropdown.classList.add('hidden');
+                // Limpiar highlights
+                allOptions.forEach(opt => opt.classList.remove('bg-blue-100'));
+                break;
+        }
+    });
+    
+    // Limpiar highlights cuando se pierde el foco
+    searchInput.addEventListener('blur', function() {
+        setTimeout(() => {
+            allOptions.forEach(opt => opt.classList.remove('bg-blue-100'));
+        }, 200); // Delay para permitir clicks en opciones
+    });
+}
 
 /**
  * Función para generar y descargar el reporte

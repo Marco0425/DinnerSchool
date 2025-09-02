@@ -189,9 +189,11 @@ def createCredit(request):
     all_users = []
     # Agregar tutores
     for tutor in tutors:
+        alumnos = Alumnos.objects.filter(tutorId=tutor.id).all()
+        strAlumnos = ", ".join([f"{alumno.nombre} {alumno.paterno} {alumno.materno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}" for alumno in alumnos])
         all_users.append({
             'id': f'tutor_{tutor.id}',
-            'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
+            'nombre': f"{strAlumnos}",
             'tipo': 'Tutor'
         })
     
@@ -199,10 +201,11 @@ def createCredit(request):
     for profesor in profesores:
         all_users.append({
             'id': f'profesor_{profesor.id}',
-            'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} - Profesor",
+            'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno}",
             'tipo': 'Profesor'
         })
     
+    print(all_users)
     return render(request, 'Credit/credit_form_view.html', {'users': all_users})
     
 def ads(request):

@@ -1,4 +1,5 @@
 {% extends "main.html" %} {% load static %} {% block content %}
+<script src="{% static 'js/credit.js' %}"></script>
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-t-8 border-primary-red"
 >
@@ -32,22 +33,50 @@
   {% csrf_token %}
     <!-- Tutor -->
     <div>
-      <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1"
-        >Tutor*</label
-      >
-      <select
-        id="tutor"
-        name="tutor"
-        required
-        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-      >
-        {% if users %}
+      <label for="tutor" class="block text-sm font-medium text-gray-700 mb-1">Tutor*</label>
+      <div class="relative">
+        <input
+          type="text"
+          id="tutor-search"
+          placeholder="Buscar tutor o profesor..."
+          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+          autocomplete="off"
+        />
+        <div class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        
+        <!-- Select oculto para enviar el valor -->
+        <select id="tutor" name="tutor" required class="hidden">
           <option value="">Selecciona el tutor</option>
-          {% for user in users %}
-            <option value="{{ user.id }}">{{ user.nombre }}</option>
-          {% endfor %}
-        {% endif %}
-      </select>
+          {% if users %}
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.nombre }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+        
+        <!-- Lista desplegable personalizada -->
+        <div id="tutor-dropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
+          <div id="tutor-options">
+            {% if users %}
+              {% for user in users %}
+                <div class="tutor-option px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
+                     data-value="{{ user.id }}" 
+                     data-search="{{ user.nombre|lower }}">
+                  <div class="font-medium text-sm">{{ user.nombre }}</div>
+                  <div class="text-xs text-gray-500">{{ user.tipo }}</div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          <div id="no-results" class="px-4 py-2 text-gray-500 text-sm hidden">
+            No se encontraron resultados
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Credito -->
