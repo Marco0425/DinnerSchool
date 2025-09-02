@@ -8,4 +8,275 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = "/core/logout/";
     });
   }
+  
+  // Ocultar botones según estado inicial
+  ocultarBotonesCancelarSegunEstado();
+});
+
+/**
+ * Función para cancelar un pedido
+ */
+function cancelarPedido(pedidoId, total) {
+    // Mostrar confirmación
+    if (!confirm(`¿Estás seguro de que deseas cancelar el pedido #${pedidoId}?\n\nSe reembolsará $${total} a tu cuenta.`)) {
+        return;
+    }
+    
+    // Deshabilitar el botón temporalmente
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Cancelando...
+    `;
+    
+    // Realizar petición AJAX
+    fetch(`/comedor/cancelOrder/${pedidoId}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            'pedido_id': pedidoId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            mostrarNotificacion(data.message, 'success');
+            
+            // Obtener la fila del pedido
+            const pedidoRow = button.closest('.flex.items-center.justify-between');
+            
+            // Actualizar el badge de estado a "Cancelado"
+            const statusBadge = pedidoRow.querySelector('.inline-flex.items-center');
+            if (statusBadge) {
+                statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                statusBadge.textContent = 'Cancelado';
+            }
+            
+            // Ocultar el botón de cancelar con animación
+            button.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            button.style.opacity = '0';
+            button.style.transform = 'scale(0.8)';
+            
+            setTimeout(() => {
+                button.style.display = 'none';
+            }, 300);
+            
+            // Actualizar el crédito en la pantalla si existe
+            const creditAmount = document.getElementById('creditAmount');
+            if (creditAmount && data.nuevo_credito) {
+                creditAmount.textContent = `$${data.nuevo_credito}`;
+                
+                // Efecto visual en el crédito
+                creditAmount.parentElement.style.transform = 'scale(1.05)';
+                creditAmount.parentElement.style.transition = 'transform 0.2s ease';
+                setTimeout(() => {
+                    creditAmount.parentElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+            
+        } else {
+            // Mostrar mensaje de error
+            mostrarNotificacion(data.message || 'Error al cancelar el pedido', 'error');
+            
+            // Restaurar el botón
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al cancelar el pedido', 'error');
+        
+        // Restaurar el botón
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+/**
+ * Función para ocultar botones de cancelar según el estado del pedido
+ */
+function ocultarBotonesCancelarSegunEstado() {
+    // Buscar todos los pedidos en la página
+    const pedidoRows = document.querySelectorAll('.flex.items-center.justify-between');
+    
+    pedidoRows.forEach(row => {
+        const statusBadge = row.querySelector('.inline-flex.items-center');
+        const cancelButton = row.querySelector('button[onclick*="cancelarPedido"]');
+        
+        if (statusBadge && cancelButton) {
+            const statusText = statusBadge.textContent.trim().toLowerCase();
+            
+            // Ocultar botón si el estado no es "pendiente" o "en preparación"
+            if (!['pendiente', 'en preparación'].includes(statusText)) {
+                cancelButton.style.display = 'none';
+            }
+        }
+    });
+}
+
+/**
+ * Función para obtener el token CSRF
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/**
+ * Función para mostrar notificaciones
+ */
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Remover notificaciones existentes
+    const existingNotifications = document.querySelectorAll('.notification-toast');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `notification-toast fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    // Estilos según el tipo
+    const estilos = {
+        success: 'bg-green-100 border border-green-200 text-green-800',
+        error: 'bg-red-100 border border-red-200 text-red-800',
+        info: 'bg-blue-100 border border-blue-200 text-blue-800',
+        warning: 'bg-yellow-100 border border-yellow-200 text-yellow-800'
+    };
+    
+    notification.className += ` ${estilos[tipo] || estilos.info}`;
+    
+    // Icono según el tipo
+    const iconos = {
+        success: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>`,
+        error: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>`,
+        info: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+               </svg>`,
+        warning: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>`
+    };
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <div class="flex-shrink-0 mr-3">
+                ${iconos[tipo] || iconos.info}
+            </div>
+            <div class="flex-1">
+                <span class="font-medium text-sm">${mensaje}</span>
+            </div>
+            <button class="ml-4 text-xl leading-none cursor-pointer hover:opacity-75" onclick="this.parentElement.parentElement.remove()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto-eliminar después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, 5000);
+}
+
+/**
+ * Función auxiliar para formatear moneda
+ */
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+
+/**
+ * Función para actualizar el estado visual de un pedido
+ */
+function updateOrderStatus(orderId, newStatus) {
+    const orderElement = document.querySelector(`[data-order-id="${orderId}"]`);
+    if (orderElement) {
+        const statusBadge = orderElement.querySelector('.inline-flex.items-center');
+        if (statusBadge) {
+            // Actualizar clases según el nuevo estado
+            statusBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClasses(newStatus)}`;
+            statusBadge.textContent = getStatusLabel(newStatus);
+        }
+    }
+}
+
+/**
+ * Función para obtener las clases CSS según el estado
+ */
+function getStatusClasses(status) {
+    const statusClasses = {
+        0: 'bg-gray-100 text-gray-800',
+        1: 'bg-yellow-100 text-yellow-800',
+        2: 'bg-blue-100 text-blue-800',
+        3: 'bg-green-100 text-green-800',
+        4: 'bg-red-100 text-red-800'
+    };
+    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+}
+
+/**
+ * Función para obtener la etiqueta del estado
+ */
+function getStatusLabel(status) {
+    const statusLabels = {
+        0: 'Pendiente',
+        1: 'En preparación',
+        2: 'Finalizado',
+        3: 'Entregado',
+        4: 'Cancelado'
+    };
+    return statusLabels[status] || 'Desconocido';
+}
+
+// Inicializar funciones cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Ocultar botones según estado inicial
+    ocultarBotonesCancelarSegunEstado();
+    
+    // Verificar estados cada 30 segundos (opcional)
+    // setInterval(verificarEstadosPedidos, 30000);
 });

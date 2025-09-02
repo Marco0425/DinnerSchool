@@ -18,4 +18,5 @@ urlpatterns = [
     path("ads/create/", views.createAds, name="createAds"),
     path("order/update-status/", views.update_order_status, name="updateOrderStatus"),
     path("credit/report/generate/", views.generarReporte, name="generarReporte"),
+    path("cancelOrder/<int:pedido_id>/", views.cancelOrder, name="cancelOrder"),
 ]

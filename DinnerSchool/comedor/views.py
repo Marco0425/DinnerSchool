@@ -1,5 +1,5 @@
 from django.http import HttpResponse, FileResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
@@ -7,11 +7,13 @@ from django.urls import reverse
 from django.contrib.auth import logout as django_logout
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from django.apps import apps
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from decimal import Decimal
+from django.db import transaction
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
 from core.models import Alumnos, Usuarios, Tutor, Empleados
@@ -207,7 +209,79 @@ def createCredit(request):
     
     print(all_users)
     return render(request, 'Credit/credit_form_view.html', {'users': all_users})
-    
+
+@login_required
+@require_POST
+def cancelOrder(request, pedido_id):
+    """
+    Vista para cancelar un pedido y reembolsar el crédito
+    """
+    try:
+        with transaction.atomic():
+            # Obtener el pedido
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+            
+            # Verificar que el pedido pertenezca al usuario actual
+            user_email = request.user.username
+            pedido_user_email = None
+            
+            print(pedido)
+            
+            if pedido.alumnoId:
+                pedido_user_email = pedido.alumnoId.tutorId.usuario.email
+            elif pedido.profesorId:
+                pedido_user_email = pedido.profesorId.usuario.email
+            
+            if pedido_user_email != user_email:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No tienes permisos para cancelar este pedido'
+                }, status=403)
+            
+            # Verificar que el pedido se pueda cancelar (solo pendiente o en preparación)
+            if pedido.status not in [0, 1]:  # 0=Pendiente, 1=En preparación
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se puede cancelar un pedido que ya está completado o entregado'
+                }, status=400)
+            
+            # Calcular el total a reembolsar
+            total_reembolso = pedido.total
+            
+            # Buscar el crédito correspondiente
+            credito = None
+            if pedido.alumnoId.tutorId:
+                credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+            elif pedido.profesorId:
+                credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+            
+            if not credito:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se encontró el crédito asociado al usuario'
+                }, status=404)
+            
+            # Reembolsar el crédito
+            credito.monto += Decimal(str(total_reembolso))
+            credito.save()
+            
+            # Marcar el pedido como cancelado
+            pedido.status = 4  # Asumiendo que 4 = Cancelado
+            pedido.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Pedido #{pedido_id} cancelado exitosamente. Se reembolsaron ${total_reembolso} a tu cuenta.',
+                'nuevo_credito': float(credito.monto),
+                'total_reembolsado': float(total_reembolso)
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error interno del servidor: {str(e)}'
+        }, status=500)
+        
 def ads(request):
     """
     Vista para manejar los anuncios.
