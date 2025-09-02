@@ -108,7 +108,7 @@ def credit(request):
                 'tipo': 'Profesor' if user.profesorId else 'Tutor',
                 'alumnos': Alumnos.objects.filter(tutorId=user.tutorId).all() if user.tutorId else '',
             })
-        print(userCreditos)
+        
         return render(request, 'Credit/credit_list_view.html', {'creditos': userCreditos})
     else:
         return redirect('core:signInUp')
@@ -207,7 +207,7 @@ def createCredit(request):
             'tipo': 'Profesor'
         })
     
-    print(all_users)
+    
     return render(request, 'Credit/credit_form_view.html', {'users': all_users})
 
 @login_required
@@ -224,8 +224,6 @@ def cancelOrder(request, pedido_id):
             # Verificar que el pedido pertenezca al usuario actual
             user_email = request.user.username
             pedido_user_email = None
-            
-            print(pedido)
             
             if pedido.alumnoId:
                 pedido_user_email = pedido.alumnoId.tutorId.usuario.email

@@ -266,7 +266,7 @@ def dashboard(request):
             'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
             'credito'   : credito,
         }
-        print(context)
+        
         return render(request, 'Home/home_dashboard_view.html', context)
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
@@ -352,7 +352,6 @@ def createStudents(request):
         grado = request.POST.get("grado")
         grupo = request.POST.get("grupo")
         nivelEducativo = request.POST.get("nivelEducativo")
-        print(f"[createStudents] Datos recibidos: nombre={nombre}, paterno={paterno}, materno={materno}, grado={grado}, grupo={grupo}, nivelEducativo={nivelEducativo}")
         tutor_id = request.POST.get("tutor") if request.user.is_staff else None
 
         try:
