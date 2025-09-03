@@ -81,7 +81,6 @@ function showCancelModal(pedidoId, total) {
     document.getElementById('confirmCancelBtn').addEventListener('click', () => {
         const pId = modal.dataset.pedidoId;
         const pTotal = modal.dataset.total;
-        console.log("Cancelando pedido desde modal:", pId, pTotal);
         cancelarPedido(pId, pTotal);
         closeModal();
     });
@@ -116,6 +115,11 @@ function closeModal() {
  * @param {number} total - El total del pedido a reembolsar.
  */
 function cancelarPedido(pedidoId, total) {
+    button = document.getElementById('cancelOrderButton');
+    if (!button) {
+        console.error('Botón de cancelar no encontrado');
+        return;
+    }
     // Realizar petición AJAX
     fetch(`/comedor/cancelOrder/${pedidoId}/`, {
         method: 'POST',
