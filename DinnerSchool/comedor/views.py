@@ -598,7 +598,7 @@ def createOrder(request):
         return redirect('core:dashboard')
 
     creditoProfesor = Credito.objects.filter(profesorId__usuario__email=request.user.username).first()
-    if creditoProfesor and creditoProfesor.monto < -200:
+    if creditoProfesor and creditoProfesor.monto < -1500:
         messages.error(request, "No tienes crédito suficiente para realizar un pedido.")
         return redirect('core:dashboard')
     
