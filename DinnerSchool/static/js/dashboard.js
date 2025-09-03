@@ -14,11 +14,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 /**
- * Almacena el botón que disparó el modal para poder manipularlo más tarde.
- */
-let originalButton = null;
-
-/**
  * Función para mostrar el modal de confirmación.
  * @param {string} pedidoId - El ID del pedido a cancelar.
  * @param {number} total - El total del pedido a reembolsar.
@@ -115,7 +110,7 @@ function closeModal() {
  * @param {number} total - El total del pedido a reembolsar.
  */
 function cancelarPedido(pedidoId, total) {
-    button = document.getElementById('cancelOrderButton');
+    button = document.getElementById('btnCancelOrder' + pedidoId);
     if (!button) {
         console.error('Botón de cancelar no encontrado');
         return;
