@@ -43,7 +43,7 @@ class Platillo(models.Model):
 class Pedido(models.Model):
     platillo = models.ForeignKey(Platillo, on_delete=models.PROTECT, verbose_name='Platillo')
     ingredientePlatillo = models.CharField(max_length=200, blank=True, null=True, verbose_name='Ingredientes del Platillo')
-    nota = models.TextField(max_length=50, blank=True, null=True, verbose_name='Nota')
+    nota = models.TextField(max_length=300, blank=True, null=True, verbose_name='Nota')
     alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno', null=True, blank=True)
     profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True, related_name='profesor_pedidos')
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
