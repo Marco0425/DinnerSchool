@@ -513,7 +513,7 @@ def createOrder(request):
                 try:
                     platillo = Platillo.objects.get(id=item['platillo_id'])
                     subtotal = Decimal(str(item['subtotal']))
-                    total_calculado += subtotal
+                    total_calculado += subtotal;
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(
@@ -745,6 +745,8 @@ def update_order_status(request):
     
     return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
+
+
 def saucers(request):
     """
     Vista para manejar los platillos (sauces).
@@ -871,3 +873,223 @@ def generarReporte(request):
     except Exception as e:
         messages.error(request, f"Error: {str(e)}")
         return redirect('comedor:credit')
+
+@login_required
+def order_details_api(request, order_id):
+    """
+    Vista para obtener los detalles de un pedido específico vía API.
+    Esta vista se encarga de devolver la información completa de un pedido
+    incluyendo sus items y totales.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+        order_id: ID del pedido a consultar.
+    Returns:
+        JsonResponse: Respuesta JSON con los detalles del pedido.
+    """
+    try:
+        # Obtener el pedido
+        pedido = get_object_or_404(Pedido, id=order_id)
+        
+        # Verificar que el pedido pertenezca al usuario actual
+        user_email = request.user.username
+        pedido_user_email = None
+        
+        if pedido.alumnoId:
+            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
+        elif pedido.profesorId:
+            pedido_user_email = pedido.profesorId.usuario.email
+        
+        # Verificar permisos: el pedido debe pertenecer al usuario o ser admin/empleado
+        is_admin = request.user.is_staff
+        is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
+        
+        if not is_admin and not is_employee and pedido_user_email != user_email:
+            return JsonResponse({
+                'error': 'No tienes permisos para ver este pedido'
+            }, status=403)
+        
+        # Procesar ingredientes del platillo
+        try:
+            ingredientes_platillo = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+        except (ValueError, SyntaxError):
+            ingredientes_platillo = []
+        
+        # Preparar datos del pedido
+        order_data = {
+            'id': pedido.id,
+            'fecha': pedido.fecha.strftime('%d/%m/%Y'),
+            'turno_label': pedido.get_turno_label(),
+            'status_label': pedido.get_status_label(),
+            'total': str(pedido.total),
+            'items': [
+                {
+                    'platillo_nombre': pedido.platillo.nombre,
+                    'cantidad': getattr(pedido, 'cantidad', 1),  # Cantidad por defecto 1 si no existe el campo
+                    'subtotal': str(pedido.total),
+                    'ingredientes': ingredientes_platillo,
+                    'nota': pedido.nota or ''
+                }
+            ]
+        }
+        
+        return JsonResponse(order_data)
+        
+    except Pedido.DoesNotExist:
+        return JsonResponse({'error': 'Pedido no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno del servidor: {str(e)}'}, status=500)
+
+@login_required
+def modify_order_view(request, order_id):
+    """
+    Vista para mostrar la página de modificación de un pedido.
+    Esta vista se encarga de renderizar el formulario para modificar un pedido existente.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+        order_id: ID del pedido a modificar.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza el formulario de modificación.
+    """
+    try:
+        # Obtener el pedido
+        pedido = get_object_or_404(Pedido, id=order_id)
+        
+        # Verificar que el pedido pertenezca al usuario actual
+        user_email = request.user.username
+        pedido_user_email = None
+        
+        if pedido.alumnoId:
+            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
+        elif pedido.profesorId:
+            pedido_user_email = pedido.profesorId.usuario.email
+        
+        # Verificar permisos
+        is_admin = request.user.is_staff
+        is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
+        
+        if not is_admin and not is_employee and pedido_user_email != user_email:
+            messages.error(request, 'No tienes permisos para modificar este pedido.')
+            return redirect('core:dashboard')
+        
+        # Verificar que el pedido se pueda modificar (solo pendiente)
+        if pedido.status != 0:  # 0 = Pendiente
+            messages.error(request, 'Solo se pueden modificar pedidos en estado pendiente.')
+            return redirect('core:dashboard')
+        
+        # Obtener todos los platillos disponibles
+        platillos = Platillo.objects.all()
+        
+        # Procesar ingredientes del pedido actual
+        try:
+            ingredientes_actuales = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+        except (ValueError, SyntaxError):
+            ingredientes_actuales = []
+        
+        # Preparar contexto para el template
+        context = {
+            'pedido': pedido,
+            'platillos': [
+                {
+                    "id": platillo.id,
+                    "nombre": platillo.nombre,
+                    "ingredientes": json.dumps([
+                        Ingredientes.objects.get(id=int(ing)).nombre 
+                        for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') 
+                        if ing
+                    ]),
+                    "precio": float(platillo.precio)
+                } for platillo in platillos
+            ],
+            'pedido_data': {
+                'id': pedido.id,
+                'platillo_id': pedido.platillo.id,
+                'platillo_nombre': pedido.platillo.nombre,
+                'ingredientes_seleccionados': ingredientes_actuales,
+                'nota': pedido.nota or '',
+                'cantidad': getattr(pedido, 'cantidad', 1),
+                'turno': pedido.turno,
+                'total_actual': float(pedido.total)
+            },
+            'is_modification': True,
+            'user_type': 'tutor' if pedido.alumnoId else 'profesor'
+        }
+        
+        # Procesar el POST para actualizar el pedido
+        if request.method == "POST":
+            try:
+                with transaction.atomic():
+                    # Obtener datos del formulario
+                    nuevo_platillo_id = request.POST.get("platillo_id")
+                    nuevos_ingredientes = request.POST.get("ingredientes", "[]")
+                    nueva_nota = request.POST.get("nota", "")
+                    nueva_cantidad = int(request.POST.get("cantidad", 1))
+                    nuevo_turno = int(request.POST.get("turno"))
+                    
+                    # Obtener el nuevo platillo
+                    nuevo_platillo = get_object_or_404(Platillo, id=nuevo_platillo_id)
+                    
+                    # Calcular el nuevo total
+                    nuevo_total = nuevo_platillo.precio * nueva_cantidad
+                    diferencia_precio = nuevo_total - pedido.total
+                    
+                    # Verificar crédito si el precio aumenta
+                    if diferencia_precio > 0:
+                        credito = None
+                        if pedido.alumnoId:
+                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+                        elif pedido.profesorId:
+                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+                        
+                        if not credito or credito.monto < diferencia_precio:
+                            messages.error(request, 'No hay crédito suficiente para esta modificación.')
+                            return render(request, 'Orders/modify_order_view.html', context)
+                        
+                        # Descontar la diferencia del crédito
+                        credito.monto -= diferencia_precio
+                        credito.save()
+                    
+                    elif diferencia_precio < 0:
+                        # Si el precio disminuye, devolver la diferencia al crédito
+                        credito = None
+                        if pedido.alumnoId:
+                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+                        elif pedido.profesorId:
+                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+                        
+                        if credito:
+                            credito.monto += abs(diferencia_precio)
+                            credito.save()
+                    
+                    # Actualizar el pedido
+                    pedido.platillo = nuevo_platillo
+                    pedido.ingredientePlatillo = nuevos_ingredientes
+                    pedido.nota = nueva_nota
+                    if hasattr(pedido, 'cantidad'):
+                        pedido.cantidad = nueva_cantidad
+                    pedido.turno = nuevo_turno
+                    pedido.total = nuevo_total
+                    pedido.save()
+                    
+                    # Actualizar el crédito diario si existe
+                    try:
+                        credito_diario = CreditoDiario.objects.get(pedido=pedido)
+                        credito_diario.monto = nuevo_total
+                        credito_diario.save()
+                    except CreditoDiario.DoesNotExist:
+                        pass
+                    
+                    messages.success(request, f'Pedido #{pedido.id} modificado exitosamente.')
+                    return redirect('core:dashboard')
+                    
+            except Exception as e:
+                messages.error(request, f'Error al modificar el pedido: {str(e)}')
+                return render(request, 'Orders/modify_order_view.html', context)
+        
+        return render(request, 'Orders/modify_order_view.html', context)
+        
+    except Pedido.DoesNotExist:
+        messages.error(request, 'Pedido no encontrado.')
+        return redirect('core:dashboard')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('core:dashboard')

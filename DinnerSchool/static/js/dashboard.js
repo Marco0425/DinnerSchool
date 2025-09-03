@@ -13,6 +13,183 @@ document.addEventListener("DOMContentLoaded", function () {
   ocultarBotonesCancelarSegunEstado();
 });
 
+// Variables globales para el modal de modificar
+let currentOrderId = null;
+
+/**
+ * Función para mostrar el modal de modificación de pedido
+ * @param {string} orderId - El ID del pedido a modificar
+ */
+function showModifyModal(orderId) {
+    currentOrderId = orderId;
+    fetchOrderDetails(orderId);
+    
+    // Verificar si el modal ya existe
+    let modal = document.getElementById('modifyOrderModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        return;
+    }
+    
+    // Si no existe, crearlo
+    createModifyModal();
+    modal = document.getElementById('modifyOrderModal');
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Función para crear el modal de modificación
+ */
+function createModifyModal() {
+    const modal = document.createElement('div');
+    modal.id = 'modifyOrderModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+    
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Modificar Pedido</h3>
+                <button onclick="closeModifyModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="orderDetails" class="mb-6">
+                <div class="flex items-center justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                    <span class="ml-2 text-gray-600">Cargando...</span>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModifyModal()" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Cancelar
+                </button>
+                <button onclick="proceedToModify()" 
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Ir a modificar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+/**
+ * Función para cerrar el modal de modificación
+ */
+function closeModifyModal() {
+    const modal = document.getElementById('modifyOrderModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        currentOrderId = null;
+    }
+}
+
+/**
+ * Función para obtener los detalles del pedido
+ * @param {string} orderId - El ID del pedido
+ */
+async function fetchOrderDetails(orderId) {
+    try {
+        const response = await fetch(`/comedor/order/${orderId}/details/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayOrderDetails(data);
+        } else {
+            throw new Error('Error al obtener los detalles del pedido');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        displayOrderError('Error al cargar los detalles del pedido');
+    }
+}
+
+/**
+ * Función para mostrar los detalles del pedido en el modal
+ * @param {Object} orderData - Los datos del pedido
+ */
+function displayOrderDetails(orderData) {
+    const orderDetailsDiv = document.getElementById('orderDetails');
+    
+    let itemsHtml = '';
+    if (orderData.items && orderData.items.length > 0) {
+        orderData.items.forEach(item => {
+            itemsHtml += `
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <div>
+                        <p class="font-medium text-gray-900">${item.platillo_nombre}</p>
+                        <p class="text-sm text-gray-600">Cantidad: ${item.cantidad}</p>
+                    </div>
+                    <p class="font-medium text-gray-900">$${item.subtotal}</p>
+                </div>
+            `;
+        });
+    } else {
+        itemsHtml = '<p class="text-gray-500 text-center py-4">No hay platillos en este pedido</p>';
+    }
+    
+    orderDetailsDiv.innerHTML = `
+        <div class="bg-gray-50 p-4 rounded-lg">
+            <h4 class="font-semibold text-gray-900 mb-2">Pedido #${orderData.id}</h4>
+            <div class="space-y-1 text-sm text-gray-600 mb-4">
+                <p><span class="font-medium">Fecha:</span> ${orderData.fecha}</p>
+                <p><span class="font-medium">Turno:</span> ${orderData.turno_label}</p>
+                <p><span class="font-medium">Estado:</span> ${orderData.status_label}</p>
+            </div>
+            
+            <h5 class="font-medium text-gray-900 mb-2">Platillos:</h5>
+            <div class="space-y-1">
+                ${itemsHtml}
+            </div>
+            
+            <div class="flex justify-between items-center pt-3 border-t border-gray-300 mt-3">
+                <span class="font-semibold text-gray-900">Total:</span>
+                <span class="font-bold text-lg text-gray-900">$${orderData.total}</span>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Función para mostrar error al cargar detalles del pedido
+ * @param {string} message - Mensaje de error
+ */
+function displayOrderError(message) {
+    const orderDetailsDiv = document.getElementById('orderDetails');
+    orderDetailsDiv.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <svg class="w-8 h-8 text-red-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-red-800 font-medium">${message}</p>
+        </div>
+    `;
+}
+
+/**
+ * Función para proceder a modificar el pedido
+ */
+function proceedToModify() {
+    if (currentOrderId) {
+        // Redirigir a la página de modificación del pedido
+        window.location.href = `/comedor/order/${currentOrderId}/modify/`;
+    } else {
+        mostrarNotificacion('Error: No se ha seleccionado un pedido para modificar', 'error');
+    }
+}
+
 /**
  * Función para mostrar el modal de confirmación.
  * @param {string} pedidoId - El ID del pedido a cancelar.
@@ -147,6 +324,17 @@ function cancelarPedido(pedidoId, total) {
             button.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             button.style.opacity = '0';
             button.style.transform = 'scale(0.8)';
+            
+            // También ocultar el botón de modificar si existe
+            const modifyButton = document.getElementById('btnModifyOrder' + pedidoId);
+            if (modifyButton) {
+                modifyButton.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                modifyButton.style.opacity = '0';
+                modifyButton.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    modifyButton.style.display = 'none';
+                }, 300);
+            }
             
             setTimeout(() => {
                 button.style.display = 'none';

@@ -1,0 +1,168 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block content %}
+<script src="{% static 'js/modifiedOrder.js' %}"></script>
+
+<!-- Script con datos del pedido actual -->
+{{ pedido_data|json_script:"current-order-data" }}
+
+<div class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red">
+    <div class="flex flex-col items-center mb-6">
+        <!-- Logo -->
+        <img src="{% static 'img/logos/logo.png' %}" alt="Logo de la Cafetería Certo"
+             class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover" />
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Modificar Pedido #{{ pedido.id }}</h1>
+        <p class="text-gray-600 text-center">
+            Fecha: {{ pedido.fecha|date:"d/m/Y" }} | 
+            Estado: {{ pedido.get_status_label }} |
+            Total actual: ${{ pedido.total }}
+        </p>
+    </div>
+
+    <!-- Bloque para mensajes -->
+    {% if messages %}
+    <div class="mb-4" style="margin-top: 1.5rem">
+        {% for message in messages %}
+        <div class="p-3 rounded-md text-center text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200{% elif message.tags == 'info' %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Información actual del pedido -->
+    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>Pedido actual:</strong> {{ pedido.platillo.nombre }} | 
+                    <strong>Cantidad:</strong> {{ pedido_data.cantidad }} | 
+                    <strong>Turno:</strong> {{ pedido.get_turno_label }}
+                    {% if pedido.nota %}
+                    <br><strong>Nota:</strong> {{ pedido.nota }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de modificación -->
+    <form method="POST" id="modifyOrderForm">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Formulario para modificar platillo -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Modificar Platillo</h2>
+                
+                <!-- Selección de platillo -->
+                <div>
+                    <label for="platillo_select" class="block text-sm font-medium text-gray-700 mb-1">
+                        Platillo*
+                    </label>
+                    <select id="platillo_select" name="platillo_id" 
+                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                        <option value="">Selecciona un platillo...</option>
+                        {% for platillo in platillos %}
+                        <option value="{{ platillo.id }}" 
+                                data-ingredientes="{{ platillo.ingredientes }}" 
+                                data-precio="{{ platillo.precio }}"
+                                data-nombre="{{ platillo.nombre }}"
+                                {% if platillo.id == pedido_data.platillo_id %}selected{% endif %}>
+                            {{ platillo.nombre }} - ${{ platillo.precio }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Ingredientes (solo lectura) -->
+                <div>
+                    <label for="ingredientes-display" class="block text-sm font-medium text-gray-700 mb-1">
+                        Ingredientes
+                    </label>
+                    <textarea
+                        id="ingredientes-display"
+                        rows="3"
+                        readonly
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm"
+                        placeholder="Los ingredientes aparecerán aquí..."
+                    ></textarea>
+                </div>
+
+                <!-- Notas -->
+                <div>
+                    <label for="nota" class="block text-sm font-medium text-gray-700 mb-1">
+                        Notas especiales
+                    </label>
+                    <input type="text" id="nota" name="nota" 
+                           value="{{ pedido_data.nota }}"
+                           placeholder="Ejemplo: Sin cebolla"
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                </div>
+
+                <!-- Cantidad -->
+                <div>
+                    <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-1">
+                        Cantidad*
+                    </label>
+                    <input type="number" id="cantidad" name="cantidad" min="1" max="10" 
+                           value="{{ pedido_data.cantidad }}"
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                </div>
+
+                <!-- Turno -->
+                <div>
+                    <label for="turno" class="block text-sm font-medium text-gray-700 mb-1">
+                        Turno*
+                    </label>
+                    <select id="turno" name="turno" 
+                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                        <option value="0" {% if pedido_data.turno == 0 %}selected{% endif %}>Receso 1</option>
+                        <option value="1" {% if pedido_data.turno == 1 %}selected{% endif %}>Receso 2</option>
+                        <option value="2" {% if pedido_data.turno == 2 %}selected{% endif %}>Comida</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Resumen del pedido -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Resumen de Modificación</h2>
+                
+                <div id="order_summary" class="space-y-2" style="display: none;">
+                    <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <div id="summary_content">
+                            <!-- El resumen se llenará dinámicamente -->
+                        </div>
+                        <div class="border-t pt-3 mt-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-lg font-semibold">Total:</span>
+                                <span class="text-xl font-bold text-primary-red" id="total_price">$0.00</span>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <span id="price_difference"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campo oculto para ingredientes -->
+        <input type="hidden" id="ingredientes" name="ingredientes" value="">
+
+        <!-- Botones finales -->
+        <div class="flex justify-end space-x-4 pt-6 mt-6 border-t">
+            <a href="{% url 'core:dashboard' %}" 
+               class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Descartar
+            </a>
+            <button type="submit" id="submit_btn" 
+                    class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
