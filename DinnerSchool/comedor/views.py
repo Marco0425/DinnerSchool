@@ -525,7 +525,8 @@ def createOrder(request):
                         nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
                         profesorId=profesor_actual if profesor_actual else None,
                         turno=item['turno'],
-                        total=subtotal
+                        total=subtotal,
+                        fecha=date.today() if datetime.now().hour < 18 else date.today() + timedelta(days=1),
                     )
                     nuevo_pedido.save()
                     pedidos_creados.append(nuevo_pedido)

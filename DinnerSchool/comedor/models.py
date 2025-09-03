@@ -48,7 +48,7 @@ class Pedido(models.Model):
     profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True, related_name='profesor_pedidos')
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Total')
-    fecha = models.DateField(auto_now=True)
+    fecha = models.DateField(verbose_name='Fecha')  # Removido auto_now=True
     status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado del Pedido')
     turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
     encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_pedidos')
