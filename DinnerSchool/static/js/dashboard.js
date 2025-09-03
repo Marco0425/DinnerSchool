@@ -155,7 +155,7 @@ function cancelarPedido(pedidoId, total) {
             // Actualizar el crédito en la pantalla si existe
             const creditAmount = document.getElementById('creditAmount');
             if (creditAmount && data.nuevo_credito) {
-                creditAmount.textContent = `$${data.nuevo_credito}`;
+                creditAmount.textContent = `${data.nuevo_credito}`;
                 
                 // Efecto visual en el crédito
                 creditAmount.parentElement.style.transform = 'scale(1.05)';
