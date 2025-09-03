@@ -27,7 +27,7 @@ function showCancelModal(pedidoId, total) {
     // Si el modal ya existe, solo lo mostramos
     let modal = document.getElementById('cancelModal');
     if (modal) {
-        document.getElementById('modal-text').innerHTML = `¿Estás seguro de que deseas cancelar el pedido **#${pedidoId}**? <br><br>Se reembolsará **$${total}** a tu cuenta.`;
+        document.getElementById('modal-text').innerHTML = `¿Estás seguro de que deseas cancelar el pedido #${pedidoId}? <br><br>Se reembolsará $${total} a tu cuenta.`;
         // Almacenamos los datos en el modal para la confirmación
         modal.dataset.pedidoId = pedidoId;
         modal.dataset.total = total;
@@ -81,6 +81,7 @@ function showCancelModal(pedidoId, total) {
     document.getElementById('confirmCancelBtn').addEventListener('click', () => {
         const pId = modal.dataset.pedidoId;
         const pTotal = modal.dataset.total;
+        console.log("Cancelando pedido desde modal:", pId, pTotal);
         cancelarPedido(pId, pTotal);
         closeModal();
     });
@@ -90,7 +91,7 @@ function showCancelModal(pedidoId, total) {
     });
 
     // Actualizamos el texto y mostramos el modal
-    document.getElementById('modal-text').innerHTML = `¿Estás seguro de que deseas cancelar el pedido **#${pedidoId}**? <br><br>Se reembolsará **$${total}** a tu cuenta.`;
+    document.getElementById('modal-text').innerHTML = `¿Estás seguro de que deseas cancelar el pedido #${pedidoId}? <br><br>Se reembolsará $${total} a tu cuenta.`;
     modal.dataset.pedidoId = pedidoId;
     modal.dataset.total = total;
     modal.classList.remove('hidden');
@@ -115,23 +116,6 @@ function closeModal() {
  * @param {number} total - El total del pedido a reembolsar.
  */
 function cancelarPedido(pedidoId, total) {
-    if (!originalButton) {
-        console.error("No se pudo encontrar el botón de cancelar original.");
-        return;
-    }
-    
-    // Deshabilitar el botón temporalmente
-    const button = originalButton;
-    const originalContent = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = `
-        <svg class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Cancelando...
-    `;
-    
     // Realizar petición AJAX
     fetch(`/comedor/cancelOrder/${pedidoId}/`, {
         method: 'POST',
