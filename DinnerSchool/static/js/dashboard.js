@@ -19,15 +19,11 @@ document.addEventListener("DOMContentLoaded", function () {
 let originalButton = null;
 
 /**
- * Crea y muestra el modal de confirmación de cancelación dinámicamente.
+ * Función para mostrar el modal de confirmación.
  * @param {string} pedidoId - El ID del pedido a cancelar.
  * @param {number} total - El total del pedido a reembolsar.
- * @param {object} event - El objeto de evento del clic.
  */
-function showCancelModal(pedidoId, total, event) {
-    // Almacena el botón original para usarlo en la función cancelarPedido.
-    originalButton = event.target.closest('button');
-
+function showCancelModal(pedidoId, total) {
     // Si el modal ya existe, solo lo mostramos
     let modal = document.getElementById('cancelModal');
     if (modal) {
@@ -43,7 +39,7 @@ function showCancelModal(pedidoId, total, event) {
     // Si el modal no existe, lo creamos
     modal = document.createElement('div');
     modal.id = 'cancelModal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 hidden'; // Oculto por defecto
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 hidden';
     
     // Contenido HTML del modal
     modal.innerHTML = `
