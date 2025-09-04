@@ -42,13 +42,13 @@ class Platillo(models.Model):
     
 class Pedido(models.Model):
     platillo = models.ForeignKey(Platillo, on_delete=models.PROTECT, verbose_name='Platillo')
-    ingredientePlatillo = models.CharField(max_length=200, blank=True, null=True, verbose_name='Ingredientes del Platillo')
-    nota = models.TextField(max_length=50, blank=True, null=True, verbose_name='Nota')
+    ingredientePlatillo = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Ingredientes del Platillo')
+    nota = models.TextField(max_length=300, blank=True, null=True, verbose_name='Nota')
     alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno', null=True, blank=True)
     profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True, related_name='profesor_pedidos')
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Total')
-    fecha = models.DateField(auto_now=True)
+    fecha = models.DateField(verbose_name='Fecha')  # Removido auto_now=True
     status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado del Pedido')
     turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
     encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_pedidos')

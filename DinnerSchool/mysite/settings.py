@@ -139,6 +139,9 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     ALLOWED_HOSTS.extend(['.onrender.com'])
 
+else:
+    DEBUG = True
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -147,12 +150,16 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
     },
     'handlers': {
         'file': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
-            'filename': 'django_errors.log',
+            'filename': 'errors.log',
             'formatter': 'verbose',
         },
         'console': {
@@ -162,9 +169,37 @@ LOGGING = {
         },
     },
     'loggers': {
+        # Logger root para capturar TODOS los errores
+        '': {
+            'handlers': ['file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Loggers específicos de tus apps
         'core': {
             'handlers': ['file', 'console'],
             'level': 'WARNING',
+            'propagate': False,
+        },
+        'comedor': {
+            'handlers': ['file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Loggers de Django
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
             'propagate': False,
         },
     },

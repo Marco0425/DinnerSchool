@@ -19,4 +19,8 @@ urlpatterns = [
     path("order/update-status/", views.update_order_status, name="updateOrderStatus"),
     path("credit/report/generate/", views.generarReporte, name="generarReporte"),
     path("cancelOrder/<int:pedido_id>/", views.cancelOrder, name="cancelOrder"),
+    path('order/<int:order_id>/details/', views.order_details_api, name='order_details_api'),
+    path('order/<int:order_id>/modify/', views.modify_order_view, name='modify_order'),
+    path('accountStatements/', views.accountStatements, name='accountStatements'),
+    path('get-movimientos/', views.get_movimientos, name='get_movimientos'),
 ]

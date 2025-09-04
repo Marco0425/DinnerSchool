@@ -129,60 +129,61 @@ def createCredit(request):
         if "tutor_" in tutor_id and credito:
             try:
                 tutor = Tutor.objects.get(id=int(tutor_id.split('_')[1]))
-                nuevoCredito, created = Credito.objects.get_or_create(tutorId=tutor, defaults={'monto': credito})
-                if created:
-                    messages.success(request, "Crédito creado exitosamente.")
-                else:
+                
+                # Crear registro positivo en CreditoDiario
+                creditoDiario = CreditoDiario.objects.create(
+                    tutorId=tutor, 
+                    monto=Decimal(credito),  # Positivo para créditos
+                    fecha=date.today()
+                )
+                
+                # Actualizar o crear el registro en Credito (saldo total)
+                nuevoCredito, created = Credito.objects.get_or_create(
+                    tutorId=tutor, 
+                    defaults={'monto': credito, 'fecha': date.today()}
+                )
+                if not created:
                     # Si ya existía, sumar el nuevo monto al existente
                     nuevoCredito.monto += Decimal(str(credito))
+                    nuevoCredito.fecha = date.today()  # Actualizar fecha
                     nuevoCredito.save()
-                    messages.info(request, f"Crédito actualizado exitosamente. Nuevo saldo: ${nuevoCredito.monto}")
+                
+                messages.success(request, f"Crédito de ${credito} asignado exitosamente. Saldo actual: ${nuevoCredito.monto}")
                 return redirect('comedor:credit')
+                
             except Tutor.DoesNotExist:
                 messages.error(request, "Tutor no encontrado.")
+                
         elif "profesor_" in tutor_id and credito:
             try:
                 profesor = Empleados.objects.get(id=int(tutor_id.split('_')[1]))
-                nuevoCredito, created = Credito.objects.get_or_create(profesorId=profesor, defaults={'monto': credito})
-                if created:
-                    messages.success(request, "Crédito creado exitosamente.")
-                else:
+                
+                # Crear registro positivo en CreditoDiario
+                creditoDiario = CreditoDiario.objects.create(
+                    profesorId=profesor, 
+                    monto=Decimal(credito),  # Positivo para créditos
+                    fecha=date.today()
+                )
+                
+                # Actualizar o crear el registro en Credito (saldo total)
+                nuevoCredito, created = Credito.objects.get_or_create(
+                    profesorId=profesor, 
+                    defaults={'monto': credito, 'fecha': date.today()}
+                )
+                if not created:
                     # Si ya existía, sumar el nuevo monto al existente
                     nuevoCredito.monto += Decimal(str(credito))
+                    nuevoCredito.fecha = date.today()  # Actualizar fecha
                     nuevoCredito.save()
-                    messages.info(request, f"Crédito actualizado exitosamente. Nuevo saldo: ${nuevoCredito.monto}")
+                
+                messages.success(request, f"Crédito de ${credito} asignado exitosamente. Saldo actual: ${nuevoCredito.monto}")
                 return redirect('comedor:credit')
+                
             except Empleados.DoesNotExist:
                 messages.error(request, "Profesor no encontrado.")
-                return redirect('comedor:createCredit')
         else:
             messages.error(request, "Por favor, completa todos los campos.")
             return redirect('comedor:createCredit')
-        
-        # Unir ambos querysets
-        tutors = Tutor.objects.all()
-        profesores = Empleados.objects.filter(puesto='Profesor')
-    
-        # Crear lista combinada con estructura uniforme
-        all_users = []
-        
-        # Agregar tutores
-        for tutor in tutors:
-            all_users.append({
-                'id': f'tutor_{tutor.id}',
-                'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
-                'tipo': 'Tutor'
-            })
-        
-        # Agregar profesores
-        for profesor in profesores:
-            all_users.append({
-                'id': f'profesor_{profesor.id}',
-                'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} - Profesor",
-                'tipo': 'Profesor'
-            })
-        
-        return render(request, 'Credit/credit_form_view.html', {'users': all_users})
     
     # GET request - mismo proceso
     tutors = Tutor.objects.all()
@@ -207,11 +208,8 @@ def createCredit(request):
             'tipo': 'Profesor'
         })
     
-    
     return render(request, 'Credit/credit_form_view.html', {'users': all_users})
-
-@login_required
-@require_POST
+    
 def cancelOrder(request, pedido_id):
     """
     Vista para cancelar un pedido y reembolsar el crédito
@@ -525,7 +523,8 @@ def createOrder(request):
                         nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
                         profesorId=profesor_actual if profesor_actual else None,
                         turno=item['turno'],
-                        total=subtotal
+                        total=subtotal,
+                        fecha=date.today() if datetime.now().hour < 18 else date.today() + timedelta(days=1),
                     )
                     nuevo_pedido.save()
                     pedidos_creados.append(nuevo_pedido)
@@ -548,7 +547,7 @@ def createOrder(request):
                     pedido=pedido,
                     tutorId=tutor_actual,
                     profesorId=profesor_actual,
-                    monto=pedido.total,
+                    monto= -pedido.total,
                     fecha=date.today()
                 )
             
@@ -597,7 +596,7 @@ def createOrder(request):
         return redirect('core:dashboard')
 
     creditoProfesor = Credito.objects.filter(profesorId__usuario__email=request.user.username).first()
-    if creditoProfesor and creditoProfesor.monto < -200:
+    if creditoProfesor and creditoProfesor.monto < -1500:
         messages.error(request, "No tienes crédito suficiente para realizar un pedido.")
         return redirect('core:dashboard')
     
@@ -744,6 +743,8 @@ def update_order_status(request):
     
     return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
+
+
 def saucers(request):
     """
     Vista para manejar los platillos (sauces).
@@ -870,3 +871,519 @@ def generarReporte(request):
     except Exception as e:
         messages.error(request, f"Error: {str(e)}")
         return redirect('comedor:credit')
+
+@login_required
+def order_details_api(request, order_id):
+    """
+    Vista para obtener los detalles de un pedido específico vía API.
+    Esta vista se encarga de devolver la información completa de un pedido
+    incluyendo sus items y totales.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+        order_id: ID del pedido a consultar.
+    Returns:
+        JsonResponse: Respuesta JSON con los detalles del pedido.
+    """
+    try:
+        # Obtener el pedido
+        pedido = get_object_or_404(Pedido, id=order_id)
+        
+        # Verificar que el pedido pertenezca al usuario actual
+        user_email = request.user.username
+        pedido_user_email = None
+        
+        if pedido.alumnoId:
+            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
+        elif pedido.profesorId:
+            pedido_user_email = pedido.profesorId.usuario.email
+        
+        # Verificar permisos: el pedido debe pertenecer al usuario o ser admin/empleado
+        is_admin = request.user.is_staff
+        is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
+        
+        if not is_admin and not is_employee and pedido_user_email != user_email:
+            return JsonResponse({
+                'error': 'No tienes permisos para ver este pedido'
+            }, status=403)
+        
+        # Procesar ingredientes del platillo
+        try:
+            ingredientes_platillo = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+        except (ValueError, SyntaxError):
+            ingredientes_platillo = []
+        
+        # Preparar datos del pedido
+        order_data = {
+            'id': pedido.id,
+            'fecha': pedido.fecha.strftime('%d/%m/%Y'),
+            'turno_label': pedido.get_turno_label(),
+            'status_label': pedido.get_status_label(),
+            'total': str(pedido.total),
+            'items': [
+                {
+                    'platillo_nombre': pedido.platillo.nombre,
+                    'cantidad': getattr(pedido, 'cantidad', 1),  # Cantidad por defecto 1 si no existe el campo
+                    'subtotal': str(pedido.total),
+                    'ingredientes': ingredientes_platillo,
+                    'nota': pedido.nota or ''
+                }
+            ]
+        }
+        
+        return JsonResponse(order_data)
+        
+    except Pedido.DoesNotExist:
+        return JsonResponse({'error': 'Pedido no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': f'Error interno del servidor: {str(e)}'}, status=500)
+
+@login_required
+def modify_order_view(request, order_id):
+    """
+    Vista para mostrar la página de modificación de un pedido.
+    Esta vista se encarga de renderizar el formulario para modificar un pedido existente.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+        order_id: ID del pedido a modificar.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza el formulario de modificación.
+    """
+    try:
+        # Obtener el pedido
+        pedido = get_object_or_404(Pedido, id=order_id)
+        
+        # Verificar que el pedido pertenezca al usuario actual
+        user_email = request.user.username
+        pedido_user_email = None
+        
+        if pedido.alumnoId:
+            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
+        elif pedido.profesorId:
+            pedido_user_email = pedido.profesorId.usuario.email
+        
+        # Verificar permisos
+        is_admin = request.user.is_staff
+        is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
+        
+        if not is_admin and not is_employee and pedido_user_email != user_email:
+            messages.error(request, 'No tienes permisos para modificar este pedido.')
+            return redirect('core:dashboard')
+        
+        # Verificar que el pedido se pueda modificar (solo pendiente)
+        if pedido.status != 0:  # 0 = Pendiente
+            messages.error(request, 'Solo se pueden modificar pedidos en estado pendiente.')
+            return redirect('core:dashboard')
+        
+        # Obtener todos los platillos disponibles
+        platillos = Platillo.objects.all()
+        
+        # Procesar ingredientes del pedido actual
+        try:
+            ingredientes_actuales = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+        except (ValueError, SyntaxError):
+            ingredientes_actuales = []
+        
+        # Preparar contexto para el template
+        context = {
+            'pedido': pedido,
+            'platillos': [
+                {
+                    "id": platillo.id,
+                    "nombre": platillo.nombre,
+                    "ingredientes": json.dumps([
+                        Ingredientes.objects.get(id=int(ing)).nombre 
+                        for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') 
+                        if ing
+                    ]),
+                    "precio": float(platillo.precio)
+                } for platillo in platillos
+            ],
+            'pedido_data': {
+                'id': pedido.id,
+                'platillo_id': pedido.platillo.id,
+                'platillo_nombre': pedido.platillo.nombre,
+                'ingredientes_seleccionados': ingredientes_actuales,
+                'nota': pedido.nota or '',
+                'cantidad': getattr(pedido, 'cantidad', 1),
+                'turno': pedido.turno,
+                'total_actual': float(pedido.total)
+            },
+            'is_modification': True,
+            'user_type': 'tutor' if pedido.alumnoId else 'profesor'
+        }
+        
+        # Procesar el POST para actualizar el pedido
+        if request.method == "POST":
+            try:
+                with transaction.atomic():
+                    # Obtener datos del formulario
+                    nuevo_platillo_id = request.POST.get("platillo_id")
+                    nuevos_ingredientes = request.POST.get("ingredientes", "[]")
+                    nueva_nota = request.POST.get("nota", "")
+                    nueva_cantidad = int(request.POST.get("cantidad", 1))
+                    nuevo_turno = int(request.POST.get("turno"))
+                    
+                    # Obtener el nuevo platillo
+                    nuevo_platillo = get_object_or_404(Platillo, id=nuevo_platillo_id)
+                    
+                    # Calcular el nuevo total
+                    nuevo_total = nuevo_platillo.precio * nueva_cantidad
+                    diferencia_precio = nuevo_total - pedido.total
+                    
+                    # Verificar crédito si el precio aumenta
+                    if diferencia_precio > 0:
+                        credito = None
+                        if pedido.alumnoId:
+                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+                        elif pedido.profesorId:
+                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+                        
+                        if not credito or credito.monto < diferencia_precio:
+                            messages.error(request, 'No hay crédito suficiente para esta modificación.')
+                            return render(request, 'Orders/modify_order_view.html', context)
+                        
+                        # Descontar la diferencia del crédito
+                        credito.monto -= diferencia_precio
+                        credito.save()
+                    
+                    elif diferencia_precio < 0:
+                        # Si el precio disminuye, devolver la diferencia al crédito
+                        credito = None
+                        if pedido.alumnoId:
+                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+                        elif pedido.profesorId:
+                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+                        
+                        if credito:
+                            credito.monto += abs(diferencia_precio)
+                            credito.save()
+                    
+                    # Actualizar el pedido
+                    pedido.platillo = nuevo_platillo
+                    pedido.ingredientePlatillo = nuevos_ingredientes
+                    pedido.nota = nueva_nota
+                    if hasattr(pedido, 'cantidad'):
+                        pedido.cantidad = nueva_cantidad
+                    pedido.turno = nuevo_turno
+                    pedido.total = nuevo_total
+                    pedido.save()
+                    
+                    # Actualizar el crédito diario si existe
+                    try:
+                        credito_diario = CreditoDiario.objects.get(pedido=pedido)
+                        credito_diario.monto = -nuevo_total
+                        credito_diario.save()
+                    except CreditoDiario.DoesNotExist:
+                        pass
+                    
+                    messages.success(request, f'Pedido #{pedido.id} modificado exitosamente.')
+                    return redirect('core:dashboard')
+                    
+            except Exception as e:
+                messages.error(request, f'Error al modificar el pedido: {str(e)}')
+                return render(request, 'Orders/modify_order_view.html', context)
+        
+        return render(request, 'Orders/modify_order_view.html', context)
+        
+    except Pedido.DoesNotExist:
+        messages.error(request, 'Pedido no encontrado.')
+        return redirect('core:dashboard')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('core:dashboard')
+
+def accountStatements(request):
+    """
+    Vista para manejar los estados de cuenta.
+    Esta vista se encarga de mostrar los estados de cuenta de tutores y profesores.
+    Args:
+        request: Objeto HttpRequest que contiene la solicitud del usuario.
+    Returns:
+        HttpResponse: Respuesta HTTP que renderiza la vista de estados de cuenta.
+    """
+    if request.user.is_authenticated:
+        # Obtener todos los tutores y profesores para los dropdowns
+        tutores = Tutor.objects.all().order_by('usuario__nombre', 'usuario__paterno')
+        profesores = Empleados.objects.filter(puesto='Profesor').order_by('usuario__nombre', 'usuario__paterno')
+        
+        # Crear lista combinada con estructura uniforme para el dropdown
+        all_users = []
+        
+        # Agregar tutores con información de sus alumnos
+        for tutor in tutores:
+            alumnos = Alumnos.objects.filter(tutorId=tutor.id).all()
+            if alumnos:
+                # Crear string con información de los alumnos
+                str_alumnos = ", ".join([
+                    f"{alumno.nombre} {alumno.paterno} {alumno.materno or ''} - {getChoiceLabel(NIVELEDUCATIVO, alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO, alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO, alumno.nivelEducativo.grupo)}"
+                    for alumno in alumnos
+                ])
+                
+                all_users.append({
+                    'id': f'tutor_{tutor.id}',
+                    'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
+                    'descripcion': str_alumnos,
+                    'tipo': 'Tutor'
+                })
+            else:
+                # Tutor sin alumnos
+                all_users.append({
+                    'id': f'tutor_{tutor.id}',
+                    'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
+                    'descripcion': 'Sin alumnos asignados',
+                    'tipo': 'Tutor'
+                })
+        
+        # Agregar profesores
+        for profesor in profesores:
+            all_users.append({
+                'id': f'profesor_{profesor.id}',
+                'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} - Profesor",
+                'descripcion': f"Profesor - {profesor.usuario.nombre} {profesor.usuario.paterno}",
+                'tipo': 'Profesor'
+            })
+        
+        context = {
+            'tutores': tutores,  # Mantenemos esto por compatibilidad
+            'profesores': profesores,  # Mantenemos esto por compatibilidad
+            'all_users': all_users,  # Nueva estructura combinada
+        }
+        return render(request, 'accountStatements/estado_cuenta.html', context)
+    else:
+        return redirect('core:signInUp')
+
+@csrf_exempt
+def get_movimientos(request):
+    """
+    Vista AJAX para obtener los movimientos de un usuario específico.
+    Esta vista se encarga de procesar las solicitudes AJAX para obtener 
+    los movimientos financieros de tutores y profesores desde CreditoDiario.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'})
+    
+    user_id = request.POST.get('user_id')
+    fecha_inicio = request.POST.get('fecha_inicio')
+    fecha_fin = request.POST.get('fecha_fin')
+    
+    if not all([user_id, fecha_inicio, fecha_fin]):
+        return JsonResponse({'success': False, 'message': 'Faltan parámetros requeridos'})
+    
+    # Parsear el user_id para determinar tipo y ID
+    if user_id.startswith('tutor_'):
+        user_type = 'tutor'
+        user_pk = user_id.replace('tutor_', '')
+    elif user_id.startswith('profesor_'):
+        user_type = 'profesor'
+        user_pk = user_id.replace('profesor_', '')
+    else:
+        return JsonResponse({'success': False, 'message': 'ID de usuario inválido'})
+    
+    # Convertir fechas
+    try:
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError as e:
+        return JsonResponse({'success': False, 'message': f'Formato de fecha inválido: {str(e)}'})
+    
+    try:
+        movimientos = []
+        user_info = {}
+        
+        if user_type == 'tutor':
+            try:
+                tutor = Tutor.objects.get(id=user_pk)
+            except Tutor.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Tutor no encontrado'})
+            
+            user_info = {
+                'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} {tutor.usuario.materno or ''}".strip(),
+                'tipo': 'Tutor',
+                'alumnos': []
+            }
+            
+            # Obtener alumnos del tutor
+            try:
+                alumnos = Alumnos.objects.filter(tutorId=tutor)
+                for alumno in alumnos:
+                    nivel_info = 'N/A'
+                    grado_info = 'N/A' 
+                    grupo_info = 'N/A'
+                    
+                    if hasattr(alumno, 'nivelEducativo') and alumno.nivelEducativo:
+                        if hasattr(alumno.nivelEducativo, 'nivel'):
+                            nivel_info = getChoiceLabel(NIVELEDUCATIVO, alumno.nivelEducativo.nivel)
+                        if hasattr(alumno.nivelEducativo, 'grado'):
+                            grado_info = getChoiceLabel(GRADO, alumno.nivelEducativo.grado)
+                        if hasattr(alumno.nivelEducativo, 'grupo'):
+                            grupo_info = getChoiceLabel(GRUPO, alumno.nivelEducativo.grupo)
+                    
+                    user_info['alumnos'].append({
+                        'nombre': f"{alumno.nombre} {alumno.paterno} {alumno.materno or ''}".strip(),
+                        'nivel': nivel_info,
+                        'grado': grado_info,
+                        'grupo': grupo_info
+                    })
+            except Exception:
+                pass  # Continuar sin alumnos si hay error
+            
+            # Obtener movimientos de CreditoDiario del tutor
+            try:
+                movimientos_credito = CreditoDiario.objects.filter(
+                    tutorId=tutor,
+                    fecha__range=[fecha_inicio, fecha_fin]
+                ).order_by('fecha', 'id')
+                
+                for mov_credito in movimientos_credito:
+                    if mov_credito.monto > 0:
+                        tipo = 'credito'
+                        tipo_display = 'Crédito Asignado'
+                        descripcion = f"Crédito asignado de ${mov_credito.monto}"
+                    else:
+                        tipo = 'gasto'
+                        tipo_display = 'Pedido'
+                        if mov_credito.pedido:
+                            descripcion = f"Pedido #{mov_credito.pedido.id}"
+                            if mov_credito.pedido.platillo:
+                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
+                            if mov_credito.pedido.alumnoId:
+                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
+                        else:
+                            descripcion = f"Gasto de ${abs(mov_credito.monto)}"
+                    
+                    movimientos.append({
+                        'fecha': mov_credito.fecha,
+                        'tipo': tipo,
+                        'tipo_display': tipo_display,
+                        'descripcion': descripcion,
+                        'monto': float(mov_credito.monto),
+                        'objeto': mov_credito,
+                        'orden': 0 if mov_credito.monto > 0 else 1
+                    })
+            except Exception:
+                pass  # Continuar si hay error
+                
+        else:  # profesor
+            try:
+                profesor = Empleados.objects.get(id=user_pk, puesto='Profesor')
+            except Empleados.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Profesor no encontrado'})
+            
+            user_info = {
+                'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno} {profesor.usuario.materno or ''}".strip(),
+                'tipo': 'Profesor',
+                'alumnos': []
+            }
+            
+            # Obtener movimientos de CreditoDiario del profesor
+            try:
+                movimientos_credito = CreditoDiario.objects.filter(
+                    profesorId=profesor,
+                    fecha__range=[fecha_inicio, fecha_fin]
+                ).order_by('fecha', 'id')
+                
+                for mov_credito in movimientos_credito:
+                    if mov_credito.monto > 0:
+                        tipo = 'credito'
+                        tipo_display = 'Crédito Asignado'
+                        descripcion = f"Crédito asignado de ${mov_credito.monto}"
+                    else:
+                        tipo = 'gasto'
+                        tipo_display = 'Pedido'
+                        if mov_credito.pedido:
+                            descripcion = f"Pedido #{mov_credito.pedido.id}"
+                            if mov_credito.pedido.platillo:
+                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
+                        else:
+                            descripcion = f"Gasto de ${abs(mov_credito.monto)}"
+                    
+                    movimientos.append({
+                        'fecha': mov_credito.fecha,
+                        'tipo': tipo,
+                        'tipo_display': tipo_display,
+                        'descripcion': descripcion,
+                        'monto': float(mov_credito.monto),
+                        'objeto': mov_credito,
+                        'orden': 0 if mov_credito.monto > 0 else 1
+                    })
+            except Exception:
+                pass  # Continuar si hay error
+        
+        # Ordenar movimientos por fecha y tipo
+        movimientos.sort(key=lambda x: (x['fecha'], x['orden'], x['objeto'].id))
+        
+        # Calcular saldo inicial
+        saldo_inicial = 0.0
+        try:
+            if user_type == 'tutor':
+                movimientos_anteriores = CreditoDiario.objects.filter(
+                    tutorId=tutor,
+                    fecha__lt=fecha_inicio
+                )
+            else:
+                movimientos_anteriores = CreditoDiario.objects.filter(
+                    profesorId=profesor,
+                    fecha__lt=fecha_inicio
+                )
+            
+            for mov_anterior in movimientos_anteriores:
+                saldo_inicial += float(mov_anterior.monto)
+        except Exception:
+            pass  # Usar saldo inicial 0 si hay error
+        
+        # Procesar movimientos con saldos
+        movimientos_procesados = []
+        saldo_actual = saldo_inicial
+        total_creditos = 0
+        total_gastos = 0
+        
+        for mov in movimientos:
+            saldo_anterior = saldo_actual
+            saldo_actual += mov['monto']
+            
+            if mov['monto'] > 0:
+                total_creditos += mov['monto']
+            else:
+                total_gastos += mov['monto']
+            
+            movimientos_procesados.append({
+                'fecha': mov['fecha'].strftime('%d/%m/%Y'),
+                'tipo': mov['tipo'],
+                'tipo_display': mov['tipo_display'],
+                'descripcion': mov['descripcion'],
+                'monto': mov['monto'],
+                'saldo_anterior': saldo_anterior,
+                'saldo_final': saldo_actual
+            })
+        
+        # Obtener saldo actual real
+        saldo_actual_real = saldo_actual
+        try:
+            if user_type == 'tutor':
+                credito_obj = Credito.objects.filter(tutorId=tutor).first()
+            else:
+                credito_obj = Credito.objects.filter(profesorId=profesor).first()
+            
+            if credito_obj:
+                saldo_actual_real = float(credito_obj.monto)
+        except Exception:
+            pass  # Usar saldo calculado si hay error
+        
+        resumen = {
+            'total_creditos': total_creditos,
+            'total_gastos': total_gastos,
+            'saldo_actual': saldo_actual_real
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'user_info': user_info,
+            'movimientos': movimientos_procesados,
+            'resumen': resumen
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Error interno del servidor: {str(e)}'
+        })
