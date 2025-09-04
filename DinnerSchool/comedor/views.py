@@ -459,48 +459,19 @@ def orderHistory(request):
         HttpResponse: Respuesta HTTP que redirige al dashboard.
     """ 
     if request.user.is_authenticated:
-        user = request.user
-        is_tutor = user.groups.filter(name='Tutor').exists()
-        is_profesor = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').exists()
-        is_admin = user.is_staff
-        pedidos_queryset = []
+        is_tutor = request.user.groups.filter(name='Tutor').exists(),
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
+        is_admin = request.user.is_staff
 
         if is_admin:
-            pedidos_queryset = Pedido.objects.all()
+            Pedidos = Pedido.objects.all()
         elif is_profesor:
-            pedidos_queryset = Pedido.objects.filter(profesorId__usuario__email=user.username)
+            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username)
         elif is_tutor:
-            pedidos_queryset = Pedido.objects.filter(alumnoId__tutorId__usuario__email=user.username)
-        else:
-            pedidos_queryset = Pedido.objects.none()
-
-        # Construir lista de pedidos para la tabla
-        order_list = []
-        for pedido in pedidos_queryset :
-            # Determinar nombre de usuario asociado
-            if pedido.alumnoId:
-                usuario_nombre = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
-            elif pedido.profesorId:
-                usuario_nombre = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
-            else:
-                usuario_nombre = "-"
-            order_list.append({
-                'id': pedido.id,
-                'usuario': usuario_nombre,
-                'platillo': pedido.platillo.nombre if pedido.platillo else '-',
-                'cantidad': pedido.cantidad,
-                'turno': pedido.turno,
-                'fecha': pedido.fecha.strftime('%d/%m/%Y'),
-                'status': pedido.status,
-                'total': pedido.total,
-            })
-
-        # Solo el admin puede eliminar
-        can_delete = is_admin
+            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username)
 
         context = {
-            'order_list': order_list,
-            'can_delete': can_delete,
+            'order_list': Pedidos,
         }
         return render(request, 'Orders/orders_history_view.html', context) 
     else:
