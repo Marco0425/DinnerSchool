@@ -132,7 +132,35 @@
           >
         </div>
       </a>
-      {% endif %} {% if is_admin %}
+      <!-- Tarjeta de Historial de Pedidos con icono SVG y nombre claro -->
+      <a
+        href="/comedor/order/history/"
+        class="group block bg-white p-6 rounded-lg shadow-custom hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 border border-gray-200"
+      >
+        <div class="flex flex-col items-center">
+          <!-- Icono de Historial de Pedidos (SVG de reloj) -->
+          <svg
+            class="w-12 h-12 text-primary-red mb-3 group-hover:text-red-700 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <span
+            class="text-lg font-semibold text-gray-700 group-hover:text-gray-900"
+            >Historial de pedidos</span
+          >
+        </div>
+      </a>
+      {% endif %}
+      {% if is_admin %}
 
       <!-- Tarjeta de Ingredientes con icono SVG y nombre claro -->
       <a
