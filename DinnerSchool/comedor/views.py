@@ -489,9 +489,9 @@ def orderHistory(request):
                 'usuario': usuario_nombre,
                 'platillo': pedido.platillo.nombre if pedido.platillo else '-',
                 'cantidad': pedido.cantidad,
-                'turno': pedido.get_turno_label() or pedido.turno,
+                'turno': pedido.turno,
                 'fecha': pedido.fecha.strftime('%d/%m/%Y'),
-                'status': pedido.get_status_label() or pedido.status,
+                'status': pedido.status,
                 'total': pedido.total,
             })
 
