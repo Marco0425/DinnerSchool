@@ -459,7 +459,81 @@ def orderHistory(request):
         HttpResponse: Respuesta HTTP que redirige al dashboard.
     """ 
     if request.user.is_authenticated:
-        return render(request, 'Orders/orders_history_view.html') 
+        is_tutor = request.user.groups.filter(name='Tutor').exists()
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
+        is_admin = request.user.is_staff
+        """
+        Vista para ver el historial de pedidos.
+        Muestra el historial de pedidos filtrado por tipo de usuario, con paginación.
+        """
+        if not request.user.is_authenticated:
+            messages.error(request, "Debes iniciar sesión para ver el historial de pedidos.")
+            return redirect("core:dashboard")
+        
+        user = request.user
+        is_admin = user.is_staff
+        is_profesor = False
+        is_tutor = False
+        pedidos_queryset = None
+        
+        # Profesor
+        try:
+            is_profesor = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').exists()
+        except Exception:
+            is_profesor = False
+        # Tutor
+        try:
+            is_tutor = user.groups.filter(name='Tutor').exists()
+        except Exception:
+            is_tutor = False
+
+        if is_admin:
+            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').all().order_by('-fecha')
+        elif is_profesor:
+            empleado = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').first()
+            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').filter(profesorId=empleado).order_by('-fecha')
+        elif is_tutor:
+            tutor = Tutor.objects.filter(usuario__email=user.username).first()
+            alumnos = Alumnos.objects.filter(tutorId=tutor)
+            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').filter(alumnoId__in=alumnos).order_by('-fecha')
+        else:
+            pedidos_queryset = Pedido.objects.none()
+
+        # Paginación
+        paginator = Paginator(pedidos_queryset, 10)
+        page_number = request.GET.get('page')
+        orders_page_obj = paginator.get_page(page_number)
+
+        # Construir lista de pedidos para la tabla
+        order_list = []
+        for pedido in orders_page_obj:
+            # Determinar nombre de usuario asociado
+            if pedido.alumnoId:
+                usuario_nombre = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
+            elif pedido.profesorId:
+                usuario_nombre = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
+            else:
+                usuario_nombre = "-"
+            order_list.append({
+                'id': pedido.id,
+                'usuario': usuario_nombre,
+                'platillo': pedido.platillo.nombre if pedido.platillo else '-',
+                'cantidad': pedido.cantidad,
+                'turno': pedido.get_turno_label() or pedido.turno,
+                'fecha': pedido.fecha.strftime('%d/%m/%Y'),
+                'status': pedido.get_status_label() or pedido.status,
+                'total': pedido.total,
+            })
+
+        # Solo el admin puede eliminar
+        can_delete = is_admin
+
+        context = {
+            'order_list': order_list,
+            'orders_page_obj': orders_page_obj,
+            'can_delete': can_delete,
+        }
+        return render(request, 'Orders/orders_history_view.html', context) 
     
 def createOrder(request):
     """
