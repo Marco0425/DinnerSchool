@@ -12,7 +12,7 @@
       />
       <h1 class="text-3xl font-bold text-gray-800">Pedidos</h1>
     </div>
-    <!-- Botón para volver o añadir alumno -->
+    <!-- Botón para volver o añadir Pedido -->
     <div class="text-right">
       <a
         href="/core/dashboard"
@@ -21,14 +21,13 @@
         Volver
       </a>
       <a
-        href="{% url 'core:createOrder' %}"
+        href="/core/signInUp/"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
-        + Añadir Pedido
+        + Añadir pedido
       </a>
     </div>
   </div>
-
 </div>
 <script src="{% static 'js/list.js' %}"></script>
 {% endblock %}
