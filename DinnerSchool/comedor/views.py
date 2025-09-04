@@ -466,14 +466,11 @@ def orderHistory(request):
         pedidos_queryset = []
 
         if is_admin:
-            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').all().order_by('-fecha')
+            pedidos_queryset = Pedido.objects.all()
         elif is_profesor:
-            empleado = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').first()
-            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').filter(profesorId=empleado).order_by('-fecha')
+            pedidos_queryset = Pedido.objects.filter(profesorId__usuario__email=user.username)
         elif is_tutor:
-            tutor = Tutor.objects.filter(usuario__email=user.username).first()
-            alumnos = Alumnos.objects.filter(tutorId=tutor)
-            pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').filter(alumnoId__in=alumnos).order_by('-fecha')
+            pedidos_queryset = Pedido.objects.filter(alumnoId__tutorId__usuario__email=user.username)
         else:
             pedidos_queryset = Pedido.objects.none()
 
