@@ -459,33 +459,11 @@ def orderHistory(request):
         HttpResponse: Respuesta HTTP que redirige al dashboard.
     """ 
     if request.user.is_authenticated:
-        is_tutor = request.user.groups.filter(name='Tutor').exists()
-        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
-        is_admin = request.user.is_staff
-        """
-        Vista para ver el historial de pedidos.
-        Muestra el historial de pedidos filtrado por tipo de usuario, con paginación.
-        """
-        if not request.user.is_authenticated:
-            messages.error(request, "Debes iniciar sesión para ver el historial de pedidos.")
-            return redirect("core:dashboard")
-        
         user = request.user
+        is_tutor = user.groups.filter(name='Tutor').exists()
+        is_profesor = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').exists()
         is_admin = user.is_staff
-        is_profesor = False
-        is_tutor = False
-        pedidos_queryset = None
-        
-        # Profesor
-        try:
-            is_profesor = Empleados.objects.filter(usuario__email=user.username, puesto='Profesor').exists()
-        except Exception:
-            is_profesor = False
-        # Tutor
-        try:
-            is_tutor = user.groups.filter(name='Tutor').exists()
-        except Exception:
-            is_tutor = False
+        pedidos_queryset = []
 
         if is_admin:
             pedidos_queryset = Pedido.objects.select_related('alumnoId', 'profesorId', 'platillo').all().order_by('-fecha')
@@ -499,14 +477,9 @@ def orderHistory(request):
         else:
             pedidos_queryset = Pedido.objects.none()
 
-        # Paginación
-        paginator = Paginator(pedidos_queryset, 10)
-        page_number = request.GET.get('page')
-        orders_page_obj = paginator.get_page(page_number)
-
         # Construir lista de pedidos para la tabla
         order_list = []
-        for pedido in orders_page_obj:
+        for pedido in pedidos_queryset :
             # Determinar nombre de usuario asociado
             if pedido.alumnoId:
                 usuario_nombre = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
@@ -530,10 +503,11 @@ def orderHistory(request):
 
         context = {
             'order_list': order_list,
-            'orders_page_obj': orders_page_obj,
             'can_delete': can_delete,
         }
         return render(request, 'Orders/orders_history_view.html', context) 
+    else:
+        return redirect('core:signInUp')
     
 def createOrder(request):
     """
