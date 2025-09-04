@@ -1,0 +1,183 @@
+{% extends "main.html" %} {% load static %}
+{% csrf_token %}
+{% block content %}
+<div class="bg-white p-8 rounded-lg shadow-xl max-w-6xl w-full border-t-8 border-primary-red mb-8">
+  <div class="flex flex-col md:flex-row items-center justify-between mb-6">
+    <!-- Logo de la cafetería -->
+    <div class="flex items-center mb-4 md:mb-0">
+      <img
+        src="{% static 'img/logos/logo.png' %}"
+        alt="Logo de la Cafetería Certo"
+        class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
+      />
+      <h1 class="text-3xl font-bold text-gray-800">Estados de cuenta</h1>
+    </div>
+    <!-- Botón para volver -->
+    <div class="text-right">
+      <a
+        href="/core/dashboard"
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out mr-2"
+      >
+        Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- Bloque para mensajes -->
+  {% if messages %}
+  <div class="mb-4" style="margin-top: 1.5rem">
+    {% for message in messages %}
+    <div
+      class="p-3 rounded-md text-center text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200{% elif message.tags == 'info' %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}"
+    >
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Filtros -->
+  <div class="bg-gray-50 p-4 rounded-lg mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <!-- Selector de Usuario -->
+      <div>
+        <label for="user-select" class="block text-sm font-medium text-gray-700 mb-2">
+          Seleccionar Usuario
+        </label>
+        <div class="relative">
+          <input
+            type="text"
+            id="user-search"
+            placeholder="Buscar tutor o profesor..."
+            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+            autocomplete="off"
+          />
+          <div class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+          
+          <!-- Select oculto para enviar el valor -->
+          <select id="user-select" name="user-select" class="hidden">
+            <option value="">Seleccionar...</option>
+            {% if all_users %}
+              {% for user in all_users %}
+                <option value="{{ user.id }}">{{ user.nombre }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+          
+          <!-- Lista desplegable personalizada -->
+          <div id="user-dropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
+            <div id="user-options">
+              {% if all_users %}
+                {% for user in all_users %}
+                  <div class="user-option px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
+                       data-value="{{ user.id }}" 
+                       data-search="{{ user.nombre|lower }} {{ user.descripcion|lower }}"
+                       data-tipo="{{ user.tipo }}">
+                    <div class="font-medium text-sm">{{ user.nombre }}</div>
+                    <div class="text-xs text-gray-500">{{ user.tipo }} - {{ user.descripcion|truncatechars:60 }}</div>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <div id="no-results" class="px-4 py-2 text-gray-500 text-sm hidden">
+              No se encontraron resultados
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fecha Inicio -->
+      <div>
+        <label for="fecha-inicio" class="block text-sm font-medium text-gray-700 mb-2">
+          Fecha Inicio
+        </label>
+        <input type="date" id="fecha-inicio" class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-red focus:border-primary-red">
+      </div>
+
+      <!-- Fecha Fin -->
+      <div>
+        <label for="fecha-fin" class="block text-sm font-medium text-gray-700 mb-2">
+          Fecha Fin
+        </label>
+        <input type="date" id="fecha-fin" class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-red focus:border-primary-red">
+      </div>
+
+      <!-- Botón Filtrar -->
+      <div class="flex items-end">
+        <button id="btn-filtrar" class="w-full px-4 py-2 bg-primary-red text-white rounded-md hover:bg-red-700 transition duration-300">
+          Filtrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información del Usuario Seleccionado -->
+  <div id="user-info" class="bg-blue-50 p-4 rounded-lg mb-4 hidden">
+    <h3 class="text-lg font-semibold text-blue-800 mb-2">Información del Usuario</h3>
+    <div id="user-details"></div>
+  </div>
+
+  <!-- Tabla de Movimientos -->
+  <div class="overflow-x-auto">
+    <div id="loading" class="text-center py-8 hidden">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
+      <p class="mt-2 text-gray-600">Cargando movimientos...</p>
+    </div>
+
+    <table id="movimientos-table" class="min-w-full bg-white rounded-lg shadow-custom hidden">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tl-lg">
+            Fecha
+          </th>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            Tipo
+          </th>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            Descripción
+          </th>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            Monto
+          </th>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            Saldo Anterior
+          </th>
+          <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg">
+            Saldo Final
+          </th>
+        </tr>
+      </thead>
+      <tbody id="movimientos-body" class="divide-y divide-gray-200">
+      </tbody>
+    </table>
+
+    <div id="no-data" class="text-center py-8 text-gray-500 hidden">
+      <p>No se encontraron movimientos para los filtros seleccionados.</p>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div id="resumen" class="mt-6 bg-gray-50 p-4 rounded-lg hidden">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="text-center">
+        <h4 class="text-sm font-medium text-gray-600">Total Créditos</h4>
+        <p id="total-creditos" class="text-lg font-bold text-green-600">$0.00</p>
+      </div>
+      <div class="text-center">
+        <h4 class="text-sm font-medium text-gray-600">Total Gastos</h4>
+        <p id="total-gastos" class="text-lg font-bold text-red-600">$0.00</p>
+      </div>
+      <div class="text-center">
+        <h4 class="text-sm font-medium text-gray-600">Saldo Actual</h4>
+        <p id="saldo-actual" class="text-lg font-bold text-blue-600">$0.00</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/estadoCuenta.js' %}"></script>
+{% endblock %}
