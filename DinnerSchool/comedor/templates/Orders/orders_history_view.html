@@ -122,54 +122,27 @@
       </li>
       {% endif %}
 
-      {% with total_pages=page_obj.paginator.num_pages current=page_obj.number %}
-        {% if total_pages > 1 %}
-          <!-- Primera página -->
-          <li>
-            {% if current == 1 %}
-              <span class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md">1</span>
-            {% else %}
-              <a href="?page=1" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">1</a>
-            {% endif %}
-          </li>
-
-          <!-- Puntos suspensivos si es necesario -->
-          {% if current > 4 %}
-            <li><span class="px-3 py-2 text-sm font-medium text-gray-400">...</span></li>
-          {% endif %}
-
-          <!-- Páginas alrededor de la actual -->
-          {% for i in current|add:'-2'|default_if_none:2|slice:':5' %}
-            {% if i > 1 and i < total_pages %}
-              {% if i >= current-2 and i <= current+2 %}
-                <li>
-                  {% if current == i %}
-                    <span class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md">{{ i }}</span>
-                  {% else %}
-                    <a href="?page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">{{ i }}</a>
-                  {% endif %}
-                </li>
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-
-          <!-- Puntos suspensivos antes de la última página -->
-          {% if current < total_pages|add:'-3' %}
-            <li><span class="px-3 py-2 text-sm font-medium text-gray-400">...</span></li>
-          {% endif %}
-
-          <!-- Última página -->
-          {% if total_pages > 1 %}
-            <li>
-              {% if current == total_pages %}
-                <span class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md">{{ total_pages }}</span>
-              {% else %}
-                <a href="?page={{ total_pages }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">{{ total_pages }}</a>
-              {% endif %}
-            </li>
-          {% endif %}
+      <!-- Itera sobre todas las páginas -->
+      {% for i in page_obj.paginator.page_range %}
+      <li>
+        {% if page_obj.number == i %}
+        <!-- Página actual -->
+        <span
+          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
+        >
+          {{ i }}
+        </span>
+        {% else %}
+        <!-- Enlaces a otras páginas -->
+        <a
+          href="?page={{ i }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          {{ i }}
+        </a>
         {% endif %}
-      {% endwith %}
+      </li>
+      {% endfor %}
 
       <!-- Enlace a la página siguiente -->
       {% if page_obj.has_next %}
