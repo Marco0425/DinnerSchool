@@ -103,25 +103,61 @@
           </td>
         </tr>
         {% endfor %}
-      <!-- Paginación -->
-      <div class="flex justify-center mt-6">
-        <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
-          {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-l-md">Anterior</a>
-          {% else %}
-            <span class="px-3 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 rounded-l-md cursor-not-allowed">Anterior</span>
-          {% endif %}
-          <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-          {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-r-md">Siguiente</a>
-          {% else %}
-            <span class="px-3 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 rounded-r-md cursor-not-allowed">Siguiente</span>
-          {% endif %}
-        </nav>
-      </div>
       </tbody>
     </table>
   </div>
+  <!-- Paginación -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
+    <ul class="flex items-center space-x-2">
+      <!-- Enlace a la página anterior -->
+      {% if page_obj.has_previous %}
+      <li>
+        <a
+          href="?page={{ page_obj.previous_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Anterior
+        </a>
+      </li>
+      {% endif %}
+
+      <!-- Itera sobre todas las páginas -->
+      {% for i in page_obj.paginator.page_range %}
+      <li>
+        {% if page_obj.number == i %}
+        <!-- Página actual -->
+        <span
+          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
+        >
+          {{ i }}
+        </span>
+        {% else %}
+        <!-- Enlaces a otras páginas -->
+        <a
+          href="?page={{ i }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          {{ i }}
+        </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+
+      <!-- Enlace a la página siguiente -->
+      {% if page_obj.has_next %}
+      <li>
+        <a
+          href="?page={{ page_obj.next_page_number }}"
+          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
+        >
+          Siguiente
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 <script src="{% static 'js/list.js' %}"></script>
 {% endblock %}
