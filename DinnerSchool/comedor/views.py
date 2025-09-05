@@ -459,21 +459,28 @@ def orderHistory(request):
         HttpResponse: Respuesta HTTP que redirige al dashboard.
     """ 
     if request.user.is_authenticated:
-        is_tutor = request.user.groups.filter(name='Tutor').exists(),
+        is_tutor = request.user.groups.filter(name='Tutor').exists()
         is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
         is_admin = request.user.is_staff
 
         if is_admin:
-            Pedidos = Pedido.objects.all()
+            Pedidos = Pedido.objects.all().order_by('-fecha')
         elif is_profesor:
-            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username)
+            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username).order_by('-fecha')
         elif is_tutor:
-            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username)
+            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username).order_by('-fecha')
+
+        # Paginación
+        from django.core.paginator import Paginator
+        paginator = Paginator(Pedidos, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
 
         context = {
-            'order_list': Pedidos,
+            'order_list': page_obj,
+            'page_obj': page_obj,
         }
-        return render(request, 'Orders/orders_history_view.html', context) 
+        return render(request, 'Orders/orders_history_view.html', context)
     else:
         return redirect('core:signInUp')
     

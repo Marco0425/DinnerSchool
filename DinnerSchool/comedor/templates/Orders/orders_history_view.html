@@ -21,7 +21,7 @@
         Volver
       </a>
       <a
-        href="/core/signInUp/"
+        href="/core/createOrder/"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         + Añadir Pedido
@@ -75,21 +75,25 @@
         {% for pedido in order_list %}
         <tr class="hover:bg-gray-50">
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ pedido.alumnoId.nombre or pedido.profesorId.nombre }} {{ pedido.alumnoId.paterno or pedido.profesorId.paterno }}
+            {% if pedido.alumnoId %}
+              {{ pedido.alumnoId.nombre }} {{ pedido.alumnoId.paterno }}
+            {% elif pedido.profesorId %}
+              {{ pedido.profesorId.usuario.nombre }} {{ pedido.profesorId.usuario.paterno }}
+            {% else %}
+              -
+            {% endif %}
           </td>
-          <td
-            class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900"
-          >
-            {{ pedido.platillo }}
+          <td class="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900">
+            {{ pedido.platillo.nombre }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
             {{ pedido.cantidad }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ pedido.turno }}
+            {{ pedido.get_turno_label|default:pedido.turno }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {{ pedido.estatus }}
+            {{ pedido.get_status_label|default:pedido.status }}
           </td>
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
             {{ pedido.fecha }}
@@ -99,6 +103,22 @@
           </td>
         </tr>
         {% endfor %}
+      <!-- Paginación -->
+      <div class="flex justify-center mt-6">
+        <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-l-md">Anterior</a>
+          {% else %}
+            <span class="px-3 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 rounded-l-md cursor-not-allowed">Anterior</span>
+          {% endif %}
+          <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-r-md">Siguiente</a>
+          {% else %}
+            <span class="px-3 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 rounded-r-md cursor-not-allowed">Siguiente</span>
+          {% endif %}
+        </nav>
+      </div>
       </tbody>
     </table>
   </div>
