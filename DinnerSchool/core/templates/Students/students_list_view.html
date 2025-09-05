@@ -146,57 +146,89 @@
     </form>
   </div>
 
-  <!-- Sección de paginación -->
-  <!-- Se muestra solo si hay más de una página -->
+  <!-- Sección de paginación mejorada -->
   {% if students_page_obj.has_other_pages %}
-  <nav class="mt-8 flex justify-center" aria-label="Paginación de la tabla">
-    <ul class="flex items-center space-x-2">
-      <!-- Enlace a la página anterior -->
-      {% if students_page_obj.has_previous %}
-      <li>
-        <a
-          href="?page={{ students_page_obj.previous_page_number }}"
-          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
-        >
-          Anterior
-        </a>
-      </li>
+  <nav class="mt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0" aria-label="Paginación de la tabla">
+    <!-- Información de páginas -->
+    <div class="text-sm text-gray-600">
+      Mostrando página {{ students_page_obj.number }} de {{ students_page_obj.paginator.num_pages }} 
+      ({{ students_page_obj.paginator.count }} alumnos en total)
+    </div>
+    
+    <!-- Controles de paginación -->
+    <div class="flex items-center space-x-1">
+      <!-- Primera página -->
+      {% if students_page_obj.number > 3 %}
+      <a href="?page=1" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+        1
+      </a>
+      {% if students_page_obj.number > 4 %}
+      <span class="px-2 py-2 text-sm text-gray-500">...</span>
+      {% endif %}
       {% endif %}
 
-      <!-- Itera sobre todas las páginas -->
+      <!-- Páginas anteriores y posteriores a la actual -->
       {% for i in students_page_obj.paginator.page_range %}
-      <li>
-        {% if students_page_obj.number == i %}
-        <!-- Página actual -->
-        <span
-          class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md"
-        >
-          {{ i }}
-        </span>
-        {% else %}
-        <!-- Enlaces a otras páginas -->
-        <a
-          href="?page={{ i }}"
-          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
-        >
-          {{ i }}
-        </a>
+        {% if i >= students_page_obj.number|add:"-2" and i <= students_page_obj.number|add:"2" %}
+          {% if students_page_obj.number == i %}
+          <!-- Página actual -->
+          <span class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md">
+            {{ i }}
+          </span>
+          {% else %}
+          <!-- Páginas cercanas -->
+          <a href="?page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+            {{ i }}
+          </a>
+          {% endif %}
         {% endif %}
-      </li>
       {% endfor %}
 
-      <!-- Enlace a la página siguiente -->
-      {% if students_page_obj.has_next %}
-      <li>
-        <a
-          href="?page={{ students_page_obj.next_page_number }}"
-          class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
-        >
-          Siguiente
-        </a>
-      </li>
+      <!-- Última página -->
+      {% if students_page_obj.number < students_page_obj.paginator.num_pages|add:"-2" %}
+      {% if students_page_obj.number < students_page_obj.paginator.num_pages|add:"-3" %}
+      <span class="px-2 py-2 text-sm text-gray-500">...</span>
       {% endif %}
-    </ul>
+      <a href="?page={{ students_page_obj.paginator.num_pages }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+        {{ students_page_obj.paginator.num_pages }}
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Navegación Anterior/Siguiente -->
+    <div class="flex items-center space-x-2">
+      {% if students_page_obj.has_previous %}
+      <a href="?page={{ students_page_obj.previous_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200 flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Anterior
+      </a>
+      {% else %}
+      <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Anterior
+      </span>
+      {% endif %}
+
+      {% if students_page_obj.has_next %}
+      <a href="?page={{ students_page_obj.next_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200 flex items-center">
+        Siguiente
+        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+      {% else %}
+      <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed flex items-center">
+        Siguiente
+        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </span>
+      {% endif %}
+    </div>
   </nav>
   {% endif %}
 </div>
