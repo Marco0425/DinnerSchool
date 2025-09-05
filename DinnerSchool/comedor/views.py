@@ -459,7 +459,21 @@ def orderHistory(request):
         HttpResponse: Respuesta HTTP que redirige al dashboard.
     """ 
     if request.user.is_authenticated:
-        return render(request, 'Orders/orders_history_view.html') 
+        is_tutor = request.user.groups.filter(name='Tutor').exists(),
+        is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
+        is_admin = request.user.is_staff
+
+        if is_admin:
+            Pedidos = Pedido.objects.all()
+        elif is_profesor:
+            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username)
+        elif is_tutor:
+            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username)
+
+        context = {
+            'order_list': Pedidos,
+        }
+        return render(request, 'Orders/orders_history_view.html', context) 
     else:
         return redirect('core:signInUp')
     
