@@ -88,6 +88,7 @@ class Noticias(models.Model):
     contenido = models.TextField(verbose_name='Contenido')
     tipoAnuncio = models.PositiveSmallIntegerField(choices=TIPOANUNCIO, default=1, verbose_name='Tipo de Anuncio')
     activo = models.BooleanField(default=True, verbose_name='Activo')
+    rutaImagen = models.CharField(max_length=200, blank=True, null=True, verbose_name='Imagen')
     autor = models.ForeignKey(Usuarios, on_delete=models.CASCADE, verbose_name='Autor')
     fecha = models.DateField(auto_now=True, verbose_name='Fecha')
 

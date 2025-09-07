@@ -492,6 +492,11 @@
     >
       <p class="font-bold">{{ noticia.titulo }}</p>
       <p class="text-sm">{{ noticia.contenido }}</p>
+      {% if noticia.rutaImagen %}
+      <div class="flex justify-center mt-2">
+        <img src="{{ MEDIA_URL }}{{ noticia.rutaImagen }}" alt="{{ noticia.titulo }}" class="rounded-lg max-w-full h-auto" />
+      </div>
+      {% endif %}
     </div>
     <br />
     {% endfor %}

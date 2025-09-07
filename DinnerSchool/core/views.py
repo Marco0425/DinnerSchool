@@ -265,6 +265,7 @@ def dashboard(request):
             'noticias': Noticias.objects.filter(activo=True),
             'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
             'credito'   : credito,
+            'MEDIA_URL': settings.MEDIA_URL,
         }
         
         return render(request, 'Home/home_dashboard_view.html', context)
