@@ -419,8 +419,8 @@ def order(request):
                 
         try:
             # Obtener todos los pedidos del día
-            pedidos_hoy = Pedido.objects.filter(fecha=today).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
-            
+            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+
             # Diccionario para agrupar pedidos
             orders_dict = {}
             
