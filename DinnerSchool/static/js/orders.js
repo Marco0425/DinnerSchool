@@ -313,6 +313,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Resetear opciones de alumno
       alumnoSelect.value = "";
       alumnoOptions.forEach((option) => {
+        // Oculta todos los alumnos
         option.style.display = "none";
       });
 
@@ -326,6 +327,21 @@ document.addEventListener("DOMContentLoaded", function () {
         alumnoSelect.disabled = false;
       } else {
         alumnoSelect.disabled = true;
+      }
+
+      // Refrescar Select2 para mostrar solo las opciones visibles
+      if (window.jQuery && $(alumnoSelect).data('select2')) {
+        $(alumnoSelect).select2('destroy');
+        $(alumnoSelect).select2({
+          width: '100%',
+          placeholder: 'Selecciona un alumno',
+          allowClear: true,
+          language: {
+            noResults: function() {
+              return 'No hay resultados';
+            }
+          }
+        });
       }
     });
   }
