@@ -70,8 +70,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const submitOrderBtn = document.getElementById("submitOrder");
   const ordersForm = document.getElementById("ordersForm");
 
+  console.log(platilloSelect);
+  console.log(ingredientesDisplay);
+
   // Mostrar ingredientes cuando se selecciona un platillo
   platilloSelect.addEventListener("change", function () {
+    console.log("Cambio detectado en platilloSelect");
     const selectedOption = this.options[this.selectedIndex];
     if (selectedOption.value) {
       const ingredientesTexto = selectedOption.getAttribute("data-ingredientes");
