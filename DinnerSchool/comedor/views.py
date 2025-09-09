@@ -40,8 +40,11 @@ def ingredients(request):
     """
 
     if request.user.is_authenticated:
-        # Aquí podrías obtener los ingredientes y pasarlos al template
+        # Filtro por nombre
+        nombre = request.GET.get('nombre', '').strip()
         ingredients = Ingredientes.objects.all()
+        if nombre:
+            ingredients = ingredients.filter(nombre__icontains=nombre)
         paginator = Paginator(ingredients, 10) # Muestra 10 ingredientes por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
