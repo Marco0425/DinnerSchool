@@ -306,7 +306,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const alumnoSelect = document.getElementById("alumno");
 
   if (tutorSelect && alumnoSelect) {
+    console.log("Tutor and alumno selects found");
     $(tutorSelect).on('change', function () {
+      console.log("Tutor select changed");
       const tutorId = this.value;
       const alumnoOptions = alumnoSelect.querySelectorAll('option[data-tutor-id]');
 
