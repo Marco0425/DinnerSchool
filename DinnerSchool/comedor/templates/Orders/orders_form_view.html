@@ -50,7 +50,7 @@
           <option
             value="{{ platillo.id }}"
             data-precio="{{ platillo.precio }}"
-            data-ingredientes="{{ platillo.ingredientes}}"
+            data-ingredientes="{{ platillo.ingredientes|escapejs }}"
             data-nombre="{{ platillo.nombre }}"
           >
             {{ platillo.nombre }} - ${{ platillo.precio }}

@@ -75,10 +75,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedOption = this.options[this.selectedIndex];
     if (selectedOption.value) {
       const ingredientesTexto = selectedOption.getAttribute("data-ingredientes");
-      let ingredientesArray = JSON.parse(ingredientesTexto);
-      var ingredientes = ingredientesArray.join(", ").toLowerCase();
-      ingredientesDisplay.value =
-        ingredientes || "No hay ingredientes especificados";
+      try {
+        let ingredientesArray = JSON.parse(ingredientesTexto);
+        var ingredientes = ingredientesArray.join(", ").toLowerCase();
+        ingredientesDisplay.value =
+          ingredientes || "No hay ingredientes especificados";
+      } catch (error) {
+        console.error("Error parsing ingredients JSON:", error, ingredientesTexto);
+        ingredientesDisplay.value = "Error al cargar ingredientes";
+      }
     } else {
       ingredientesDisplay.value = "";
     }
@@ -95,9 +100,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const precio = parseFloat(
       platilloSelect.options[platilloSelect.selectedIndex].getAttribute("data-precio")
     );
-    const ingredientes = platilloSelect.options[platilloSelect.selectedIndex].getAttribute(
+    const ingredientesRaw = platilloSelect.options[platilloSelect.selectedIndex].getAttribute(
       "data-ingredientes"
     );
+    
+    // Parse ingredients for display
+    let ingredientesDisplay = "";
+    try {
+      let ingredientesArray = JSON.parse(ingredientesRaw);
+      ingredientesDisplay = ingredientesArray.join(", ");
+    } catch (error) {
+      console.error("Error parsing ingredients for cart:", error);
+      ingredientesDisplay = "Error en ingredientes";
+    }
     const notas = notasInput.value.trim();
     const cantidad = parseInt(cantidadInput.value);
     const turno = turnoSelect.value;
@@ -125,7 +140,8 @@ document.addEventListener("DOMContentLoaded", function () {
       precio: precio,
       cantidad: cantidad,
       subtotal: precio * cantidad,
-      ingredientes: ingredientes,
+      ingredientes: ingredientesRaw, // Raw JSON for backend
+      ingredientes_display: ingredientesDisplay, // Parsed for display
       notas: notas,
       turno: turno,
       turno_text: turnoText,
@@ -215,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <h4 class="font-medium text-gray-900">${item.platillo_nombre}</h4>
                                 <p class="text-sm text-gray-600">Turno: ${item.turno_text}</p>
                                 <p class="text-sm text-gray-600">Cantidad: ${item.cantidad}</p>
+                                ${item.ingredientes_display ? `<p class="text-sm text-gray-500">Ingredientes: ${item.ingredientes_display}</p>` : ''}
                                 ${item.notas ? `<p class="text-sm text-gray-600">Notas: ${item.notas}</p>` : ''}
                                 <p class="text-sm font-medium text-gray-900">Subtotal: $${item.subtotal.toFixed(2)}</p>
                             </div>
