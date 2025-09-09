@@ -70,13 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const submitOrderBtn = document.getElementById("submitOrder");
   const ordersForm = document.getElementById("ordersForm");
 
-  console.log(platilloSelect);
-  console.log(ingredientesDisplay);
-
   // Mostrar ingredientes cuando se selecciona un platillo
   if (window.jQuery && $('#platillo').length) {
     $('#platillo').on('select2:select select2:clear change', function () {
-      console.log('Cambio detectado en select2');
       const selectedOption = this.options[this.selectedIndex];
       if (selectedOption && selectedOption.value) {
         const ingredientesTexto = selectedOption.getAttribute("data-ingredientes");
