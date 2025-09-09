@@ -306,58 +306,81 @@ document.addEventListener("DOMContentLoaded", function () {
   const alumnoSelect = document.getElementById("alumno");
 
   if (tutorSelect && alumnoSelect) {
-    console.log("Tutor and alumno selects found");
-      // Guardar todas las opciones originales al cargar la página
-      const originalAlumnoOptions = Array.from(alumnoSelect.options).map(opt => ({
-        value: opt.value,
-        text: opt.text,
-        tutorId: opt.getAttribute('data-tutor-id')
-      }));
+    // Guardar todas las opciones originales al cargar la página
+    const originalAlumnoOptions = Array.from(alumnoSelect.options).map(opt => ({
+      value: opt.value,
+      text: opt.text,
+      tutorId: opt.getAttribute('data-tutor-id')
+    }));
 
-      $(tutorSelect).on('change', function () {
-        const tutorId = this.value;
-        console.log("Tutor changed to:", tutorId);
-        // Limpiar opciones actuales
-        alumnoSelect.innerHTML = '';
-
-        // Agregar opción por defecto
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.text = 'Selecciona un tutor primero';
-        alumnoSelect.appendChild(defaultOption);
-
-        if (tutorId) {
-          // Agregar solo alumnos del tutor seleccionado
-          originalAlumnoOptions.forEach(opt => {
-            if (opt.tutorId === tutorId) {
-              const option = document.createElement('option');
-              option.value = opt.value;
-              option.text = opt.text;
-              option.setAttribute('data-tutor-id', opt.tutorId);
-              alumnoSelect.appendChild(option);
-            }
-          });
-          alumnoSelect.disabled = false;
-          defaultOption.text = 'Selecciona el Alumno';
-        } else {
-          alumnoSelect.disabled = true;
-        }
-
-        // Reinicializar Select2
-        if (window.jQuery && $(alumnoSelect).data('select2')) {
-          $(alumnoSelect).val(null).trigger('change.select2');
-          $(alumnoSelect).select2('destroy');
-          $(alumnoSelect).select2({
-            width: '100%',
-            placeholder: 'Selecciona un alumno',
-            allowClear: true,
-            language: {
-              noResults: function() {
-                return 'No hay resultados';
-              }
-            }
-          });
+    // Deshabilitar y mostrar el select de alumno por defecto
+    alumnoSelect.disabled = true;
+    alumnoSelect.style.display = '';
+    if (window.jQuery && $(alumnoSelect).data('select2')) {
+      $(alumnoSelect).val(null).trigger('change.select2');
+      $(alumnoSelect).select2('destroy');
+      $(alumnoSelect).select2({
+        width: '100%',
+        placeholder: 'Selecciona un alumno',
+        allowClear: true,
+        language: {
+          noResults: function() {
+            return 'No hay resultados';
+          }
         }
       });
+    }
+
+    $(tutorSelect).on('change', function () {
+      const tutorId = this.value;
+
+      // Limpiar opciones actuales
+      alumnoSelect.innerHTML = '';
+
+      // Agregar opción por defecto
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.text = 'Selecciona un tutor primero';
+      alumnoSelect.appendChild(defaultOption);
+
+      // Si es profesor, ocultar el select de alumno
+      if (tutorId.startsWith('Profesor_')) {
+        alumnoSelect.style.display = 'none';
+        alumnoSelect.disabled = true;
+      } else if (tutorId.startsWith('Tutor_')) {
+        // Mostrar solo alumnos del tutor seleccionado
+        originalAlumnoOptions.forEach(opt => {
+          if (opt.tutorId === tutorId) {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.text = opt.text;
+            option.setAttribute('data-tutor-id', opt.tutorId);
+            alumnoSelect.appendChild(option);
+          }
+        });
+        alumnoSelect.disabled = false;
+        alumnoSelect.style.display = '';
+        defaultOption.text = 'Selecciona el Alumno';
+      } else {
+        alumnoSelect.disabled = true;
+        alumnoSelect.style.display = '';
+      }
+
+      // Reinicializar Select2
+      if (window.jQuery && $(alumnoSelect).data('select2')) {
+        $(alumnoSelect).val(null).trigger('change.select2');
+        $(alumnoSelect).select2('destroy');
+        $(alumnoSelect).select2({
+          width: '100%',
+          placeholder: 'Selecciona un alumno',
+          allowClear: true,
+          language: {
+            noResults: function() {
+              return 'No hay resultados';
+            }
+          }
+        });
+      }
+    });
   }
 });
