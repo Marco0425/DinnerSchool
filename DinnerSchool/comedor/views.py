@@ -494,49 +494,25 @@ def orderHistory(request):
         total_max = request.GET.get('total_max', '')
 
         if usuario:
-            # Buscar por nombre y apellido juntos (sin agregar otro campo)
-            Pedidos = Pedidos.filter(
-                Q(
-                    alumnoId__nombre__icontains=usuario
-                ) |
-                Q(
-                    alumnoId__paterno__icontains=usuario
-                ) |
-                Q(
-                    profesorId__usuario__nombre__icontains=usuario
-                ) |
-                Q(
-                    profesorId__usuario__paterno__icontains=usuario
-                ) |
-                Q(
-                    alumnoId__tutorId__usuario__email__icontains=usuario
-                ) |
-                Q(
-                    profesorId__usuario__email__icontains=usuario
-                ) |
-                Q(
-                    alumnoId__nombre__icontains=usuario.split()[0] if len(usuario.split()) > 1 else usuario
-                ) |
-                Q(
-                    alumnoId__paterno__icontains=usuario.split()[-1] if len(usuario.split()) > 1 else usuario
-                ) |
-                Q(
-                    profesorId__usuario__nombre__icontains=usuario.split()[0] if len(usuario.split()) > 1 else usuario
-                ) |
-                Q(
-                    profesorId__usuario__paterno__icontains=usuario.split()[-1] if len(usuario.split()) > 1 else usuario
-                ) |
-                Q(
-                    alumnoId__nombre__icontains=usuario.split()[0] if len(usuario.split()) > 1 else usuario
-                ) & Q(
-                    alumnoId__paterno__icontains=usuario.split()[-1] if len(usuario.split()) > 1 else usuario
-                ) |
-                Q(
-                    profesorId__usuario__nombre__icontains=usuario.split()[0] if len(usuario.split()) > 1 else usuario
-                ) & Q(
-                    profesorId__usuario__paterno__icontains=usuario.split()[-1] if len(usuario.split()) > 1 else usuario
+            usuario = usuario.strip()
+            palabras = usuario.split()
+            if len(palabras) == 2:
+                nombre, apellido = palabras
+                Pedidos = Pedidos.filter(
+                    Q(alumnoId__nombre__iexact=nombre, alumnoId__paterno__iexact=apellido) |
+                    Q(profesorId__usuario__nombre__iexact=nombre, profesorId__usuario__paterno__iexact=apellido) |
+                    Q(alumnoId__tutorId__usuario__email__icontains=usuario) |
+                    Q(profesorId__usuario__email__icontains=usuario)
                 )
-            )
+            else:
+                Pedidos = Pedidos.filter(
+                    Q(alumnoId__nombre__icontains=usuario) |
+                    Q(alumnoId__paterno__icontains=usuario) |
+                    Q(profesorId__usuario__nombre__icontains=usuario) |
+                    Q(profesorId__usuario__paterno__icontains=usuario) |
+                    Q(alumnoId__tutorId__usuario__email__icontains=usuario) |
+                    Q(profesorId__usuario__email__icontains=usuario)
+                )
         if platillo:
             Pedidos = Pedidos.filter(platillo__nombre__icontains=platillo)
         if turno != '':
