@@ -316,47 +316,6 @@ def createAds(request):
         imagen = request.FILES.get("imagen")
         
         # Procesar la imagen si existe
-        ruta_imagen = None
-        if imagen:
-            try:
-                # Crear nombre del archivo con fecha actual
-                fecha_actual = datetime.now().strftime("%d-%m-%Y")
-                extension = os.path.splitext(imagen.name)[1]
-                nombre_archivo = f"noticia_{fecha_actual}{extension}"
-                
-                # Usar MEDIA_ROOT para archivos dinámicos
-                from django.conf import settings
-                
-                # Verificar que MEDIA_ROOT existe
-                if not hasattr(settings, 'MEDIA_ROOT') or not settings.MEDIA_ROOT:
-                    raise Exception("MEDIA_ROOT no está configurado en settings.py")
-                
-                # Crear directorio completo
-                directorio_noticias = os.path.join(settings.MEDIA_ROOT, 'noticias')
-                
-                if not os.path.exists(directorio_noticias):
-                    os.makedirs(directorio_noticias, exist_ok=True)
-                
-                # Ruta completa del archivo
-                ruta_completa = os.path.join(directorio_noticias, nombre_archivo)
-                
-                # Guardar archivo
-                with open(ruta_completa, 'wb+') as destination:
-                    for chunk in imagen.chunks():
-                        destination.write(chunk)
-                
-                # Verificar que el archivo se guardó
-                if not os.path.exists(ruta_completa):
-                    raise Exception("El archivo no se guardó correctamente")
-        
-                # Guardar ruta relativa para MEDIA
-                ruta_imagen = f"noticias/{nombre_archivo}"
-        
-            except Exception as e:
-                messages.error(request, f"Error al guardar la imagen: {str(e)}")
-                context = {'noticia': noticia}
-                return render(request, 'Ads/ads_form_view.html', context)
-        
         if titulo and contenido:
             if noticia:
                 noticia.titulo = titulo
@@ -364,8 +323,8 @@ def createAds(request):
                 noticia.activo = True if request.POST.get("estado") == "1" else False
                 noticia.tipoAnuncio = request.POST.get("tipoAnuncio")
                 # Solo actualizar la imagen si se subió una nueva
-                if ruta_imagen:
-                    noticia.rutaImagen = ruta_imagen
+                if imagen:
+                    noticia.rutaImagen = imagen
                 noticia.save()
                 messages.success(request, "Anuncio actualizado exitosamente.")
                 return redirect('comedor:ads')
@@ -378,7 +337,7 @@ def createAds(request):
                         activo=True if request.POST.get("estado") == "1" else False,
                         autor=usuario,
                         tipoAnuncio=request.POST.get("tipoAnuncio"),
-                        rutaImagen=ruta_imagen
+                        rutaImagen=imagen
                     )
                     nueva_noticia.save()
                     messages.success(request, "Anuncio creado exitosamente.")

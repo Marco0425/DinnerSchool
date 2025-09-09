@@ -27,6 +27,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 ]
 
+# Para archivos media - SOLO en desarrollo local
+# Con Cloudinary, no necesitas esto en producción
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

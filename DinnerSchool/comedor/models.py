@@ -1,4 +1,5 @@
 from django.db import models
+from cloudinary.models import CloudinaryField
 
 from .choices import *
 from core.models import Tutor, Alumnos, NivelEducativo, Usuarios, Empleados
@@ -88,9 +89,40 @@ class Noticias(models.Model):
     contenido = models.TextField(verbose_name='Contenido')
     tipoAnuncio = models.PositiveSmallIntegerField(choices=TIPOANUNCIO, default=1, verbose_name='Tipo de Anuncio')
     activo = models.BooleanField(default=True, verbose_name='Activo')
-    rutaImagen = models.CharField(max_length=200, blank=True, null=True, verbose_name='Imagen')
+    rutaImagen = CloudinaryField(
+        'imagen',
+        folder='noticias/',  # Organiza en carpetas
+        null=True,
+        blank=True,
+        transformation={
+            'quality': 'auto',  # Optimización automática
+            'fetch_format': 'auto',  # Formato automático (WebP cuando sea posible)
+            'width': 800,  # Ancho máximo
+            'height': 600,  # Alto máximo
+            'crop': 'limit'  # No cortar, solo redimensionar
+        }
+    )
     autor = models.ForeignKey(Usuarios, on_delete=models.CASCADE, verbose_name='Autor')
     fecha = models.DateField(auto_now=True, verbose_name='Fecha')
+    
+    def get_imagen_url(self):
+        """Retorna la URL de la imagen o None si no existe"""
+        if self.rutaImagen:
+            return self.rutaImagen.url
+        return None
+    
+    def get_imagen_thumbnail(self, width=200, height=150):
+        """Retorna una URL de thumbnail de la imagen"""
+        if self.rutaImagen:
+            from cloudinary import CloudinaryImage
+            return CloudinaryImage(str(self.rutaImagen)).build_url(
+                width=width,
+                height=height,
+                crop='fill',
+                quality='auto',
+                fetch_format='auto'
+            )
+        return None
 
     class Meta:
         verbose_name = 'Noticia'
