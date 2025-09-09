@@ -435,8 +435,25 @@ def user_list_view(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de usuarios.
     """
     if request.user.is_authenticated:
+        # Obtener filtros de GET
+        nombre = request.GET.get('nombre', '').strip()
+        correo = request.GET.get('correo', '').strip()
+        tipo = request.GET.get('tipo', '').strip()
+
         users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Empleado"])
-        
+        # Aplicar filtros
+        if nombre:
+            users = users.filter(nombre__icontains=nombre)
+        if correo:
+            users = users.filter(email__icontains=correo)
+        if tipo:
+            # tipo puede ser Tutor, Cocinero, Profesor
+            if tipo == 'Tutor':
+                users = users.filter(groupId__name='Tutor')
+            elif tipo in ['Cocinero', 'Profesor']:
+                empleados_ids = Empleados.objects.filter(puesto=tipo).values_list('usuario_id', flat=True)
+                users = users.filter(id__in=empleados_ids)
+
         usersData = []
         for user in users:
             if user.groupId.name == 'Tutor':
@@ -457,9 +474,10 @@ def user_list_view(request):
         paginator = Paginator(usersData, 10) # Muestra 10 usuarios por página
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        
+
         context = {
-            'users': page_obj
+            'users': page_obj,
+            'request': request,
         }
         return render(request, 'Users/users_list_view.html', context)
     else:
