@@ -74,19 +74,20 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log(ingredientesDisplay);
 
   // Mostrar ingredientes cuando se selecciona un platillo
-  platilloSelect.addEventListener("change", function () {
-    console.log("Cambio detectado en platilloSelect");
-    const selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value) {
-      const ingredientesTexto = selectedOption.getAttribute("data-ingredientes");
-      let ingredientesArray = JSON.parse(ingredientesTexto);
-      var ingredientes = ingredientesArray.join(", ").toLowerCase();
-      ingredientesDisplay.value =
-        ingredientes || "No hay ingredientes especificados";
-    } else {
-      ingredientesDisplay.value = "";
-    }
-  });
+  if (window.jQuery && $('#platillo').length) {
+    $('#platillo').on('select2:select select2:clear change', function () {
+      console.log('Cambio detectado en select2');
+      const selectedOption = this.options[this.selectedIndex];
+      if (selectedOption && selectedOption.value) {
+        const ingredientesTexto = selectedOption.getAttribute("data-ingredientes");
+        let ingredientesArray = JSON.parse(ingredientesTexto);
+        var ingredientes = ingredientesArray.join(", ").toLowerCase();
+        ingredientesDisplay.value = ingredientes || "No hay ingredientes especificados";
+      } else {
+        ingredientesDisplay.value = "";
+      }
+    });
+  }
 
   // Agregar platillo al carrito
   addToCartBtn.addEventListener("click", function () {
