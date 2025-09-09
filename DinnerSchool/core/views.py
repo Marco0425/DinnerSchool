@@ -284,6 +284,12 @@ def students(request):
     if not request.user.is_authenticated:
         return redirect('core:signInUp')
 
+    # Filtros avanzados
+    nombre = request.GET.get('nombre', '').strip()
+    nivel = request.GET.get('nivel', '').strip()
+    grado = request.GET.get('grado', '').strip()
+    grupo = request.GET.get('grupo', '').strip()
+
     # Obtener el queryset de estudiantes basado en el tipo de usuario
     if request.user.is_staff:
         students_queryset = Alumnos.objects.all()
@@ -295,6 +301,16 @@ def students(request):
         except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
             messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
             return redirect('core:createStudents')
+
+    # Aplicar filtros
+    if nombre:
+        students_queryset = students_queryset.filter(nombre__icontains=nombre)
+    if nivel:
+        students_queryset = students_queryset.filter(nivelEducativo__nivel=nivel)
+    if grado:
+        students_queryset = students_queryset.filter(nivelEducativo__grado=grado)
+    if grupo:
+        students_queryset = students_queryset.filter(nivelEducativo__grupo=grupo)
 
     # Aplicar la paginación al queryset
     paginator = Paginator(students_queryset, 10)
@@ -318,6 +334,10 @@ def students(request):
         context = {
             'students_list': students_list,
             'students_page_obj': students_page_obj,
+            'NIVELEDUCATIVO': NIVELEDUCATIVO,
+            'GRADO': GRADO,
+            'GRUPO': GRUPO,
+            'request': request,
         }
         return render(request, 'Students/students_list_view.html', context)
     else:
