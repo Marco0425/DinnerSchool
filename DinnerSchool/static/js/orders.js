@@ -306,21 +306,19 @@ document.addEventListener("DOMContentLoaded", function () {
   const alumnoSelect = document.getElementById("alumno");
 
   if (tutorSelect && alumnoSelect) {
-    tutorSelect.addEventListener("change", function () {
+    $(tutorSelect).on('change', function () {
       const tutorId = this.value;
-      const alumnoOptions = alumnoSelect.querySelectorAll("option[data-tutor-id]");
+      const alumnoOptions = alumnoSelect.querySelectorAll('option[data-tutor-id]');
 
       // Resetear opciones de alumno
       alumnoSelect.value = "";
       alumnoOptions.forEach((option) => {
-        // Oculta todos los alumnos
         option.style.display = "none";
       });
 
       if (tutorId) {
-        // Mostrar solo alumnos del tutor seleccionado
         alumnoOptions.forEach((option) => {
-          if (option.getAttribute("data-tutor-id") === tutorId) {
+          if (option.getAttribute('data-tutor-id') === tutorId) {
             option.style.display = "block";
           }
         });
@@ -331,6 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Refrescar Select2 para mostrar solo las opciones visibles
       if (window.jQuery && $(alumnoSelect).data('select2')) {
+        $(alumnoSelect).val(null).trigger('change.select2');
         $(alumnoSelect).select2('destroy');
         $(alumnoSelect).select2({
           width: '100%',
