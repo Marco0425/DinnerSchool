@@ -16,6 +16,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
+from django.db.models import Q
 from core.models import Alumnos, Usuarios, Tutor, Empleados
 from core.choices import *
 from .choices import *
@@ -471,12 +472,49 @@ def orderHistory(request):
         is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
         is_admin = request.user.is_staff
 
+        # Base queryset según tipo de usuario
         if is_admin:
-            Pedidos = Pedido.objects.all().order_by('-fecha')
+            Pedidos = Pedido.objects.all()
         elif is_profesor:
-            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username).order_by('-fecha')
+            Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username)
         elif is_tutor:
-            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username).order_by('-fecha')
+            Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username)
+
+        # Filtros por GET
+        usuario = request.GET.get('usuario', '').strip()
+        platillo = request.GET.get('platillo', '').strip()
+        turno = request.GET.get('turno', '')
+        estatus = request.GET.get('estatus', '')
+        fecha_inicio = request.GET.get('fecha_inicio', '')
+        fecha_fin = request.GET.get('fecha_fin', '')
+        total_min = request.GET.get('total_min', '')
+        total_max = request.GET.get('total_max', '')
+
+        if usuario:
+            Pedidos = Pedidos.filter(
+                Q(alumnoId__nombre__icontains=usuario) |
+                Q(alumnoId__paterno__icontains=usuario) |
+                Q(profesorId__usuario__nombre__icontains=usuario) |
+                Q(profesorId__usuario__paterno__icontains=usuario) |
+                Q(alumnoId__tutorId__usuario__email__icontains=usuario) |
+                Q(profesorId__usuario__email__icontains=usuario)
+            )
+        if platillo:
+            Pedidos = Pedidos.filter(platillo__nombre__icontains=platillo)
+        if turno != '':
+            Pedidos = Pedidos.filter(turno=turno)
+        if estatus != '':
+            Pedidos = Pedidos.filter(status=estatus)
+        if fecha_inicio:
+            Pedidos = Pedidos.filter(fecha__gte=fecha_inicio)
+        if fecha_fin:
+            Pedidos = Pedidos.filter(fecha__lte=fecha_fin)
+        if total_min:
+            Pedidos = Pedidos.filter(total__gte=total_min)
+        if total_max:
+            Pedidos = Pedidos.filter(total__lte=total_max)
+
+        Pedidos = Pedidos.order_by('-fecha')
 
         # Paginación
         from django.core.paginator import Paginator
