@@ -1,3 +1,18 @@
+document.addEventListener("DOMContentLoaded", function () {
+  // Inicializar Select2 para el select de platillos
+  if (window.jQuery && $('#platillo').length) {
+    $('#platillo').select2({
+      width: '100%',
+      placeholder: 'Selecciona el Platillo',
+      allowClear: true,
+      language: {
+        noResults: function() {
+          return 'No hay resultados';
+        }
+      }
+    });
+  }
+
   // Inicializar Select2 para el select de alumno
   if (window.jQuery && $('#alumno').length) {
     $('#alumno').select2({
@@ -11,12 +26,12 @@
       }
     });
   }
-document.addEventListener("DOMContentLoaded", function () {
-  // Inicializar Select2 para el select de platillos
-  if (window.jQuery && $('#platillo').length) {
-    $('#platillo').select2({
+
+    // Inicializar Select2 para el select de alumno_tutor
+  if (window.jQuery && $('#alumno_tutor').length) {
+    $('#alumno_tutor').select2({
       width: '100%',
-      placeholder: 'Selecciona el Platillo',
+      placeholder: 'Selecciona un alumno',
       allowClear: true,
       language: {
         noResults: function() {
