@@ -839,31 +839,37 @@ def saucers(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de platillos.
     """
     if request.user.is_authenticated:
-        # 1. Obtiene todos los platillos, sin procesarlos aún.
-        all_saucers = Platillo.objects.all()
+        # Filtros por GET
+        nombre = request.GET.get('nombre', '').strip()
+        precio_min = request.GET.get('precio_min', '').strip()
+        precio_max = request.GET.get('precio_max', '').strip()
 
-        # 2. Aplica la paginación a la lista completa de objetos.
-        paginator = Paginator(all_saucers, 10)
+        saucers_qs = Platillo.objects.all()
+        if nombre:
+            saucers_qs = saucers_qs.filter(nombre__icontains=nombre)
+        if precio_min:
+            saucers_qs = saucers_qs.filter(precio__gte=precio_min)
+        if precio_max:
+            saucers_qs = saucers_qs.filter(precio__lte=precio_max)
+
+        paginator = Paginator(saucers_qs, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
-        # 3. Procesa solo los platillos de la página actual.
         saucers_for_template = []
         for platillo in page_obj:
-            # Convierte la cadena de ingredientes en una lista de nombres.
             ingredient_ids = platillo.ingredientes.strip('[]').replace("'", "").split(', ')
             ingredient_names = [Ingredientes.objects.get(id=int(ing)).nombre for ing in ingredient_ids if ing]
-            
             saucers_for_template.append({
                 'id': platillo.id,
                 'nombre': platillo.nombre,
                 'ingredientes': ingredient_names,
                 'precio': platillo.precio
             })
-            
+
         context = {
-            'saucers_list': saucers_for_template, # Lista procesada para el bucle
-            'saucers_page_obj': page_obj          # Objeto de paginación
+            'saucers_list': saucers_for_template,
+            'saucers_page_obj': page_obj
         }
 
         return render(request, 'Saucer/saucer_list_view.html', context)
