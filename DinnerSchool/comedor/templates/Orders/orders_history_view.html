@@ -123,9 +123,9 @@
         <tr class="hover:bg-gray-50">
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
             {% if pedido.alumnoId %}
-              {{ pedido.alumnoId.nombre }} {{ pedido.alumnoId.paterno }}
+              {{ pedido.alumnoId.nombre }} {{ pedido.alumnoId.paterno }} {{ pedido.alumnoId.materno }}
             {% elif pedido.profesorId %}
-              {{ pedido.profesorId.usuario.nombre }} {{ pedido.profesorId.usuario.paterno }}
+              {{ pedido.profesorId.usuario.nombre }} {{ pedido.profesorId.usuario.paterno }} {{ pedido.profesorId.usuario.materno }}
             {% else %}
               -
             {% endif %}
