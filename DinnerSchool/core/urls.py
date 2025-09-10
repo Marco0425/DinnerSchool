@@ -15,4 +15,5 @@ urlpatterns = [
     path("educational/", views.education_level, name="educational"),
     path("users/", views.user_list_view, name="user_list_view"),
     path("account_settings/", views.account_settings_form_view, name="account_settings"),
+    path('reset-password/', views.reset_password, name='reset_password'),
 ]

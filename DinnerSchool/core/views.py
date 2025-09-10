@@ -1,6 +1,6 @@
 # Imports de Django
 import logging
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.contrib.auth import logout as django_logout
 from comedor.models import Ingredientes, Noticias, Pedido, Credito
 from core.models import Empleados
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.http import require_POST
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -17,12 +17,66 @@ from .choices import *
 from .herramientas import *
 from django.conf import settings
 
+# Imports para reset de contraseña
+import json
+import string
+import random
+
 # Imports del core
 from .models import *
 
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+@require_http_methods(["POST"])
+def reset_password(request):
+    """Vista para resetear contraseña (sin envío de correo)"""
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            email = data.get('email')
+        else:
+            email = request.POST.get('email')
+        
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'message': 'El correo electrónico es requerido.'
+            })
+        
+        # Verificar si el usuario existe
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'No existe una cuenta con ese correo electrónico.'
+            })
+        
+        # Por seguridad, generar una contraseña temporal
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        
+        # Cambiar la contraseña
+        print(f"[reset_password] Cambiando contraseña para {email} a {temp_password}")
+        print(f"[reset_password] User antes del cambio: {user}")
+        user.set_password(temp_password)
+        user.save()
+        
+        logger.info(f"Password reset for user: {email}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Tu nueva contraseña temporal es: {temp_password}. Te recomendamos cambiarla en tus ajustes de cuenta.',
+            'temp_password': temp_password
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in reset_password view: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error interno del servidor. Inténtalo más tarde.'
+        })
 
 # Vista genérica para eliminar
 @require_POST
@@ -160,7 +214,7 @@ def signInUp(request):
                     username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
                 )
                 messages.success(request, f'El usuario {useremail} ha sido creado exitosamente.')
-                return redirect('core:signInUp')  # CAMBIO: redirect después del éxito
+                return redirect('core:signInUp')
             except Group.DoesNotExist:
                 messages.error(request, 'Tipo de usuario inválido.')
                 return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
@@ -174,63 +228,77 @@ def signInUp(request):
     else:
         # No autenticado: login y registro normal
         if request.method == "POST":
-            username = request.POST.get("username")
-            userlastname = request.POST.get("userlastname")
-            userlastname2 = request.POST.get("userlastname2")
-            useremail = request.POST.get("useremail")
-            registerPassword = request.POST.get("password")
-            confirmPassword = request.POST.get("confirmPassword")
-            userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
-            userphone = request.POST.get("userphone")
-            
-            if '@liceoemperadores.edu.mx' in useremail:
-                userType = 4  # Profesor
+            # Detectar si es login o registro
+            if 'useremail' in request.POST:
+                # Es registro
+                username = request.POST.get("username")
+                userlastname = request.POST.get("userlastname")
+                userlastname2 = request.POST.get("userlastname2")
+                useremail = request.POST.get("useremail")
+                registerPassword = request.POST.get("password")
+                confirmPassword = request.POST.get("confirmPassword")
+                userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
+                userphone = request.POST.get("userphone")
+                
+                if '@liceoemperadores.edu.mx' in useremail:
+                    userType = 4  # Profesor
 
-            # Validaciones
-            if User.objects.filter(email=useremail).exists():
-                messages.error(request, 'El correo electrónico ya está en uso.')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-            
-            if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
-                messages.error(request, 'Por favor, completa todos los campos obligatorios.')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-            
-            if registerPassword != confirmPassword:
-                messages.error(request, 'Las contraseñas no coinciden.')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-
-            try:
-                user, usuario = crearUsuarioYPerfil(
-                    username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
-                )
-                # Login automático tras registro
-                userAuth = authenticate(request, username=useremail, password=registerPassword)
-                if userAuth is not None:
-                    login(request, userAuth)
-                    messages.success(request, 'Registro exitoso. ¡Bienvenido!')
-                    return redirect('core:dashboard')
-                else:
-                    messages.error(request, 'Error en la autenticación después del registro.')
+                # Validaciones
+                if User.objects.filter(email=useremail).exists():
+                    messages.error(request, 'El correo electrónico ya está en uso.')
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-            except Group.DoesNotExist:
-                messages.error(request, 'Tipo de usuario inválido.')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-            except Exception as e:
-                messages.error(request, f'Error creando usuario: {e}')
-                return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                
+                if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
+                    messages.error(request, 'Por favor, completa todos los campos obligatorios.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                
+                if registerPassword != confirmPassword:
+                    messages.error(request, 'Las contraseñas no coinciden.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
-        elif request.method == "GET":
-            correo = request.GET.get("username")
-            contrasena = request.GET.get("password")
-
-            if correo and contrasena:  # Solo intentar login si hay credenciales
+                try:
+                    user, usuario = crearUsuarioYPerfil(
+                        username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
+                    )
+                    # Login automático tras registro
+                    userAuth = authenticate(request, username=useremail, password=registerPassword)
+                    if userAuth is not None:
+                        login(request, userAuth)
+                        messages.success(request, 'Registro exitoso. ¡Bienvenido!')
+                        return redirect('core:dashboard')
+                    else:
+                        messages.error(request, 'Error en la autenticación después del registro.')
+                        return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                except Group.DoesNotExist:
+                    messages.error(request, 'Tipo de usuario inválido.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                except Exception as e:
+                    messages.error(request, f'Error creando usuario: {e}')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+            
+            else:
+                # Es login
+                correo = request.POST.get("username")
+                contrasena = request.POST.get("password")
+                
+                print(f"[LOGIN] Intentando login con: {correo}")
+                
+                if not correo or not contrasena:
+                    messages.error(request, 'Por favor, ingresa tu correo y contraseña.')
+                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                
                 user = authenticate(request, username=correo, password=contrasena)
                 if user is not None:
                     login(request, user)
                     messages.success(request, 'Inicio de sesión exitoso.')
                     return redirect('core:dashboard')
                 else:
-                    messages.error(request, 'Credenciales inválidas.')
+                    print(f"[LOGIN] Autenticación fallida para: {correo}")
+                    # Verificar si el usuario existe
+                    if User.objects.filter(email=correo).exists():
+                        messages.error(request, 'Contraseña incorrecta.')
+                    else:
+                        messages.error(request, 'No existe una cuenta con ese correo electrónico.')
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
         return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
