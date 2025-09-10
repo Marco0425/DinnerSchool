@@ -19,7 +19,7 @@ class Usuarios(models.Model):
         verbose_name = 'Usuario'
 
     def __str__(self):
-        return self.nombre
+        return f"{self.nombre} {self.paterno} {self.materno}"
     
 class Empleados(models.Model):
     usuario = models.ForeignKey(Usuarios, on_delete=models.CASCADE, verbose_name='Usuario')
@@ -30,8 +30,8 @@ class Empleados(models.Model):
         verbose_name = 'Empleado'
 
     def __str__(self):
-        return self.usuario.nombre
-    
+        return f"{self.usuario.nombre} {self.usuario.paterno} {self.usuario.materno}"
+
 class Tutor(models.Model):
     usuario = models.ForeignKey(Usuarios, on_delete=models.CASCADE, verbose_name='Usuario')
     parentesco = models.CharField(max_length=50, verbose_name='Parentesco')
@@ -41,7 +41,7 @@ class Tutor(models.Model):
         verbose_name = 'Tutor'
 
     def __str__(self):
-        return self.usuario.nombre
+        return f"{self.usuario.nombre} {self.usuario.paterno} {self.usuario.materno}"
 
 class NivelEducativo(models.Model):
     nivel = models.PositiveIntegerField(choices=NIVELEDUCATIVO, default=1, verbose_name='Nivel')
@@ -53,7 +53,7 @@ class NivelEducativo(models.Model):
         verbose_name = 'Nivel Educativo'
 
     def __str__(self):
-        return str(self.nivel)
+        return "{0} {1} {2}".format(dict(NIVELEDUCATIVO).get(self.nivel), dict(GRADO).get(self.grado), dict(GRUPO).get(self.grupo))
 
 class Alumnos(models.Model):
     nombre = models.CharField(max_length=100, verbose_name='Nombre')
