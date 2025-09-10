@@ -73,7 +73,7 @@ def createIngredient(request):
             ingrediente = None
 
     if request.method == "POST":
-        nombre = request.POST.get("ingrediente")
+        nombre = request.POST.get("ingrediente", "").title().strip()  # Capitalizar nombre
         if nombre:
             if ingrediente:
                 ingrediente.nombre = nombre
@@ -315,8 +315,8 @@ def createAds(request):
             noticia = None
 
     if request.method == "POST":
-        titulo = request.POST.get("titulo")
-        contenido = request.POST.get("contenido")
+        titulo = request.POST.get("titulo", "").title().strip()  # Capitalizar título
+        contenido = request.POST.get("contenido", "").strip()  # Solo quitar espacios del contenido
         imagen = request.FILES.get("imagen")
         
         # Procesar la imagen si existe
@@ -907,12 +907,14 @@ def createSaucer(request):
     ingredientes = Ingredientes.objects.all()
 
     if request.method == "POST":
-        nombre = request.POST.get("platillo")
+        nombre = request.POST.get("platillo", "").title().strip()  # Capitalizar nombre del platillo
         ingredientes_ids = request.POST.getlist("ingredientes")
         precio = request.POST.get("precio")
+        
         if not precio:
             messages.error(request, "Por favor, ingresa un precio para el platillo.")
             return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
+        
         if nombre and ingredientes_ids:
             if platillo:
                 platillo.nombre = nombre

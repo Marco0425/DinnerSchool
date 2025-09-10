@@ -142,13 +142,18 @@ def logout_view(request):
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
 def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, registerPassword, userType, userphone):
+    # Capitalizar nombres y apellidos
+    username = username.title().strip()
+    userlastname = userlastname.title().strip()
+    userlastname2 = userlastname2.title().strip() if userlastname2 else ''
+    
     # 1. Crear usuario base
     user = User.objects.create_user(
         username=useremail,
         email=useremail,
         password=registerPassword,
         first_name=username,
-        last_name=f"{userlastname} {userlastname2}"
+        last_name=f"{userlastname} {userlastname2}".strip()
     )
 
     group = Group.objects.get(pk=3 if userType in [3, 4] else userType)
@@ -182,10 +187,10 @@ def signInUp(request):
     if request.user.is_authenticated and request.user.is_staff:
         # Staff: solo registro
         if request.method == "POST":
-            username = request.POST.get("username")
-            userlastname = request.POST.get("userlastname")
-            userlastname2 = request.POST.get("userlastname2")
-            useremail = request.POST.get("useremail")
+            username = request.POST.get("username", "").title().strip()
+            userlastname = request.POST.get("userlastname", "").title().strip()
+            userlastname2 = request.POST.get("userlastname2", "").title().strip()
+            useremail = request.POST.get("useremail").lower()
             registerPassword = request.POST.get("password")
             confirmPassword = request.POST.get("confirmPassword")
             userType = request.POST.get("userType")
@@ -231,10 +236,10 @@ def signInUp(request):
             # Detectar si es login o registro
             if 'useremail' in request.POST:
                 # Es registro
-                username = request.POST.get("username")
-                userlastname = request.POST.get("userlastname")
-                userlastname2 = request.POST.get("userlastname2")
-                useremail = request.POST.get("useremail")
+                username = request.POST.get("username", "").title().strip()
+                userlastname = request.POST.get("userlastname", "").title().strip()
+                userlastname2 = request.POST.get("userlastname2", "").title().strip()
+                useremail = request.POST.get("useremail").lower()
                 registerPassword = request.POST.get("password")
                 confirmPassword = request.POST.get("confirmPassword")
                 userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
@@ -277,7 +282,7 @@ def signInUp(request):
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
             
             else:
-                # Es login
+                # Es login - no necesita capitalización
                 correo = request.POST.get("username")
                 contrasena = request.POST.get("password")
                 
@@ -415,11 +420,6 @@ def students(request):
 def createStudents(request):
     """
     Vista para crear un nuevo estudiante.
-    Esta vista se encarga de manejar la creación de un nuevo estudiante.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que redirige a la lista de estudiantes.
     """
     alumno_id = request.GET.get('id') or request.POST.get('id')
     alumno = None
@@ -435,9 +435,10 @@ def createStudents(request):
         context['is_staff'] = True
 
     if request.method == "POST":
-        nombre = request.POST.get("nombre")
-        paterno = request.POST.get("apellidoPaterno")
-        materno = request.POST.get("apellidoMaterno")
+        # Capitalizar nombres de estudiantes
+        nombre = request.POST.get("nombre", "").title().strip()
+        paterno = request.POST.get("apellidoPaterno", "").title().strip()
+        materno = request.POST.get("apellidoMaterno", "").title().strip()
         grado = request.POST.get("grado")
         grupo = request.POST.get("grupo")
         nivelEducativo = request.POST.get("nivelEducativo")
@@ -574,11 +575,6 @@ def user_list_view(request):
 def account_settings_form_view(request):
     """
     Vista para manejar los ajustes de cuenta del usuario.
-    Esta vista se encarga de mostrar y gestionar los ajustes de cuenta del usuario autenticado.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza el formulario de ajustes de cuenta.
     """
     if not request.user.is_authenticated:
         return redirect('core:signInUp')
@@ -591,9 +587,10 @@ def account_settings_form_view(request):
         return redirect('core:dashboard')
 
     if request.method == "POST":
-        nombre = request.POST.get("nombre", usuario.nombre)
-        paterno = request.POST.get("apellidoPaterno", usuario.paterno)
-        materno = request.POST.get("apellidoMaterno", usuario.materno)
+        # Capitalizar nombres en configuración de cuenta
+        nombre = request.POST.get("nombre", usuario.nombre).title().strip()
+        paterno = request.POST.get("apellidoPaterno", usuario.paterno).title().strip()
+        materno = request.POST.get("apellidoMaterno", usuario.materno).title().strip()
         correo = request.POST.get("correo", usuario.email)
         telefono = request.POST.get("telefono", usuario.telefono)
         password = request.POST.get("password")
@@ -611,6 +608,9 @@ def account_settings_form_view(request):
             user.email = correo
             user.username = correo
 
+        # Actualizar nombre completo en User model
+        user.first_name = nombre
+        user.last_name = f"{paterno} {materno}".strip()
 
         # Cambiar contraseña si ambas coinciden y no están vacías
         if password:
