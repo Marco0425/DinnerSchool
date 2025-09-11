@@ -462,6 +462,19 @@ def createStudents(request):
                 tutor = Tutor.objects.get(id=tutor_id) if tutor_id else None
             else:
                 tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+            
+            alumno_exists = Alumnos.objects.filter(
+                nombre=nombre,
+                paterno=paterno,
+                materno=materno,
+                nivelEducativo=nivelEducativoAlumno
+            )
+
+            if alumno_exists.exists() and not alumno:
+                tutor_exist = alumno_exists.first().tutorId
+                messages.error(request, f'El estudiante {nombre} {paterno} {materno} ya está registrado. Con el tutor {tutor_exist.usuario.nombre} {tutor_exist.usuario.paterno}.')
+                return render(request, 'Students/students_form_view.html', context)
+            
             if alumno:
                 alumno.nombre = nombre
                 alumno.paterno = paterno
