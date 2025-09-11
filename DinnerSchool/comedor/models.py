@@ -33,7 +33,7 @@ class Platillo(models.Model):
     nombre = models.CharField(max_length=100, verbose_name='Nombre')
     ingredientes = models.CharField(max_length=200, verbose_name='Ingredientes')
     precio = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio')
-
+    disponible = models.BooleanField(default=True, verbose_name='Disponible')
     class Meta:
         verbose_name = 'Platillo'
         verbose_name_plural = 'Platillos'

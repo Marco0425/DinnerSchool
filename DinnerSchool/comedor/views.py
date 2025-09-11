@@ -700,7 +700,7 @@ def createOrder(request):
     is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
     is_admin = request.user.is_staff
     
-    platillos = Platillo.objects.all()
+    platillos = Platillo.objects.all().filter(disponible=True)
     
     if is_tutor:
         # Para tutores: solo mostrar sus alumnos, no el campo de selección de usuario
@@ -910,6 +910,7 @@ def createSaucer(request):
         nombre = request.POST.get("platillo", "").title().strip()  # Capitalizar nombre del platillo
         ingredientes_ids = request.POST.getlist("ingredientes")
         precio = request.POST.get("precio")
+        disponible = False if request.POST.get("disponible") == None else True
         
         if not precio:
             messages.error(request, "Por favor, ingresa un precio para el platillo.")
@@ -920,10 +921,11 @@ def createSaucer(request):
                 platillo.nombre = nombre
                 platillo.precio = precio
                 platillo.ingredientes = str(ingredientes_ids)
+                platillo.disponible = disponible
                 platillo.save()
                 messages.success(request, "Platillo actualizado exitosamente.")
             else:
-                nuevoPlatillo = Platillo(nombre=nombre, precio=precio, ingredientes=str(ingredientes_ids))
+                nuevoPlatillo = Platillo(nombre=nombre, precio=precio, ingredientes=str(ingredientes_ids), disponible=disponible)
                 nuevoPlatillo.save()
                 messages.success(request, "Platillo creado exitosamente.")
             return redirect('comedor:saucers')

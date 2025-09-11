@@ -66,6 +66,15 @@
         value="{{ platillo.precio|default:'' }}"
       />
     </div>
+    <div class="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        id="disponible"
+        name="disponible"
+        class="h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300 rounded"
+      />
+      <label for="disponible" class="text-sm font-medium text-gray-700">Disponible</label>
+    </div>
 
     <div class="flex justify-end space-x-4 pt-4">
       <a
