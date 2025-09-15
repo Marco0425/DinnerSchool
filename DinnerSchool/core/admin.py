@@ -24,12 +24,13 @@ class TutorAdmin(admin.ModelAdmin):
     
 @admin.register(Alumnos)
 class AlumnosAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreCompleto', 'nivelEducativo', 'tutorId')
-    search_fields = ('nombre', 'paterno', 'tutorId')
-    
+    list_display = ('id', 'nombreCompleto', 'nivelEducativo', 'nombreTutor')
+    search_fields = ('nombre', 'paterno', 'materno', 'tutorId__usuario__nombre', 'tutorId__usuario__paterno', 'tutorId__usuario__materno')
+
     def nombreCompleto(self, obj):
         return f"{obj.nombre} {obj.paterno} {obj.materno}"
+    def nombreTutor(self, obj):
+        return f"{obj.tutorId.usuario.nombre} {obj.tutorId.usuario.paterno} {obj.tutorId.usuario.materno}"
     
     nombreCompleto.short_description = 'Nombre Completo'
-    
-    
+    nombreTutor.short_description = 'Tutor'

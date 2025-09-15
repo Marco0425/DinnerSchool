@@ -68,8 +68,17 @@ class PlatilloAdmin(admin.ModelAdmin):
 
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'alumnoId', 'profesorId', 'platillo', 'total', 'fecha', 'status', 'turno')
-    search_fields = ('alumnoId__usuario__nombre', 'alumnoId__usuario__paterno', 'alumnoId__usuario__materno', 'platillo__nombre')
+    list_display = ('id', 'alumnoId', 'nombreTutor', 'profesorId', 'platillo', 'total', 'fecha', 'status', 'turno')
+    search_fields = ('alumnoId__nombre', 'alumnoId__paterno', 'alumnoId__materno',
+                     'platillo__nombre', 'profesorId__usuario__nombre', 'profesorId__usuario__paterno', 
+                     'profesorId__usuario__materno','alumnoId__tutorId__usuario__nombre',
+                     'alumnoId__tutorId__usuario__paterno','alumnoId__tutorId__usuario__materno',)
+    list_filter = ('status', 'turno', 'fecha')
+
+    def nombreTutor(self, obj):
+        return f"{obj.alumnoId.tutorId.usuario.nombre} {obj.alumnoId.tutorId.usuario.paterno} {obj.alumnoId.tutorId.usuario.materno}" if obj.alumnoId.tutorId and obj.alumnoId.tutorId.usuario else "-"
+    
+    nombreTutor.short_description = 'Tutor'
 
 @admin.register(Noticias)
 class NoticiasAdmin(admin.ModelAdmin):

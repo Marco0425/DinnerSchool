@@ -398,7 +398,7 @@ def order(request):
                 else:
                     user_key = f"alumno_{pedido.alumnoId.id}"
                     user_name = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
-                    user_level = getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)
+                    user_level = f"{getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)} - {getChoiceLabel(GRADO, pedido.nivelEducativo.grado)}{getChoiceLabel(GRUPO, pedido.nivelEducativo.grupo)}"
                 
                 group_key = f"{user_key}_{pedido.turno}_{pedido.fecha}"
                 

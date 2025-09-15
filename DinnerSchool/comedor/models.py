@@ -10,7 +10,7 @@ class Credito(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Monto')
     tutorId = models.OneToOneField(Tutor, on_delete=models.CASCADE, unique=True, verbose_name='Tutor', null=True, blank=True)
     profesorId = models.OneToOneField(Empleados, on_delete=models.CASCADE, unique=True, verbose_name='Profesor', null=True, blank=True)
-    fecha = models.DateField(auto_now=True, verbose_name='Fecha')
+    fecha = models.DateField(verbose_name='Fecha')
     
     class Meta:
         verbose_name = 'Crédito'
@@ -71,7 +71,7 @@ class Pedido(models.Model):
         return f"{self.fecha} - {self.total}"
     
 class CreditoDiario(models.Model):
-    fecha = models.DateField(auto_now=True, verbose_name='Fecha')
+    fecha = models.DateField(verbose_name='Fecha')
     monto = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Monto')
     tutorId = models.ForeignKey(Tutor, on_delete=models.CASCADE, verbose_name='Tutor', null=True, blank=True)
     profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True)

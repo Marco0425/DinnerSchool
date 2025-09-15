@@ -262,6 +262,8 @@ def signInUp(request):
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
                 try:
+                    if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
+                        raise ValueError("Faltan campos obligatorios.")
                     user, usuario = crearUsuarioYPerfil(
                         username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
                     )
@@ -443,6 +445,23 @@ def createStudents(request):
         grupo = request.POST.get("grupo")
         nivelEducativo = request.POST.get("nivelEducativo")
         tutor_id = request.POST.get("tutor") if request.user.is_staff else None
+        
+        if not all([nombre, paterno, grado, grupo, nivelEducativo]):
+            campos = ''
+            if not nombre:
+                campos += 'nombre, '
+            if not paterno:
+                campos += 'apellido paterno, '
+            if not materno:
+                campos += 'apellido materno, '
+            if not grado:
+                campos += 'grado, '
+            if not grupo:
+                campos += 'grupo, '
+            if not nivelEducativo:
+                campos += 'nivel educativo, '
+            messages.error(request, f"Por favor, completa todos los campos {campos[:-2]}.")
+            return render(request, 'Students/students_form_view.html', context)
 
         try:
             nivelEducativoAlumno = NivelEducativo.objects.get(
