@@ -76,8 +76,10 @@ class PedidoAdmin(admin.ModelAdmin):
     list_filter = ('status', 'turno', 'fecha')
 
     def nombreTutor(self, obj):
-        return f"{obj.alumnoId.tutorId.usuario.nombre} {obj.alumnoId.tutorId.usuario.paterno} {obj.alumnoId.tutorId.usuario.materno}" if obj.alumnoId.tutorId and obj.alumnoId.tutorId.usuario else "-"
-    
+        if obj.alumnoId and obj.alumnoId.tutorId:
+            return f"{obj.alumnoId.tutorId.usuario.nombre} {obj.alumnoId.tutorId.usuario.paterno} {obj.alumnoId.tutorId.usuario.materno}" if obj.alumnoId.tutorId and obj.alumnoId.tutorId.usuario else "-"
+        return "-"
+
     nombreTutor.short_description = 'Tutor'
 
 @admin.register(Noticias)
