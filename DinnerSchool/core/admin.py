@@ -15,13 +15,18 @@ class UsuariosAdmin(admin.ModelAdmin):
 @admin.register(Empleados)
 class EmpleadosAdmin(admin.ModelAdmin):
     list_display = ('id', 'usuario', 'puesto')
-    search_fields = ('usuario__username', 'usuario__last_name', 'usuario__email')
-    
+    search_fields = ('usuario__nombre', 'usuario__paterno', 'usuario__email')
+
 @admin.register(Tutor)
 class TutorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'usuario')
-    search_fields = ('usuario__username', 'usuario__paterno', 'usuario__email')
+    list_display = ('id', 'usuario', 'emailTutor')
+    search_fields = ('usuario__nombre', 'usuario__paterno', 'usuario__email')
     
+    def emailTutor(self, obj):
+        return obj.usuario.email if obj.usuario else "-"
+
+    emailTutor.short_description = 'Email'
+
 @admin.register(Alumnos)
 class AlumnosAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombreCompleto', 'nivelEducativo', 'nombreTutor')
