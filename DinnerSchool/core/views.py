@@ -333,6 +333,7 @@ def dashboard(request):
 
         context = {
             'user': request.user,
+            'TipoUsuario': 'Profesor' if is_profesor else 'Tutor' if request.user.groups.filter(name='Tutor').exists() else 'Empleado' if request.user.groups.filter(name='Empleado').exists() else 'Adminstrador' if request.user.is_staff else 'Invitado',
             'is_tutor': request.user.groups.filter(name='Tutor').exists(),
             'is_employee': request.user.groups.filter(name='Empleado').exists() if not is_profesor else False,
             'is_profesor': is_profesor,
