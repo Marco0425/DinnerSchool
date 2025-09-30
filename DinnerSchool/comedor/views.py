@@ -700,9 +700,10 @@ def createOrder(request):
     is_profesor = Empleados.objects.filter(usuario__email=request.user.username, puesto='Profesor').exists()
     is_admin = request.user.is_staff
     
-    platillos = Platillo.objects.all().filter(disponible=True)
+    platillos = Platillo.objects.all()
     
     if is_tutor:
+        platillos = Platillo.objects.all().filter(disponible=True)
         # Para tutores: solo mostrar sus alumnos, no el campo de selección de usuario
         tutor = Tutor.objects.get(usuario__email=request.user.username)
         students = Alumnos.objects.filter(tutorId=tutor)
@@ -730,6 +731,7 @@ def createOrder(request):
         }
         
     elif is_profesor:
+        platillos = Platillo.objects.all().filter(disponible=True)
         # Para profesores: no mostrar campos de usuario ni alumnos
         context = {
             "Platillos": [
