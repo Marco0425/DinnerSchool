@@ -185,6 +185,17 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("final-tutor").value = tutorSelect.value;
     }
 
+    // Capturar y enviar la fecha
+    const fechaInput = document.getElementById("fecha");
+    if (fechaInput && fechaInput.value.trim() !== '') {
+      // Si el admin seleccionó una fecha, usarla
+      document.getElementById("final-fecha").value = fechaInput.value;
+    } else {
+      // Si no hay fecha seleccionada o el campo no existe, usar fecha actual
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById("final-fecha").value = today;
+    }
+
     // Enviar formulario
     ordersForm.submit();
   });

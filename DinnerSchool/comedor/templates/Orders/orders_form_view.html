@@ -255,6 +255,23 @@
   </div>
   {% endif %}
 
+  {% if is_admin %}
+  <!-- Fecha -->
+  <div>
+    <label for="fecha" class="block text-sm font-medium text-gray-700 mb-1"
+      >Fecha para programar pedido</label
+    >
+    <input
+      type="date"
+      id="fecha"
+      name="fecha"
+      min="{{ today }}"
+      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
+    />
+    <span class="help-block" style="color: red;"><small>Selecciona la fecha en la que deseas recibir el pedido. Por defecto, es para hoy.</small></span>
+  </div>
+  {% endif %}
+  
   <!-- Botones finales -->
   <div class="flex justify-end space-x-4 pt-6 mt-6 border-t">
     <a
@@ -292,6 +309,7 @@
     <input type="hidden" id="final-alumno" name="alumno" />
     <input type="hidden" id="final-tutor" name="tutor" />
     <input type="hidden" id="final-total" name="total" />
+    <input type="hidden" id="final-fecha" name="fecha" />
   </form>
 
   <div
