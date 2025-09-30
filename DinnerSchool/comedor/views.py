@@ -875,7 +875,8 @@ def saucers(request):
                 'id': platillo.id,
                 'nombre': platillo.nombre,
                 'ingredientes': ingredient_names,
-                'precio': platillo.precio
+                'precio': str(platillo.precio).replace(",", "."),
+                'disponible': platillo.disponible
             })
 
         context = {
@@ -901,6 +902,7 @@ def createSaucer(request):
     if platillo_id:
         try:
             platillo = Platillo.objects.get(id=platillo_id)
+            platillo.precio = str(platillo.precio).replace(",", ".")
         except Platillo.DoesNotExist:
             platillo = None
 

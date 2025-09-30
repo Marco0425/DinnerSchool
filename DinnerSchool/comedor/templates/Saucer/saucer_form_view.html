@@ -72,8 +72,9 @@
         id="disponible"
         name="disponible"
         class="h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300 rounded"
+        {% if platillo and platillo.disponible %}checked{% endif %}
       />
-      <label for="disponible" class="text-sm font-medium text-gray-700">Disponible</label>
+      <label for="disponible" class="text-sm font-medium text-gray-700">Visible</label>
     </div>
 
     <div class="flex justify-end space-x-4 pt-4">
