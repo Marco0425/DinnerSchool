@@ -174,12 +174,12 @@ def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, regist
     # 3. Crear perfil según tipo
     if userType == 1:
         tutor = Tutor.objects.create(usuario=usuario)
-        Credito.objects.create(tutorId=tutor, monto=0)
+        Credito.objects.create(tutorId=tutor, monto=0, fecha=datetime.today())
     elif userType in [3, 4]:
         puesto = 'Cocinero' if userType == 3 else 'Profesor'
         empleado = Empleados.objects.create(usuario=usuario, puesto=puesto)
-        if userType == 4:
-            Credito.objects.create(profesorId=empleado, monto=0)
+        if '@liceoemperadores.edu.mx' in useremail:
+            Credito.objects.create(profesorId=empleado, monto=0, fecha=datetime.today())
 
     return user, usuario
 
