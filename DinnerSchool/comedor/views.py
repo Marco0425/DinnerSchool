@@ -560,6 +560,7 @@ def createOrder(request):
             alumno_id = request.POST.get("alumno")
             tutor_profesor = request.POST.get("tutor")
             total_carrito = Decimal(request.POST.get("total", "0"))
+            fechaPedido = request.POST.get("fecha")
             
             if not cart_data:
                 messages.error(request, "El carrito está vacío.")
@@ -607,6 +608,7 @@ def createOrder(request):
                     platillo = Platillo.objects.get(id=item['platillo_id'])
                     subtotal = Decimal(str(item['subtotal']))
                     total_calculado += subtotal
+                    fecha_entrega = date.fromisoformat(fechaPedido) if fechaPedido else (date.today() if datetime.now().hour < 18 else date.today() + timedelta(days=1))
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(
@@ -619,7 +621,7 @@ def createOrder(request):
                         profesorId=profesor_actual if profesor_actual else None,
                         turno=item['turno'],
                         total=subtotal,
-                        fecha=date.today() if datetime.now().hour < 18 else date.today() + timedelta(days=1),
+                        fecha=fecha_entrega,
                     )
                     nuevo_pedido.save()
                     pedidos_creados.append(nuevo_pedido)
@@ -793,7 +795,8 @@ def createOrder(request):
                 } for alumno in students
             ],
         }
-        
+    
+    context["today"] = date.today().isoformat()
     return render(request, 'Orders/orders_form_view.html', context)
 
 @csrf_exempt
