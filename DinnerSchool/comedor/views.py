@@ -1370,6 +1370,8 @@ def get_movimientos(request):
                             if mov_credito.pedido.alumnoId:
                                 descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
                         else:
+                            tipo = 'reembolso'
+                            tipo_display = 'Reembolso'
                             descripcion = f"Pedido #{mov_credito.pedido.id}"
                             if mov_credito.pedido.alumnoId:
                                 descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
