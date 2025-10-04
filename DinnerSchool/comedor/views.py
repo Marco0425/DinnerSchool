@@ -263,12 +263,17 @@ def cancelOrder(request, pedido_id):
             
             # Reembolsar el crédito
             credito.monto += Decimal(str(total_reembolso))
+            credito.fecha = date.today()
             credito.save()
             
             # Marcar el pedido como cancelado
             pedido.status = 4  # Asumiendo que 4 = Cancelado
             pedido.save()
-            
+            # Registrar el movimiento en CreditoDiario como positivo (reembolso)
+            creditoDiario = CreditoDiario.objects.get(pedido_id=pedido.id)
+            creditoDiario.monto = abs(creditoDiario.monto) # Anular el movimiento original
+            creditoDiario.save()
+
             return JsonResponse({
                 'success': True,
                 'message': f'Pedido #{pedido_id} cancelado exitosamente. Se reembolsaron ${total_reembolso} a tu cuenta.',
@@ -651,14 +656,14 @@ def createOrder(request):
             # Actualizar crédito total (descontar el total del carrito)
             try:
                 if is_admin:
-                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual) 
+                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual, fecha=date.today()) 
                                      if profesor_actual 
                                      else Credito.objects.get(tutorId=tutor_actual))
                 else:
-                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest) 
+                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest, fecha=date.today()) 
                                      if is_profesor 
                                      else Credito.objects.get(tutorId=tutor_actual))
-                
+
                 credito_usuario.monto -= total_carrito
                 credito_usuario.save()
                 
@@ -1347,21 +1352,24 @@ def get_movimientos(request):
                 ).order_by('fecha', 'id')
                 
                 for mov_credito in movimientos_credito:
-                    if mov_credito.monto > 0:
+                    if mov_credito.monto > 0 and mov_credito.pedido == None:  # Incluir solo créditos asignados o gastos con pedido
                         tipo = 'credito'
                         tipo_display = 'Crédito Asignado'
                         descripcion = f"Crédito asignado de ${mov_credito.monto}"
                     else:
                         tipo = 'gasto'
                         tipo_display = 'Pedido'
-                        if mov_credito.pedido:
+                        if mov_credito.pedido.status != 4:  # Excluir pedidos cancelados
                             descripcion = f"Pedido #{mov_credito.pedido.id}"
                             if mov_credito.pedido.platillo:
                                 descripcion += f": {mov_credito.pedido.platillo.nombre}"
                             if mov_credito.pedido.alumnoId:
                                 descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
                         else:
-                            descripcion = f"Gasto de ${abs(mov_credito.monto)}"
+                            descripcion = f"Pedido #{mov_credito.pedido.id}"
+                            if mov_credito.pedido.alumnoId:
+                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
+                            descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
                     
                     movimientos.append({
                         'fecha': mov_credito.fecha,
