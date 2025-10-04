@@ -1409,19 +1409,20 @@ def get_movimientos(request):
                 ).order_by('fecha', 'id')
                 
                 for mov_credito in movimientos_credito:
-                    if mov_credito.monto > 0:
+                    if mov_credito.monto > 0 and mov_credito.pedido == None:  # Incluir solo créditos asignados o gastos con pedido
                         tipo = 'credito'
                         tipo_display = 'Crédito Asignado'
                         descripcion = f"Crédito asignado de ${mov_credito.monto}"
+                        
+                    elif mov_credito.monto < 0 and mov_credito.pedido == None:  # Incluir deudas actualizadas sin pedido
+                        tipo = 'Deuda'
+                        tipo_display = 'Deuda'
+                        descripcion = f"Deuda de ${abs(mov_credito.monto)}"
                     else:
-                        tipo = 'gasto'
-                        tipo_display = 'Pedido'
-                        if mov_credito.pedido:
+                            tipo = 'reembolso'
+                            tipo_display = 'Reembolso'
                             descripcion = f"Pedido #{mov_credito.pedido.id}"
-                            if mov_credito.pedido.platillo:
-                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
-                        else:
-                            descripcion = f"Gasto de ${abs(mov_credito.monto)}"
+                            descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
                     
                     movimientos.append({
                         'fecha': mov_credito.fecha,
