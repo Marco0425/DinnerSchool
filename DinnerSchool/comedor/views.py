@@ -1419,9 +1419,18 @@ def get_movimientos(request):
                         tipo_display = 'Deuda'
                         descripcion = f"Deuda de ${abs(mov_credito.monto)}"
                     else:
+                        tipo = 'gasto'
+                        tipo_display = 'Pedido'
+                        if mov_credito.pedido.status != 4:
+                            descripcion = f"Pedido #{mov_credito.pedido.id}"
+                            if mov_credito.pedido.platillo:
+                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
+                        else:
                             tipo = 'reembolso'
                             tipo_display = 'Reembolso'
                             descripcion = f"Pedido #{mov_credito.pedido.id}"
+                            if mov_credito.pedido.alumnoId:
+                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
                             descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
                     
                     movimientos.append({
