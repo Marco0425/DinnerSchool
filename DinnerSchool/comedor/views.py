@@ -1368,7 +1368,7 @@ def get_movimientos(request):
                         else:
                             descripcion = f"Pedido #{mov_credito.pedido.id}"
                             if mov_credito.pedido.alumnoId:
-                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
+                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
                             descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
                     
                     movimientos.append({
