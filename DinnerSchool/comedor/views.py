@@ -1356,8 +1356,8 @@ def get_movimientos(request):
                         tipo = 'credito'
                         tipo_display = 'Crédito Asignado'
                         descripcion = f"Crédito asignado de ${mov_credito.monto}"
-                    if mov_credito.monto < 0 and mov_credito.pedido == None:  # Incluir deudas actualizadas sin pedido
-                        tipo = 'deuda'
+                    elif mov_credito.monto < 0 and mov_credito.pedido == None:  # Incluir deudas actualizadas sin pedido
+                        tipo = 'Deuda'
                         tipo_display = 'Deuda'
                         descripcion = f"Deuda de ${abs(mov_credito.monto)}"
                     else:
