@@ -656,15 +656,16 @@ def createOrder(request):
             # Actualizar crédito total (descontar el total del carrito)
             try:
                 if is_admin:
-                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual, fecha=date.today()) 
+                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual) 
                                      if profesor_actual 
                                      else Credito.objects.get(tutorId=tutor_actual))
                 else:
-                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest, fecha=date.today()) 
+                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest) 
                                      if is_profesor 
                                      else Credito.objects.get(tutorId=tutor_actual))
 
                 credito_usuario.monto -= total_carrito
+                credito_usuario.fecha = date.today()
                 credito_usuario.save()
                 
                 # Mensajes de advertencia sobre el crédito
