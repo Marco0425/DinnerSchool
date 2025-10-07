@@ -371,6 +371,9 @@ function getCookie(name) {
           Array.from(col.children).forEach(card => {
             const cardId = card.id.substring(6); // 'order-'.length === 6
             if (!newOrderIds.has(cardId)) {
+              console.log("Removing card:", cardId);
+              console.log(newOrderIds);
+              console.log(newOrderIds.has(cardId));
               card.remove();
             }
           });
