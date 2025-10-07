@@ -330,10 +330,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Llama a la función cada 2 segundos
-    setInterval(fetchAndUpdateKanban, 2000);
-    // También la llama al cargar la página
-    fetchAndUpdateKanban();
+  // Llama a la función cada 5 segundos
+  setInterval(fetchAndUpdateKanban, 1000);
+  // También la llama al cargar la página
+  fetchAndUpdateKanban();
+
+  // Permite actualizar el kanban inmediatamente tras crear/cancelar pedido
+  window.refreshKanban = fetchAndUpdateKanban;
 
     // Función para actualizar las columnas del kanban
     function updateKanbanColumns(orders) {

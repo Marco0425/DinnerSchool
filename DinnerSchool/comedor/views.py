@@ -38,7 +38,8 @@ def pedidos_del_dia_api(request):
     from core.models import Alumnos, Usuarios, Tutor, Empleados, NivelEducativo
     from comedor.models import Pedido, Platillo
     from datetime import date
-    pedidos = Pedido.objects.filter(fecha=date.today())
+    # Mostrar solo pedidos que están en curso (no cancelados ni entregados)
+    pedidos = Pedido.objects.filter(fecha=date.today()).exclude(status__in=[4, 3])  # 4=cancelado, 3=entregado (ajusta según tu STATUSPEDIDO)
     # Agrupar pedidos por usuario, turno, status (similar a la vista kanban)
     grouped_orders = {}
     for pedido in pedidos:
@@ -46,7 +47,7 @@ def pedidos_del_dia_api(request):
         if pedido.alumnoId:
             user_id = f"alumno_{pedido.alumnoId.id}"
             user_name = pedido.alumnoId.nombre
-            user_level = pedido.nivelEducativo.nombre if pedido.nivelEducativo else ""
+            user_level = pedido.nivelEducativo.nivel if pedido.nivelEducativo else ""
             is_profesor = False
         elif pedido.profesorId:
             user_id = f"profesor_{pedido.profesorId.id}"
