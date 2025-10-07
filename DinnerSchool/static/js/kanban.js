@@ -350,30 +350,27 @@ function getCookie(name) {
       console.log(orders);
       console.log(columns);
 
-      // Crear un set con los IDs actuales de las órdenes
+      // Crear un set con los IDs actuales de las órdenes (ID agrupado completo)
       const currentOrderIds = new Set();
       Object.values(columns).forEach(col => {
         if (col) {
           Array.from(col.children).forEach(card => {
             if (card.id && card.id.startsWith('order-')) {
-              currentOrderIds.add(card.id.replace('order-', ''));
+              currentOrderIds.add(card.id.substring(6)); // 'order-'.length === 6
             }
           });
         }
       });
 
-      // Crear un set con los IDs de las órdenes nuevas
+      // Crear un set con los IDs de las órdenes nuevas (ID agrupado completo)
       const newOrderIds = new Set(orders.map(order => String(order.id)));
 
       // Eliminar tarjetas que ya no están (canceladas/entregadas)
       Object.values(columns).forEach(col => {
         if (col) {
-          console.log(col);
           Array.from(col.children).forEach(card => {
-            const cardId = card.id.replace('order-', '');
+            const cardId = card.id.substring(6); // 'order-'.length === 6
             if (!newOrderIds.has(cardId)) {
-              console.log("Removing card:", cardId);
-              console.log(newOrderIds);
               card.remove();
             }
           });
