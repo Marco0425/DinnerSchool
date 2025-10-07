@@ -323,14 +323,41 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function checkForNewOrders() {
-    fetchOrderIds().then(newIds => {
-      const newOrders = newIds.filter(id => !currentOrderIds.has(id));
-      if (newOrders.length > 0) {
-        console.log('orden nueva');
-
-      }
-      currentOrderIds = new Set(newIds);
-    });
+    fetch('/comedor/kanban/orders/')
+      .then(response => response.json())
+      .then(data => {
+        // Obtener todos los IDs actuales
+        let allOrders = [];
+        ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
+          if (data[estado]) {
+            data[estado].forEach(order => {
+              allOrders.push({id: order.id, estado, order});
+            });
+          }
+        });
+        const newOrders = allOrders.filter(o => !currentOrderIds.has(o.id));
+        if (newOrders.length > 0) {
+          newOrders.forEach(o => {
+            console.log('orden nueva');
+            // Crear la card y agregarla al contenedor correspondiente
+            const container = document.getElementById(`${o.estado.replace(' ', '-')}-cards`);
+            if (container) {
+              const card = createOrderCard(o.order);
+              container.appendChild(card);
+              // Configurar drag and drop/touch para la nueva card
+              card.addEventListener("dragstart", dragStart);
+              card.addEventListener("dragend", dragEnd);
+              card.addEventListener('touchstart', handleTouchStart, { passive: false });
+              card.addEventListener('touchmove', handleTouchMove, { passive: false });
+              card.addEventListener('touchend', handleTouchEnd, { passive: false });
+              card.style.touchAction = 'none';
+              card.style.userSelect = 'none';
+            }
+          });
+        }
+        // Actualizar el set de IDs
+        currentOrderIds = new Set(allOrders.map(o => o.id));
+      });
   }
 
   // Inicializar el set de IDs al cargar la página
