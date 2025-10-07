@@ -60,34 +60,34 @@ def pedidos_del_dia_api(request):
             user_level = ""
             is_profesor = False
 
-        turno = pedido.get_turno_label()
-        status = pedido.get_status_label()
-        key = f"{user_id}_{turno}_{status}"
-        if key not in grouped_orders:
-            grouped_orders[key] = {
-                "id": key,
-                "user_name": user_name,
-                "user_level": user_level,
-                "is_profesor": is_profesor,
-                "turno": turno,
-                "status": status,
-                "platillos": [],
-                "pedido_ids": [],
-                "total_cantidad": 0,
-                "total_precio": 0.0,
-                "encargado": pedido.encargadoId.nombre if pedido.encargadoId else "",
-                "is_employee": pedido.encargadoId is not None,
-            }
-        grouped_orders[key]["platillos"].append({
-            "nombre": pedido.platillo.nombre,
-            "cantidad": pedido.cantidad,
-            "precio": float(pedido.platillo.precio),
-            "ingredientes": pedido.ingredientePlatillo.split(",") if pedido.ingredientePlatillo else [],
-            "nota": pedido.nota or ""
-        })
-        grouped_orders[key]["pedido_ids"].append(pedido.id)
-        grouped_orders[key]["total_cantidad"] += pedido.cantidad
-        grouped_orders[key]["total_precio"] += float(pedido.total)
+    turno_label = pedido.get_turno_label()
+    status_label = pedido.get_status_label()
+    key = f"{user_id}_{turno_label}_{status_label}"
+    if key not in grouped_orders:
+        grouped_orders[key] = {
+            "id": key,
+            "user_name": user_name,
+            "user_level": user_level,
+            "is_profesor": is_profesor,
+            "turno": turno_label,
+            "status": status_label,
+            "platillos": [],
+            "pedido_ids": [],
+            "total_cantidad": 0,
+            "total_precio": 0.0,
+            "encargado": pedido.encargadoId.nombre if pedido.encargadoId else "",
+            "is_employee": pedido.encargadoId is not None,
+        }
+    grouped_orders[key]["platillos"].append({
+        "nombre": pedido.platillo.nombre,
+        "cantidad": pedido.cantidad,
+        "precio": float(pedido.platillo.precio),
+        "ingredientes": pedido.ingredientePlatillo.split(",") if pedido.ingredientePlatillo else [],
+        "nota": pedido.nota or ""
+    })
+    grouped_orders[key]["pedido_ids"].append(pedido.id)
+    grouped_orders[key]["total_cantidad"] += pedido.cantidad
+    grouped_orders[key]["total_precio"] += float(pedido.total)
 
     # Convertir a lista
     orders = list(grouped_orders.values())
