@@ -347,6 +347,7 @@ function getCookie(name) {
         finalizado: document.getElementById("finalizado-cards"),
         entregado: document.getElementById("entregado-cards")
       };
+      console.log(orders);
 
       // Crear un set con los IDs actuales de las órdenes
       const currentOrderIds = new Set();
@@ -366,9 +367,11 @@ function getCookie(name) {
       // Eliminar tarjetas que ya no están (canceladas/entregadas)
       Object.values(columns).forEach(col => {
         if (col) {
+          console.log(col);
           Array.from(col.children).forEach(card => {
             const cardId = card.id.replace('order-', '');
             if (!newOrderIds.has(cardId)) {
+              console.log("Removing card:", cardId);
               card.remove();
             }
           });
