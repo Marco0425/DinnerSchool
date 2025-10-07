@@ -343,11 +343,12 @@ function getCookie(name) {
       // Solo elimina las tarjetas canceladas/entregadas y agrega nuevas
       const columns = {
         pendiente: document.getElementById("pendiente-cards"),
-        "en preparacion": document.getElementById("en-preparacion-cards"),
+        en_preparacion: document.getElementById("en-preparacion-cards"),
         finalizado: document.getElementById("finalizado-cards"),
         entregado: document.getElementById("entregado-cards")
       };
       console.log(orders);
+      console.log(columns);
 
       // Crear un set con los IDs actuales de las órdenes
       const currentOrderIds = new Set();
@@ -372,6 +373,7 @@ function getCookie(name) {
             const cardId = card.id.replace('order-', '');
             if (!newOrderIds.has(cardId)) {
               console.log("Removing card:", cardId);
+              console.log(newOrderIds);
               card.remove();
             }
           });
