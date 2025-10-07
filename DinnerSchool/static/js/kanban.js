@@ -304,6 +304,40 @@ function getCookie(name) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Guardar IDs actuales para detectar nuevas órdenes
+  let currentOrderIds = new Set();
+
+  function fetchOrderIds() {
+    return fetch('/comedor/kanban/orders/')
+      .then(response => response.json())
+      .then(data => {
+        // Obtener todos los IDs de las órdenes agrupadas
+        let ids = [];
+        ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
+          if (data[estado]) {
+            data[estado].forEach(order => ids.push(order.id));
+          }
+        });
+        return ids;
+      });
+  }
+
+  function checkForNewOrders() {
+    fetchOrderIds().then(newIds => {
+      const newOrders = newIds.filter(id => !currentOrderIds.has(id));
+      if (newOrders.length > 0) {
+        console.log('orden nueva');
+
+      }
+      currentOrderIds = new Set(newIds);
+    });
+  }
+
+  // Inicializar el set de IDs al cargar la página
+  fetchOrderIds().then(ids => { currentOrderIds = new Set(ids); });
+
+  // Revisar cada 5 segundos
+  setInterval(checkForNewOrders, 5000);
   // Cargar pedidos por AJAX y renderizar cards
   fetch('/comedor/kanban/orders/')
     .then(response => response.json())
