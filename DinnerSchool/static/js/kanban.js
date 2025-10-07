@@ -303,7 +303,7 @@ function getCookie(name) {
   return cookieValue;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+
   // Configurar drag and drop para todas las tarjetas
   const cards = document.querySelectorAll("[draggable='true']");
   cards.forEach((card) => {
@@ -340,22 +340,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Función para actualizar las columnas del kanban
     function updateKanbanColumns(orders) {
-      // Limpia las columnas
+      // Solo elimina las tarjetas canceladas/entregadas y agrega nuevas
       const columns = {
         pendiente: document.getElementById("pendiente-cards"),
         "en preparacion": document.getElementById("en-preparacion-cards"),
         finalizado: document.getElementById("finalizado-cards"),
         entregado: document.getElementById("entregado-cards")
       };
-      Object.values(columns).forEach(col => { if (col) col.innerHTML = ""; });
 
-      // Renderiza las órdenes agrupadas
+      // Crear un set con los IDs actuales de las órdenes
+      const currentOrderIds = new Set();
+      Object.values(columns).forEach(col => {
+        if (col) {
+          Array.from(col.children).forEach(card => {
+            if (card.id && card.id.startsWith('order-')) {
+              currentOrderIds.add(card.id.replace('order-', ''));
+            }
+          });
+        }
+      });
+
+      // Crear un set con los IDs de las órdenes nuevas
+      const newOrderIds = new Set(orders.map(order => String(order.id)));
+
+      // Eliminar tarjetas que ya no están (canceladas/entregadas)
+      Object.values(columns).forEach(col => {
+        if (col) {
+          Array.from(col.children).forEach(card => {
+            const cardId = card.id.replace('order-', '');
+            if (!newOrderIds.has(cardId)) {
+              card.remove();
+            }
+          });
+        }
+      });
+
+      // Agregar nuevas tarjetas que no están presentes
       orders.forEach(order => {
         const col = columns[order.status];
-        if (col) {
+        if (col && !currentOrderIds.has(String(order.id))) {
           col.innerHTML += renderOrderCard(order);
         }
       });
+
       // Reasigna eventos drag & drop a las nuevas tarjetas
       const cards = document.querySelectorAll("[draggable='true']");
       cards.forEach((card) => {
@@ -427,4 +454,4 @@ document.addEventListener("DOMContentLoaded", function () {
     column.addEventListener("drop", drop);
     column.addEventListener("dragleave", dragLeave);
   });
-});
+
