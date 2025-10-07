@@ -328,13 +328,17 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(data => {
         // Obtener todos los IDs actuales
         let allOrders = [];
+        let activeOrderIds = new Set();
         ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
           if (data[estado]) {
             data[estado].forEach(order => {
               allOrders.push({id: order.id, estado, order});
+              activeOrderIds.add(order.id);
             });
           }
         });
+
+        // Detectar nuevas órdenes
         const newOrders = allOrders.filter(o => !currentOrderIds.has(o.id));
         if (newOrders.length > 0) {
           newOrders.forEach(o => {
@@ -355,6 +359,15 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           });
         }
+
+        // Eliminar cards de órdenes canceladas
+        document.querySelectorAll('[id^="order-"]').forEach(card => {
+          const cardId = card.id.replace('order-', '');
+          if (!activeOrderIds.has(cardId)) {
+            card.remove();
+          }
+        });
+
         // Actualizar el set de IDs
         currentOrderIds = new Set(allOrders.map(o => o.id));
       });
