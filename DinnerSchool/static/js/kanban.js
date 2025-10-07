@@ -321,6 +321,102 @@ document.addEventListener("DOMContentLoaded", function () {
     card.style.userSelect = 'none';
   });
 
+    // Polling para actualizar el kanban cada 5 segundos
+    function fetchAndUpdateKanban() {
+      fetch("/comedor/api/pedidos-del-dia/")
+        .then(response => response.json())
+        .then(data => {
+          updateKanbanColumns(data.orders);
+        });
+    }
+
+    // Llama a la función cada 2 segundos
+    setInterval(fetchAndUpdateKanban, 2000);
+    // También la llama al cargar la página
+    fetchAndUpdateKanban();
+
+    // Función para actualizar las columnas del kanban
+    function updateKanbanColumns(orders) {
+      // Limpia las columnas
+      const columns = {
+        pendiente: document.getElementById("pendiente-cards"),
+        "en preparacion": document.getElementById("en-preparacion-cards"),
+        finalizado: document.getElementById("finalizado-cards"),
+        entregado: document.getElementById("entregado-cards")
+      };
+      Object.values(columns).forEach(col => { if (col) col.innerHTML = ""; });
+
+      // Renderiza las órdenes agrupadas
+      orders.forEach(order => {
+        const col = columns[order.status];
+        if (col) {
+          col.innerHTML += renderOrderCard(order);
+        }
+      });
+      // Reasigna eventos drag & drop a las nuevas tarjetas
+      const cards = document.querySelectorAll("[draggable='true']");
+      cards.forEach((card) => {
+        card.addEventListener("dragstart", dragStart);
+        card.addEventListener("dragend", dragEnd);
+        card.addEventListener('touchstart', handleTouchStart, { passive: false });
+        card.addEventListener('touchmove', handleTouchMove, { passive: false });
+        card.addEventListener('touchend', handleTouchEnd, { passive: false });
+        card.style.touchAction = 'none';
+        card.style.userSelect = 'none';
+      });
+    }
+
+    // Renderiza el HTML de una tarjeta de orden agrupada (simplificado)
+    function renderOrderCard(order) {
+      let platillosHtml = order.platillos.map(p => `
+        <div class="bg-gray-50 p-2 rounded border-l-2 border-primary-red">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-medium text-gray-800">${p.nombre}</span>
+              ${p.cantidad > 1 ? `<span class="text-primary-red font-semibold ml-1">x${p.cantidad}</span>` : ""}
+            </div>
+            <span class="text-sm text-gray-600">$${p.precio.toFixed(2)}</span>
+          </div>
+          ${p.ingredientes && p.ingredientes.length ? `<p class="text-xs text-gray-500 mt-1"><strong>Ingredientes:</strong> ${p.ingredientes.join(", ")}</p>` : ""}
+          ${p.nota ? `<p class="text-xs text-blue-600 mt-1"><strong>Nota:</strong> ${p.nota}</p>` : ""}
+        </div>
+      `).join("");
+
+      return `
+        <div
+          id="order-${order.id}"
+          class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing ${order.status === 'finalizado' || order.status === 'entregado' ? 'opacity-80' : ''}"
+          draggable="${order.is_employee ? 'true' : 'false'}"
+          data-pedido-ids="${order.pedido_ids.join(',')}"
+        >
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-gray-900 mb-1">${order.user_name}</h3>
+              <p class="text-sm text-gray-600">
+                ${order.is_profesor ? '<strong>Profesor</strong>' : `<strong>${order.user_level}</strong>`}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500"><strong>Turno:</strong> ${order.turno}</p>
+              ${order.platillos.length > 1 ? `<span class="inline-block px-2 py-1 bg-primary-red text-white text-xs rounded-full mt-1">${order.platillos.length} platillos</span>` : ""}
+            </div>
+          </div>
+          <div class="space-y-2 mb-3">${platillosHtml}</div>
+          <div class="border-t pt-2 mb-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Total items:</span>
+              <span class="font-semibold">${order.total_cantidad}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Total:</span>
+              <span class="font-bold text-primary-red">$${order.total_precio.toFixed(2)}</span>
+            </div>
+          </div>
+          ${order.is_employee ? `<p class="text-xs text-gray-500 encargado-field"><strong>Encargado:</strong> ${order.encargado}</p>` : ""}
+        </div>
+      `;
+    }
+
   // Configurar drop zones para las columnas
   const columns = document.querySelectorAll(".kanban-column");
   columns.forEach((column) => {

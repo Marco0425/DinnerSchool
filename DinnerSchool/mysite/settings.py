@@ -1,10 +1,4 @@
-"""
-Configuración de producción para DinnerSchool en Render.com
-Marco0425 - 2025-08-19 03:28:33 UTC
-"""
-
 import os
-import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
 import cloudinary
@@ -85,20 +79,15 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 # Database - PostgreSQL en Render
 # Comentar en local
-DATABASES = {
-    'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
-}
-
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME', 'dinnerschool_db'),
-#         'USER': os.getenv('DB_USER', 'dinnerschool_user'),
-#         'PASSWORD': os.getenv('DB_PASSWORD', ''),
-#         'HOST': os.getenv('DB_HOST', 'localhost'),
-#         'PORT': os.getenv('DB_PORT', '5432'),
-#     }
+#     'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
 # }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -154,16 +143,20 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de seguridad para producción
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    ALLOWED_HOSTS.extend(['.onrender.com'])
+# if not DEBUG:
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
+#     SECURE_BROWSER_XSS_FILTER = True
+#     SECURE_CONTENT_TYPE_NOSNIFF = True
+#     ALLOWED_HOSTS.extend(['.onrender.com'])
 
-else:
-    DEBUG = True
+# else:
+DEBUG = True
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+    
 
 LOGGING = {
     'version': 1,
