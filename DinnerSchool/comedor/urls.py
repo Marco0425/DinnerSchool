@@ -7,6 +7,7 @@ app_name = 'comedor'
 
 urlpatterns = [
     path("ingredients/", views.ingredients, name="ingredients"),
+    path('kanban/orders/', views.kanban_orders_api, name='kanban_orders_api'),
     path("ingredients/create/", views.createIngredient, name="createIngredient"),
     path("saucers/", views.saucers, name="saucers"),
     path("saucers/create/", views.createSaucer, name="createSaucer"),
