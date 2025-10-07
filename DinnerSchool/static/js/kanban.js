@@ -350,30 +350,28 @@ function getCookie(name) {
       console.log(orders);
       console.log(columns);
 
-      // Crear un set con los IDs actuales de las órdenes (ID agrupado completo)
+      // Crear un set con los IDs actuales de las órdenes (id entero)
       const currentOrderIds = new Set();
       Object.values(columns).forEach(col => {
         if (col) {
           Array.from(col.children).forEach(card => {
             if (card.id && card.id.startsWith('order-')) {
-              currentOrderIds.add(card.id.substring(6)); // 'order-'.length === 6
+              currentOrderIds.add(parseInt(card.id.substring(6)));
             }
           });
         }
       });
 
-      // Crear un set con los IDs de las órdenes nuevas (ID agrupado completo)
-      const newOrderIds = new Set(orders.map(order => String(order.id)));
+      // Crear un set con los IDs de las órdenes nuevas (id entero)
+      const newOrderIds = new Set(orders.map(order => order.id));
 
       // Eliminar tarjetas que ya no están (canceladas/entregadas)
       Object.values(columns).forEach(col => {
         if (col) {
           Array.from(col.children).forEach(card => {
-            const cardId = card.id.substring(6); // 'order-'.length === 6
+            const cardId = parseInt(card.id.substring(6));
             if (!newOrderIds.has(cardId)) {
               console.log("Removing card:", cardId);
-              console.log(newOrderIds);
-              console.log(newOrderIds.has(cardId));
               card.remove();
             }
           });
@@ -383,8 +381,9 @@ function getCookie(name) {
       // Agregar nuevas tarjetas que no están presentes
       orders.forEach(order => {
         const col = columns[order.status];
-        if (col && !currentOrderIds.has(String(order.id))) {
+        if (col && !currentOrderIds.has(order.id)) {
           col.innerHTML += renderOrderCard(order);
+          console.log("Adding card:", order.id);
         }
       });
 

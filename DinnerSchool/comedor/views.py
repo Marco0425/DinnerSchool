@@ -62,7 +62,8 @@ def pedidos_del_dia_api(request):
 
     turno_label = pedido.get_turno_label()
     status_label = pedido.get_status_label()
-    key = f"{user_id}_{turno_label}_{status_label}"
+    # Usar el id del primer pedido del grupo como id único (entero)
+    key = str(pedido.id)
     if key not in grouped_orders:
         grouped_orders[key] = {
             "id": key,
