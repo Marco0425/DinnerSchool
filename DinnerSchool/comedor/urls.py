@@ -24,6 +24,4 @@ urlpatterns = [
     path('order/<int:order_id>/modify/', views.modify_order_view, name='modify_order'),
     path('accountStatements/', views.accountStatements, name='accountStatements'),
     path('get-movimientos/', views.get_movimientos, name='get_movimientos'),
-    # API para pedidos del día (kanban polling)
-    path('api/pedidos-del-dia/', views.pedidos_del_dia_api, name='pedidos_del_dia_api'),
 ]

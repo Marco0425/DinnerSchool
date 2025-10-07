@@ -31,69 +31,6 @@ import ast
 
 from django.views.decorators.csrf import csrf_exempt
 
-@login_required
-@csrf_exempt
-def pedidos_del_dia_api(request):
-    """API para devolver los pedidos del día agrupados para el kanban."""
-    from core.models import Alumnos, Usuarios, Tutor, Empleados, NivelEducativo
-    from comedor.models import Pedido, Platillo
-    from datetime import date
-    # Mostrar solo pedidos que están en curso (no cancelados ni entregados)
-    pedidos = Pedido.objects.filter(fecha=date.today()).exclude(status__in=[4, 3])  # 4=cancelado, 3=entregado (ajusta según tu STATUSPEDIDO)
-    # Agrupar pedidos por usuario, turno, status (similar a la vista kanban)
-    grouped_orders = {}
-    for pedido in pedidos:
-        # Determinar usuario (alumno o profesor)
-        if pedido.alumnoId:
-            user_id = f"alumno_{pedido.alumnoId.id}"
-            user_name = pedido.alumnoId.nombre
-            user_level = pedido.nivelEducativo.nivel if pedido.nivelEducativo else ""
-            is_profesor = False
-        elif pedido.profesorId:
-            user_id = f"profesor_{pedido.profesorId.id}"
-            user_name = pedido.profesorId.nombre
-            user_level = "Profesor"
-            is_profesor = True
-        else:
-            user_id = "desconocido"
-            user_name = "Desconocido"
-            user_level = ""
-            is_profesor = False
-
-    turno_label = pedido.get_turno_label()
-    status_label = pedido.get_status_label()
-    # Usar el id del primer pedido del grupo como id único (entero)
-    key = str(pedido.id)
-    if key not in grouped_orders:
-        grouped_orders[key] = {
-            "id": key,
-            "user_name": user_name,
-            "user_level": user_level,
-            "is_profesor": is_profesor,
-            "turno": turno_label,
-            "status": status_label,
-            "platillos": [],
-            "pedido_ids": [],
-            "total_cantidad": 0,
-            "total_precio": 0.0,
-            "encargado": pedido.encargadoId.nombre if pedido.encargadoId else "",
-            "is_employee": pedido.encargadoId is not None,
-        }
-    grouped_orders[key]["platillos"].append({
-        "nombre": pedido.platillo.nombre,
-        "cantidad": pedido.cantidad,
-        "precio": float(pedido.platillo.precio),
-        "ingredientes": pedido.ingredientePlatillo.split(",") if pedido.ingredientePlatillo else [],
-        "nota": pedido.nota or ""
-    })
-    grouped_orders[key]["pedido_ids"].append(pedido.id)
-    grouped_orders[key]["total_cantidad"] += pedido.cantidad
-    grouped_orders[key]["total_precio"] += float(pedido.total)
-
-    # Convertir a lista
-    orders = list(grouped_orders.values())
-    return JsonResponse({"orders": orders})
-
 def ingredients(request):
     """
     Vista para manejar los ingredientes.
