@@ -304,22 +304,107 @@ function getCookie(name) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Configurar drag and drop para todas las tarjetas
-  const cards = document.querySelectorAll("[draggable='true']");
-  cards.forEach((card) => {
-    // Mouse events
-    card.addEventListener("dragstart", dragStart);
-    card.addEventListener("dragend", dragEnd);
-    
-    // Touch events
-    card.addEventListener('touchstart', handleTouchStart, { passive: false });
-    card.addEventListener('touchmove', handleTouchMove, { passive: false });
-    card.addEventListener('touchend', handleTouchEnd, { passive: false });
-    
-    // Prevenir scroll en dispositivos táctiles durante el arrastre
-    card.style.touchAction = 'none';
-    card.style.userSelect = 'none';
-  });
+  // Guardar IDs actuales para detectar nuevas órdenes
+  let currentOrderIds = new Set();
+
+  function fetchOrderIds() {
+    return fetch('/comedor/kanban/orders/')
+      .then(response => response.json())
+      .then(data => {
+        // Obtener todos los IDs de las órdenes agrupadas
+        let ids = [];
+        ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
+          if (data[estado]) {
+            data[estado].forEach(order => ids.push(order.id));
+          }
+        });
+        return ids;
+      });
+  }
+
+  function checkForNewOrders() {
+    fetch('/comedor/kanban/orders/')
+      .then(response => response.json())
+      .then(data => {
+        // Obtener todos los IDs actuales
+        let allOrders = [];
+        let activeOrderIds = new Set();
+        ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
+          if (data[estado]) {
+            data[estado].forEach(order => {
+              allOrders.push({id: order.id, estado, order});
+              activeOrderIds.add(order.id);
+            });
+          }
+        });
+
+        // Detectar nuevas órdenes
+        const newOrders = allOrders.filter(o => !currentOrderIds.has(o.id));
+        if (newOrders.length > 0) {
+          newOrders.forEach(o => {
+            console.log('orden nueva');
+            // Crear la card y agregarla al contenedor correspondiente
+            const container = document.getElementById(`${o.estado.replace(' ', '-')}-cards`);
+            if (container) {
+              const card = createOrderCard(o.order);
+              container.appendChild(card);
+              // Configurar drag and drop/touch para la nueva card
+              card.addEventListener("dragstart", dragStart);
+              card.addEventListener("dragend", dragEnd);
+              card.addEventListener('touchstart', handleTouchStart, { passive: false });
+              card.addEventListener('touchmove', handleTouchMove, { passive: false });
+              card.addEventListener('touchend', handleTouchEnd, { passive: false });
+              card.style.touchAction = 'none';
+              card.style.userSelect = 'none';
+            }
+          });
+        }
+
+        // Eliminar cards de órdenes canceladas
+        document.querySelectorAll('[id^="order-"]').forEach(card => {
+          const cardId = card.id.replace('order-', '');
+          if (!activeOrderIds.has(cardId)) {
+            card.remove();
+          }
+        });
+
+        // Actualizar el set de IDs
+        currentOrderIds = new Set(allOrders.map(o => o.id));
+      });
+  }
+
+  // Inicializar el set de IDs al cargar la página
+  fetchOrderIds().then(ids => { currentOrderIds = new Set(ids); });
+
+  // Revisar cada 5 segundos
+  setInterval(checkForNewOrders, 5000);
+  // Cargar pedidos por AJAX y renderizar cards
+  fetch('/comedor/kanban/orders/')
+    .then(response => response.json())
+    .then(data => {
+      const estados = ['pendiente', 'en preparacion', 'finalizado', 'entregado'];
+      estados.forEach(estado => {
+        const container = document.getElementById(`${estado.replace(' ', '-')}-cards`);
+        if (container) {
+          container.innerHTML = '';
+          data[estado].forEach(order => {
+            const card = createOrderCard(order);
+            container.appendChild(card);
+          });
+        }
+      });
+      // Configurar drag and drop para todas las tarjetas
+      const cards = document.querySelectorAll("[draggable='true']");
+      cards.forEach((card) => {
+        card.addEventListener("dragstart", dragStart);
+        card.addEventListener("dragend", dragEnd);
+        card.addEventListener('touchstart', handleTouchStart, { passive: false });
+        card.addEventListener('touchmove', handleTouchMove, { passive: false });
+        card.addEventListener('touchend', handleTouchEnd, { passive: false });
+        card.style.touchAction = 'none';
+        card.style.userSelect = 'none';
+      });
+    });
 
   // Configurar drop zones para las columnas
   const columns = document.querySelectorAll(".kanban-column");
@@ -329,3 +414,55 @@ document.addEventListener("DOMContentLoaded", function () {
     column.addEventListener("dragleave", dragLeave);
   });
 });
+
+// Función para crear la card de pedido (estructura igual a order_card_grouped.html)
+function createOrderCard(order) {
+  const div = document.createElement('div');
+  div.id = `order-${order.id}`;
+  div.className = `bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing ${['finalizado','entregado'].includes(order.status) ? 'opacity-80' : ''}`;
+  div.setAttribute('draggable', order.is_employee ? 'true' : 'false');
+  div.dataset.pedidoIds = order.pedido_ids.join(',');
+
+  // Header
+  div.innerHTML = `
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <h3 class="font-bold text-gray-900 mb-1">${order.user_name}</h3>
+        <p class="text-sm text-gray-600">
+          ${order.is_profesor ? '<strong>Profesor</strong>' : `<strong>${order.user_level}</strong>`}
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-gray-500"><strong>Turno:</strong> ${order.turno}</p>
+        ${order.platillos.length > 1 ? `<span class="inline-block px-2 py-1 bg-primary-red text-white text-xs rounded-full mt-1">${order.platillos.length} platillos</span>` : ''}
+      </div>
+    </div>
+    <div class="space-y-2 mb-3">
+      ${order.platillos.map(platillo => `
+        <div class="bg-gray-50 p-2 rounded border-l-2 border-primary-red">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-medium text-gray-800">${platillo.nombre}</span>
+              ${platillo.cantidad > 1 ? `<span class="text-primary-red font-semibold ml-1">x${platillo.cantidad}</span>` : ''}
+            </div>
+            <span class="text-sm text-gray-600">$${parseFloat(platillo.precio).toFixed(2)}</span>
+          </div>
+          ${platillo.ingredientes && platillo.ingredientes.length ? `<p class="text-xs text-gray-500 mt-1"><strong>Ingredientes:</strong> ${platillo.ingredientes.join(', ').slice(0,50)}${platillo.ingredientes.join(', ').length > 50 ? '...' : ''}</p>` : ''}
+          ${platillo.nota ? `<p class="text-xs text-blue-600 mt-1"><strong>Nota:</strong> ${platillo.nota}</p>` : ''}
+        </div>
+      `).join('')}
+    </div>
+    <div class="border-t pt-2 mb-2">
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-600">Total items:</span>
+        <span class="font-semibold">${order.total_cantidad}</span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-600">Total:</span>
+        <span class="font-bold text-primary-red">$${parseFloat(order.total_precio).toFixed(2)}</span>
+      </div>
+    </div>
+    ${order.is_employee ? `<p class="text-xs text-gray-500 encargado-field"><strong>Encargado:</strong> ${order.encargado}</p>` : ''}
+  `;
+  return div;
+}

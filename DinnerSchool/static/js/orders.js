@@ -198,6 +198,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Enviar formulario
     ordersForm.submit();
+    // Actualizar el kanban inmediatamente si está disponible
+    if (window.refreshKanban) {
+      setTimeout(window.refreshKanban, 1000); // Espera 1s para que el pedido se procese
+    }
   });
 
   // Función para actualizar la vista del carrito

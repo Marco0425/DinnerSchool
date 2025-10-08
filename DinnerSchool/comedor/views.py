@@ -1,3 +1,4 @@
+from django.views.decorators.http import require_GET
 from django.http import HttpResponse, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group
@@ -1524,3 +1525,81 @@ def get_movimientos(request):
             'success': False, 
             'message': f'Error interno del servidor: {str(e)}'
         })
+        
+# Endpoint AJAX para pedidos agrupados por estado (Kanban)
+@require_GET
+def kanban_orders_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'No autenticado'}, status=401)
+
+    today = date.today()
+    status_map = {
+        0: "pendiente",
+        1: "en preparacion",
+        2: "finalizado",
+        3: "entregado",
+    }
+    is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
+
+    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+    orders_dict = {}
+
+    for pedido in pedidos_hoy:
+        is_profesor = pedido.profesorId is not None
+        if is_profesor:
+            user_key = f"profesor_{pedido.profesorId.id}"
+            user_name = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
+            user_level = "Profesor"
+        else:
+            user_key = f"alumno_{pedido.alumnoId.id}"
+            user_name = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
+            user_level = f"{getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)} - {getChoiceLabel(GRADO, pedido.nivelEducativo.grado)}{getChoiceLabel(GRUPO, pedido.nivelEducativo.grupo)}"
+
+        group_key = f"{user_key}_{pedido.turno}_{pedido.fecha}"
+
+        if group_key not in orders_dict:
+            orders_dict[group_key] = {
+                "id": group_key,
+                "user_name": user_name,
+                "user_level": user_level,
+                "turno": pedido.get_turno_label(),
+                "turno_num": pedido.turno,
+                "fecha": str(pedido.fecha),
+                "is_profesor": is_profesor,
+                "is_employee": is_employee,
+                "status": status_map.get(pedido.status, "pendiente"),
+                "status_num": pedido.status,
+                "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado",
+                "encargado_id": pedido.encargadoId.id if pedido.encargadoId else None,
+                "platillos": [],
+                "total_cantidad": 0,
+                "total_precio": float(0),
+                "pedido_ids": []
+            }
+
+        # Agregar platillo al grupo
+        import ast
+        pedido.ingredientePlatillo = ast.literal_eval(pedido.ingredientePlatillo)
+        platillo_info = {
+            "id": pedido.id,
+            "nombre": pedido.platillo.nombre,
+            "ingredientes": pedido.ingredientePlatillo,
+            "nota": pedido.nota,
+            "cantidad": pedido.cantidad if hasattr(pedido, 'cantidad') else 1,
+            "precio": float(pedido.total)
+        }
+        orders_dict[group_key]["platillos"].append(platillo_info)
+        orders_dict[group_key]["total_cantidad"] += platillo_info["cantidad"]
+        orders_dict[group_key]["total_precio"] += platillo_info["precio"]
+        orders_dict[group_key]["pedido_ids"].append(pedido.id)
+
+        if pedido.status < orders_dict[group_key]["status_num"]:
+            orders_dict[group_key]["status"] = status_map.get(pedido.status, "pendiente")
+            orders_dict[group_key]["status_num"] = pedido.status
+
+    # Agrupar por estado para el frontend
+    result = {"pendiente": [], "en preparacion": [], "finalizado": [], "entregado": []}
+    for order in orders_dict.values():
+        result[order["status"]].append(order)
+
+    return JsonResponse(result)
