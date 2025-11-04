@@ -113,14 +113,22 @@
           >
             Fecha
           </th>
+          {% if is_staff %}
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+          >
+            Total
+          </th>
+          <th
+            class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+          >
+            Acciones
+          </th>
+          {% else %}
           <th
             class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
           >
             Total
-          </th>
-          {% if is_staff %}
-          <th>
-            Acciones
           </th>
           {% endif %}
         </tr>
@@ -156,11 +164,13 @@
             ${{ pedido.total }}
           </td>
           {% if is_staff %}
-            {% if pedido.status != 4 %}
-              <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              {% if pedido.status == 0 or pedido.status == 1 %}
                 <a href="{% url 'comedor:cancelOrder' pedido.id %}" class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200">Cancelar</a>
-              </td>
-            {% endif %}
+              {% else %}
+                <span class="text-gray-400 text-xs">-</span>
+              {% endif %}
+            </td>
           {% endif %}
         </tr>
         {% endfor %}
