@@ -232,8 +232,8 @@ def cancelOrder(request, pedido_id):
                 pedido_user_email = pedido.alumnoId.tutorId.usuario.email
             elif pedido.profesorId:
                 pedido_user_email = pedido.profesorId.usuario.email
-            
-            if pedido_user_email != user_email:
+                
+            if pedido_user_email != user_email and not request.user.is_staff:
                 return JsonResponse({
                     'success': False,
                     'message': 'No tienes permisos para cancelar este pedido'
@@ -271,8 +271,13 @@ def cancelOrder(request, pedido_id):
             pedido.status = 4  # Asumiendo que 4 = Cancelado
             pedido.save()
             # Registrar el movimiento en CreditoDiario como positivo (reembolso)
-            creditoDiario = CreditoDiario.objects.get(pedido_id=pedido.id)
-            creditoDiario.monto = abs(creditoDiario.monto) # Anular el movimiento original
+            creditoDiario = CreditoDiario.objects.create(
+                pedido=pedido,
+                tutorId=pedido.alumnoId.tutorId if pedido.alumnoId else None,
+                profesorId=pedido.profesorId if pedido.profesorId else None,
+                monto=Decimal(str(total_reembolso)),  # Positivo para reembolso
+                fecha=date.today()
+            )
             creditoDiario.save()
 
             return JsonResponse({
@@ -543,9 +548,11 @@ def orderHistory(request):
         page_obj = paginator.get_page(page_number)
 
         context = {
+            'is_staff': is_admin,
             'order_list': page_obj,
             'page_obj': page_obj,
         }
+        
         return render(request, 'Orders/orders_history_view.html', context)
     else:
         return redirect('core:signInUp')
@@ -614,7 +621,7 @@ def createOrder(request):
                     platillo = Platillo.objects.get(id=item['platillo_id'])
                     subtotal = Decimal(str(item['subtotal']))
                     total_calculado += subtotal
-                    fecha_entrega = date.fromisoformat(fechaPedido) if fechaPedido else (date.today() if datetime.now().hour < 18 else date.today() + timedelta(days=1))
+                    fecha_entrega = date.fromisoformat(fechaPedido) if fechaPedido else (date.today() if datetime.now().hour < 15 else date.today() + timedelta(days=1))
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(
@@ -651,7 +658,7 @@ def createOrder(request):
                     tutorId=tutor_actual,
                     profesorId=profesor_actual,
                     monto= -pedido.total,
-                    fecha=date.today()
+                    fecha=fecha_entrega
                 )
             
             # Actualizar crédito total (descontar el total del carrito)
@@ -1372,12 +1379,21 @@ def get_movimientos(request):
                             if mov_credito.pedido.alumnoId:
                                 descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
                         else:
-                            tipo = 'reembolso'
-                            tipo_display = 'Reembolso'
-                            descripcion = f"Pedido #{mov_credito.pedido.id}"
-                            if mov_credito.pedido.alumnoId:
-                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
-                            descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
+                            if mov_credito.monto < 0:
+                                tipo = 'Pedido Cancelado'
+                                tipo_display = 'Pedido Cancelado'
+                                descripcion = f"Pedido #{mov_credito.pedido.id}"
+                                if mov_credito.pedido.platillo:
+                                    descripcion += f": {mov_credito.pedido.platillo.nombre}"
+                                if mov_credito.pedido.alumnoId:
+                                    descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
+                            else:
+                                tipo = 'Reembolso'
+                                tipo_display = 'Reembolso'
+                                descripcion = f"Pedido #{mov_credito.pedido.id}"
+                                if mov_credito.pedido.alumnoId:
+                                    descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
+                                descripcion += f" Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
                     
                     movimientos.append({
                         'fecha': mov_credito.fecha,
@@ -1428,12 +1444,16 @@ def get_movimientos(request):
                             if mov_credito.pedido.platillo:
                                 descripcion += f": {mov_credito.pedido.platillo.nombre}"
                         else:
-                            tipo = 'reembolso'
-                            tipo_display = 'Reembolso'
-                            descripcion = f"Pedido #{mov_credito.pedido.id}"
-                            if mov_credito.pedido.alumnoId:
-                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
-                            descripcion += f"Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
+                            if mov_credito.monto < 0:
+                                tipo = 'Pedido Cancelado'
+                                tipo_display = 'Pedido Cancelado'
+                                descripcion = f"Pedido #{mov_credito.pedido.id}"
+                                if mov_credito.pedido.platillo:
+                                    descripcion += f": {mov_credito.pedido.platillo.nombre}"
+                            else:
+                                tipo = 'Reembolso'
+                                tipo_display = 'Reembolso'
+                                descripcion = f" Reembolso de ${abs(mov_credito.monto)} por pedido cancelado #{mov_credito.pedido.id}"
                     
                     movimientos.append({
                         'fecha': mov_credito.fecha,
@@ -1450,22 +1470,57 @@ def get_movimientos(request):
         # Ordenar movimientos por fecha y tipo
         movimientos.sort(key=lambda x: (x['fecha'], x['orden'], x['objeto'].id))
         
-        # Calcular saldo inicial
+        # Calcular saldo inicial basado en el saldo actual real
         saldo_inicial = 0.0
+        saldo_actual_real = 0.0
+        
         try:
+            # Obtener saldo actual real del modelo Credito
             if user_type == 'tutor':
-                movimientos_anteriores = CreditoDiario.objects.filter(
+                credito_obj = Credito.objects.filter(tutorId=tutor).first()
+            else:
+                credito_obj = Credito.objects.filter(profesorId=profesor).first()
+            
+            if credito_obj:
+                saldo_actual_real = float(credito_obj.monto)
+            
+            # Calcular saldo inicial restando los movimientos posteriores al rango de fechas
+            movimientos_posteriores = 0.0
+            if user_type == 'tutor':
+                movimientos_post = CreditoDiario.objects.filter(
                     tutorId=tutor,
-                    fecha__lt=fecha_inicio
+                    fecha__gt=fecha_fin
                 )
             else:
-                movimientos_anteriores = CreditoDiario.objects.filter(
+                movimientos_post = CreditoDiario.objects.filter(
                     profesorId=profesor,
-                    fecha__lt=fecha_inicio
+                    fecha__gt=fecha_fin
                 )
             
-            for mov_anterior in movimientos_anteriores:
-                saldo_inicial += float(mov_anterior.monto)
+            for mov_post in movimientos_post:
+                movimientos_posteriores += float(mov_post.monto)
+            
+            # Calcular saldo al final del período (sin movimientos posteriores)
+            saldo_fin_periodo = saldo_actual_real - movimientos_posteriores
+            
+            # Calcular saldo inicial restando los movimientos del período seleccionado
+            movimientos_periodo = 0.0
+            if user_type == 'tutor':
+                movimientos_per = CreditoDiario.objects.filter(
+                    tutorId=tutor,
+                    fecha__range=[fecha_inicio, fecha_fin]
+                )
+            else:
+                movimientos_per = CreditoDiario.objects.filter(
+                    profesorId=profesor,
+                    fecha__range=[fecha_inicio, fecha_fin]
+                )
+            
+            for mov_per in movimientos_per:
+                movimientos_periodo += float(mov_per.monto)
+            
+            saldo_inicial = saldo_fin_periodo - movimientos_periodo
+            
         except Exception:
             pass  # Usar saldo inicial 0 si hay error
         
@@ -1494,18 +1549,8 @@ def get_movimientos(request):
                 'saldo_final': saldo_actual
             })
         
-        # Obtener saldo actual real
-        saldo_actual_real = saldo_actual
-        try:
-            if user_type == 'tutor':
-                credito_obj = Credito.objects.filter(tutorId=tutor).first()
-            else:
-                credito_obj = Credito.objects.filter(profesorId=profesor).first()
-            
-            if credito_obj:
-                saldo_actual_real = float(credito_obj.monto)
-        except Exception:
-            pass  # Usar saldo calculado si hay error
+        # El saldo actual real ya se calculó arriba
+        # saldo_actual_real ya contiene el valor correcto del modelo Credito
         
         resumen = {
             'total_creditos': total_creditos,
