@@ -234,8 +234,8 @@ def cancelOrder(request, pedido_id):
                 pedido_user_email = pedido.alumnoId.tutorId.usuario.email
             elif pedido.profesorId:
                 pedido_user_email = pedido.profesorId.usuario.email
-            
-            if pedido_user_email != user_email:
+                
+            if pedido_user_email != user_email and not request.user.is_staff:
                 return JsonResponse({
                     'success': False,
                     'message': 'No tienes permisos para cancelar este pedido'
@@ -550,9 +550,11 @@ def orderHistory(request):
         page_obj = paginator.get_page(page_number)
 
         context = {
+            'is_staff': is_admin,
             'order_list': page_obj,
             'page_obj': page_obj,
         }
+        
         return render(request, 'Orders/orders_history_view.html', context)
     else:
         return redirect('core:signInUp')
