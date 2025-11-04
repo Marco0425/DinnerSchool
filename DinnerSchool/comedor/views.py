@@ -279,6 +279,11 @@ def cancelOrder(request, pedido_id):
                 fecha=date.today()
             )
             creditoDiario.save()
+            
+            if request.user.is_staff:
+                message = f'Pedido #{pedido_id} cancelado exitosamente por el administrador. Se reembolsaron ${total_reembolso} al usuario.'
+                messages.success(request, message)
+                return redirect('comedor:orderHistory')
 
             return JsonResponse({
                 'success': True,
