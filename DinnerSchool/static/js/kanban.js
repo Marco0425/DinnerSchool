@@ -369,8 +369,6 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch('/comedor/kanban/orders/')
       .then(response => response.json())
       .then(data => {
-        console.log('[KANBAN] Datos obtenidos del servidor:', data);
-        
         // Obtener todos los IDs y estados actuales
         let allOrders = [];
         let activeOrderIds = new Set();
@@ -386,22 +384,15 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
 
-        console.log('[KANBAN] Estados actuales:', currentStates);
-        console.log('[KANBAN] Estados previos:', currentOrderStates);
-
         // Detectar nuevas órdenes
         const newOrders = allOrders.filter(o => !currentOrderStates.has(o.id));
         if (newOrders.length > 0) {
-          console.log('[KANBAN] Nuevas órdenes detectadas:', newOrders.map(o => ({id: o.id, estado: o.estado})));
           newOrders.forEach(o => {
-            console.log(`[KANBAN] Creando nueva card para orden ${o.id} en estado ${o.estado}`);
             // Crear la card y agregarla al contenedor correspondiente
             const container = document.getElementById(`${o.estado.replace(' ', '-')}-cards`);
-            console.log(`[KANBAN] Contenedor buscado: ${o.estado.replace(' ', '-')}-cards`, container);
             if (container) {
               const card = createOrderCard(o.order);
               container.appendChild(card);
-              console.log(`[KANBAN] Card agregada al contenedor`);
               // Configurar drag and drop/touch para la nueva card
               card.addEventListener("dragstart", dragStart);
               card.addEventListener("dragend", dragEnd);
@@ -415,36 +406,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Detectar cambios de estado
-        console.log('[KANBAN] Verificando cambios de estado...');
         currentOrderStates.forEach((oldEstado, orderId) => {
           const newEstado = currentStates.get(orderId);
-          console.log(`[KANBAN] Orden ${orderId}: estado anterior=${oldEstado}, estado actual=${newEstado}`);
           
           if (newEstado && oldEstado !== newEstado) {
-            console.log(`[KANBAN] *** CAMBIO DE ESTADO DETECTADO *** Orden ${orderId}: ${oldEstado} → ${newEstado}`);
             
             // Encontrar la card actual
             const card = document.getElementById(`order-${orderId}`);
-            console.log(`[KANBAN] Card encontrada para orden ${orderId}:`, card);
             
             if (card) {
               // Obtener la orden actualizada
               const updatedOrder = allOrders.find(o => o.id === orderId);
-              console.log(`[KANBAN] Orden actualizada encontrada:`, updatedOrder);
               
               if (updatedOrder) {
                 // Eliminar la card del contenedor actual
-                console.log(`[KANBAN] Eliminando card del contenedor anterior...`);
                 card.remove();
                 
                 // Crear una nueva card con la información actualizada
                 const newContainer = document.getElementById(`${newEstado.replace(' ', '-')}-cards`);
-                console.log(`[KANBAN] Nuevo contenedor buscado: ${newEstado.replace(' ', '-')}-cards`, newContainer);
                 
                 if (newContainer) {
                   const newCard = createOrderCard(updatedOrder.order);
                   newContainer.appendChild(newCard);
-                  console.log(`[KANBAN] Nueva card agregada al contenedor ${newEstado}`);
                   
                   // Configurar drag and drop/touch para la nueva card
                   newCard.addEventListener("dragstart", dragStart);
@@ -461,19 +444,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Eliminar cards de órdenes canceladas
-        console.log('[KANBAN] Verificando órdenes canceladas...');
         document.querySelectorAll('[id^="order-"]').forEach(card => {
           const cardId = card.id.replace('order-', '');
           if (!activeOrderIds.has(cardId)) {
-            console.log(`[KANBAN] Orden ${cardId} ya no existe, eliminando card`);
             card.remove();
           }
         });
 
         // Actualizar el map de estados
-        console.log('[KANBAN] Actualizando estados previos');
         currentOrderStates = new Map(currentStates);
-        console.log('[KANBAN] --- Ciclo de verificación completado ---');
       })
       .catch(error => console.error('[KANBAN] Error al verificar órdenes:', error));
   }
