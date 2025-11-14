@@ -242,6 +242,8 @@ async function updateGroupedOrder(pedidoIds, newStatus, cardElement) {
           assigneeElement.innerHTML = `<strong>Encargado:</strong> ${results[0].encargado}`;
         }
       }
+      // Verificar y mover la tarjeta si cambió de estado
+      verifyAndMoveCard(cardElement);
     } else {
       location.reload();
     }
@@ -279,6 +281,8 @@ function updateSingleOrder(cardId, newStatus, cardElement) {
             assigneeElement.textContent = `Encargado: ${data.encargado}`;
           }
         }
+        // Verificar y mover la tarjeta si cambió de estado
+        verifyAndMoveCard(cardElement);
       } else {
         alert("Error al actualizar el estado: " + (data.error || ""));
       }
@@ -286,6 +290,43 @@ function updateSingleOrder(cardId, newStatus, cardElement) {
     .catch((error) => {
       alert("Error de red al actualizar el estado");
     });
+}
+
+function verifyAndMoveCard(cardElement) {
+  // Obtener todas las órdenes del servidor para verificar el estado actual
+  fetch('/comedor/kanban/orders/')
+    .then(response => response.json())
+    .then(data => {
+      const cardId = cardElement.id.replace('order-', '');
+      let currentStatus = null;
+      
+      // Buscar en qué estado está la orden actualmente
+      ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
+        if (data[estado]) {
+          const found = data[estado].find(order => order.id == cardId);
+          if (found) {
+            currentStatus = estado;
+          }
+        }
+      });
+      
+      // Si encontramos la orden, moverla al contenedor correcto
+      if (currentStatus) {
+        const targetColumnId = currentStatus.replace(' ', '-') + '-column';
+        const targetColumn = document.getElementById(targetColumnId);
+        
+        if (targetColumn) {
+          const cardsContainer = targetColumn.querySelector('[id$="-cards"]');
+          if (cardsContainer) {
+            // Verificar si la tarjeta no está ya en el contenedor correcto
+            if (!cardsContainer.contains(cardElement)) {
+              cardsContainer.appendChild(cardElement);
+            }
+          }
+        }
+      }
+    })
+    .catch(error => console.error('Error verificando estado:', error));
 }
 
 function getCookie(name) {
