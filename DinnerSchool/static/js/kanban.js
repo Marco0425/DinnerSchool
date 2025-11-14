@@ -345,21 +345,23 @@ function getCookie(name) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Guardar IDs actuales para detectar nuevas órdenes
-  let currentOrderIds = new Set();
+  // Guardar IDs actuales y su estado para detectar nuevas órdenes y cambios de estado
+  let currentOrderStates = new Map(); // Map de {orderId: estado}
 
-  function fetchOrderIds() {
+  function fetchOrderStates() {
     return fetch('/comedor/kanban/orders/')
       .then(response => response.json())
       .then(data => {
-        // Obtener todos los IDs de las órdenes agrupadas
-        let ids = [];
+        // Obtener todos los IDs y sus estados
+        let states = new Map();
         ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
           if (data[estado]) {
-            data[estado].forEach(order => ids.push(order.id));
+            data[estado].forEach(order => {
+              states.set(order.id, estado);
+            });
           }
         });
-        return ids;
+        return states;
       });
   }
 
@@ -367,23 +369,26 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch('/comedor/kanban/orders/')
       .then(response => response.json())
       .then(data => {
-        // Obtener todos los IDs actuales
+        // Obtener todos los IDs y estados actuales
         let allOrders = [];
         let activeOrderIds = new Set();
+        let currentStates = new Map();
+        
         ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
           if (data[estado]) {
             data[estado].forEach(order => {
               allOrders.push({id: order.id, estado, order});
               activeOrderIds.add(order.id);
+              currentStates.set(order.id, estado);
             });
           }
         });
 
         // Detectar nuevas órdenes
-        const newOrders = allOrders.filter(o => !currentOrderIds.has(o.id));
+        const newOrders = allOrders.filter(o => !currentOrderStates.has(o.id));
         if (newOrders.length > 0) {
           newOrders.forEach(o => {
-            console.log('orden nueva');
+            console.log('orden nueva:', o.id);
             // Crear la card y agregarla al contenedor correspondiente
             const container = document.getElementById(`${o.estado.replace(' ', '-')}-cards`);
             if (container) {
@@ -401,6 +406,41 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         }
 
+        // Detectar cambios de estado
+        currentOrderStates.forEach((oldEstado, orderId) => {
+          const newEstado = currentStates.get(orderId);
+          if (newEstado && oldEstado !== newEstado) {
+            console.log(`orden ${orderId} cambió de ${oldEstado} a ${newEstado}`);
+            
+            // Encontrar la card actual
+            const card = document.getElementById(`order-${orderId}`);
+            if (card) {
+              // Obtener la orden actualizada
+              const updatedOrder = allOrders.find(o => o.id === orderId);
+              if (updatedOrder) {
+                // Eliminar la card del contenedor actual
+                card.remove();
+                
+                // Crear una nueva card con la información actualizada
+                const newContainer = document.getElementById(`${newEstado.replace(' ', '-')}-cards`);
+                if (newContainer) {
+                  const newCard = createOrderCard(updatedOrder.order);
+                  newContainer.appendChild(newCard);
+                  
+                  // Configurar drag and drop/touch para la nueva card
+                  newCard.addEventListener("dragstart", dragStart);
+                  newCard.addEventListener("dragend", dragEnd);
+                  newCard.addEventListener('touchstart', handleTouchStart, { passive: false });
+                  newCard.addEventListener('touchmove', handleTouchMove, { passive: false });
+                  newCard.addEventListener('touchend', handleTouchEnd, { passive: false });
+                  newCard.style.touchAction = 'none';
+                  newCard.style.userSelect = 'none';
+                }
+              }
+            }
+          }
+        });
+
         // Eliminar cards de órdenes canceladas
         document.querySelectorAll('[id^="order-"]').forEach(card => {
           const cardId = card.id.replace('order-', '');
@@ -409,13 +449,13 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
 
-        // Actualizar el set de IDs
-        currentOrderIds = new Set(allOrders.map(o => o.id));
+        // Actualizar el map de estados
+        currentOrderStates = new Map(currentStates);
       });
   }
 
-  // Inicializar el set de IDs al cargar la página
-  fetchOrderIds().then(ids => { currentOrderIds = new Set(ids); });
+  // Inicializar el map de estados al cargar la página
+  fetchOrderStates().then(states => { currentOrderStates = new Map(states); });
 
   // Revisar cada 5 segundos
   setInterval(checkForNewOrders, 5000);
