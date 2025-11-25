@@ -74,6 +74,7 @@ class PedidoAdmin(admin.ModelAdmin):
                      'profesorId__usuario__materno','alumnoId__tutorId__usuario__nombre',
                      'alumnoId__tutorId__usuario__paterno','alumnoId__tutorId__usuario__materno',)
     list_filter = ('status', 'turno', 'fecha')
+    readonly_fields = ('creado',)
 
     def nombreTutor(self, obj):
         if obj.alumnoId and obj.alumnoId.tutorId:
