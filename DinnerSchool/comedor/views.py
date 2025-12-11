@@ -626,7 +626,12 @@ def createOrder(request):
                     platillo = Platillo.objects.get(id=item['platillo_id'])
                     subtotal = Decimal(str(item['subtotal']))
                     total_calculado += subtotal
-                    fecha_entrega = date.fromisoformat(fechaPedido) if fechaPedido else (date.today() if datetime.now().hour < 15 else date.today() + timedelta(days=1))
+                    
+                    if fechaPedido:
+                        fecha_entrega = date.fromisoformat(fechaPedido)
+                    else:
+                        hora_actual = datetime.now().hour
+                        fecha_entrega = date.today() if hora_actual < 15 else date.today() + timedelta(days=1)
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(
