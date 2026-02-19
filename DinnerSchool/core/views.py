@@ -26,6 +26,7 @@ import random
 from .models import *
 
 from datetime import datetime
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -339,10 +340,10 @@ def dashboard(request):
             'is_profesor': is_profesor,
             'is_admin': request.user.is_staff,
             'noticias': Noticias.objects.filter(activo=True),
-            'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
+            'statusPedidos': listaPedidos.filter(fecha__gte=timezone.localtime().date()),
             'credito'   : credito,
             'MEDIA_URL': settings.MEDIA_URL,
-            'pedidos_bloqueados': datetime.now().hour >= 14 and not request.user.is_staff,
+            'pedidos_bloqueados': timezone.localtime().hour >= 14 and not request.user.is_staff,
         }
         
         return render(request, 'Home/home_dashboard_view.html', context)

@@ -15,6 +15,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from decimal import Decimal
 from django.db import transaction
+from django.utils import timezone
 
 from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
 from django.db.models import Q
@@ -577,7 +578,7 @@ def createOrder(request):
     if request.method == "POST":
         try:
             # Bloquear pedidos después de las 2:00 PM (excepto admins)
-            if not request.user.is_staff and datetime.now().hour >= 14:
+            if not request.user.is_staff and timezone.localtime().hour >= 14:
                 messages.error(request, "No se pueden registrar pedidos después de las 2:00 PM.")
                 return redirect('core:dashboard')
 
@@ -638,7 +639,7 @@ def createOrder(request):
                     if fechaPedido:
                         fecha_entrega = date.fromisoformat(fechaPedido)
                     else:
-                        hora_actual = datetime.now().hour
+                        hora_actual = timezone.localtime().hour
                         fecha_entrega = date.today() if hora_actual < 14 else date.today() + timedelta(days=1)
                     
                     # Crear el pedido
@@ -719,7 +720,7 @@ def createOrder(request):
     
     # GET request - código existente para mostrar el formulario
     # Bloquear acceso al formulario después de las 2:00 PM (excepto admins)
-    if not request.user.is_staff and datetime.now().hour >= 14:
+    if not request.user.is_staff and timezone.localtime().hour >= 14:
         messages.error(request, "El registro de pedidos está cerrado después de las 2:00 PM. Intenta mañana.")
         return redirect('core:dashboard')
 
@@ -1601,7 +1602,7 @@ def get_turnos_activos():
     - 11:00+: todos los turnos
     - Antes de 8:00: ninguno
     """
-    hora_actual = datetime.now().hour
+    hora_actual = timezone.localtime().hour
     if hora_actual < 8:
         return []
     elif hora_actual < 10:
