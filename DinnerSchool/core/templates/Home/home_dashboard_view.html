@@ -109,7 +109,7 @@
       {% if pedidos_bloqueados %}
       <div
         class="group block bg-gray-100 p-6 rounded-lg shadow-custom border border-gray-300 opacity-60 cursor-not-allowed"
-        title="El registro de pedidos está cerrado después de las 2:00 PM"
+        title="El registro de pedidos está cerrado de 2:00 PM a 8:00 PM"
       >
         <div class="flex flex-col items-center">
           <!-- Icono de Pedidos (SVG de carrito de compras) -->
@@ -128,7 +128,7 @@
             ></path>
           </svg>
           <span class="text-lg font-semibold text-gray-400">Crear pedido</span>
-          <span class="text-xs text-red-500 mt-1 font-medium">Cerrado después de las 2:00 PM</span>
+          <span class="text-xs text-red-500 mt-1 font-medium">Cerrado de 2:00 PM a 8:00 PM</span>
         </div>
       </div>
       {% else %}

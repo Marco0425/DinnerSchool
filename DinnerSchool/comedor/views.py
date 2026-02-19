@@ -578,8 +578,8 @@ def createOrder(request):
     if request.method == "POST":
         try:
             # Bloquear pedidos después de las 2:00 PM (excepto admins)
-            if not request.user.is_staff and timezone.localtime().hour >= 14:
-                messages.error(request, "No se pueden registrar pedidos después de las 2:00 PM.")
+            if not request.user.is_staff and 14 <= timezone.localtime().hour < 20:
+                messages.error(request, "El registro de pedidos está cerrado de 2:00 PM a 8:00 PM. Después de las 8:00 PM podrás registrar pedidos para el día siguiente.")
                 return redirect('core:dashboard')
 
             # Obtener datos del carrito
@@ -720,8 +720,8 @@ def createOrder(request):
     
     # GET request - código existente para mostrar el formulario
     # Bloquear acceso al formulario después de las 2:00 PM (excepto admins)
-    if not request.user.is_staff and timezone.localtime().hour >= 14:
-        messages.error(request, "El registro de pedidos está cerrado después de las 2:00 PM. Intenta mañana.")
+    if not request.user.is_staff and 14 <= timezone.localtime().hour < 20:
+        messages.error(request, "El registro de pedidos está cerrado de 2:00 PM a 8:00 PM. Después de las 8:00 PM podrás registrar pedidos para el día siguiente.")
         return redirect('core:dashboard')
 
     # Verificar crédito

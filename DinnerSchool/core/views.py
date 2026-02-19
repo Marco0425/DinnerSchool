@@ -343,7 +343,7 @@ def dashboard(request):
             'statusPedidos': listaPedidos.filter(fecha__gte=timezone.localtime().date()),
             'credito'   : credito,
             'MEDIA_URL': settings.MEDIA_URL,
-            'pedidos_bloqueados': timezone.localtime().hour >= 14 and not request.user.is_staff,
+            'pedidos_bloqueados': 14 <= timezone.localtime().hour < 20 and not request.user.is_staff,
         }
         
         return render(request, 'Home/home_dashboard_view.html', context)
