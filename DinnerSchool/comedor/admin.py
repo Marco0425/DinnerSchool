@@ -1,7 +1,9 @@
 from django.contrib import admin
+from django.contrib import messages
 from django.utils.html import format_html
 from .models import *
 
+from django.utils import timezone
 import ast
 
 @admin.register(Credito)
@@ -75,6 +77,13 @@ class PedidoAdmin(admin.ModelAdmin):
                      'alumnoId__tutorId__usuario__paterno','alumnoId__tutorId__usuario__materno',)
     list_filter = ('status', 'turno', 'fecha')
     readonly_fields = ('creado',)
+
+    def save_model(self, request, obj, form, change):
+        """Bloquear creación/modificación de pedidos después de las 2:00 PM."""
+        if 14 <= timezone.localtime().hour < 20:
+            messages.error(request, "No se pueden crear ni modificar pedidos de 2:00 PM a 8:00 PM.")
+            return  # No guardar
+        super().save_model(request, obj, form, change)
 
     def nombreTutor(self, obj):
         if obj.alumnoId and obj.alumnoId.tutorId:
