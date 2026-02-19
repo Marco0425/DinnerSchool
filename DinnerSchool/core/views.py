@@ -342,6 +342,7 @@ def dashboard(request):
             'statusPedidos': listaPedidos.filter(fecha__gte=datetime.now().date()),
             'credito'   : credito,
             'MEDIA_URL': settings.MEDIA_URL,
+            'pedidos_bloqueados': datetime.now().hour >= 14 and not request.user.is_staff,
         }
         
         return render(request, 'Home/home_dashboard_view.html', context)

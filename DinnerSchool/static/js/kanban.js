@@ -1,7 +1,7 @@
 function dragStart(event) {
   event.dataTransfer.setData("text/plain", event.target.id);
   event.target.classList.add("dragging");
-  
+
   // Si es una orden agrupada, también pasar los IDs de pedidos individuales
   if (event.target.dataset.pedidoIds) {
     event.dataTransfer.setData("text/pedido-ids", event.target.dataset.pedidoIds);
@@ -28,7 +28,7 @@ function drop(event) {
   const pedidoIds = event.dataTransfer.getData("text/pedido-ids");
   const draggedCard = document.getElementById(cardId);
   const targetColumn = event.currentTarget;
-  
+
   // Remover indicador visual
   targetColumn.classList.remove("drag-over");
 
@@ -40,13 +40,13 @@ function drop(event) {
   if (targetColumn && draggedCard) {
     // Encontrar el contenedor de cartas dentro de la columna
     const cardsContainer = targetColumn.querySelector('[id$="-cards"]');
-    
+
     if (cardsContainer) {
       cardsContainer.appendChild(draggedCard);
 
       // Determinar nuevo status basado en el ID de la columna
       let newStatus = getStatusFromColumn(targetColumn);
-      
+
       if (newStatus) {
         // Si es una orden agrupada, actualizar todos los pedidos
         if (pedidoIds) {
@@ -82,24 +82,24 @@ function handleTouchStart(e) {
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
   isDragging = false;
-  
+
   // Agregar clase visual para indicar que se está arrastrando
   this.classList.add('opacity-50');
 }
 
 function handleTouchMove(e) {
   if (!draggedElement) return;
-  
+
   e.preventDefault();
   const touch = e.touches[0];
   const deltaX = Math.abs(touch.clientX - touchStartX);
   const deltaY = Math.abs(touch.clientY - touchStartY);
-  
+
   // Solo considerar como arrastre si se mueve más de 10px
   if (deltaX > 10 || deltaY > 10) {
     isDragging = true;
   }
-  
+
   if (isDragging) {
     // Crear elemento visual que sigue el dedo
     let ghostElement = document.getElementById('touch-ghost');
@@ -115,19 +115,19 @@ function handleTouchMove(e) {
       ghostElement.style.borderRadius = '8px';
       document.body.appendChild(ghostElement);
     }
-    
+
     ghostElement.style.left = (touch.clientX - 50) + 'px';
     ghostElement.style.top = (touch.clientY - 50) + 'px';
-    
+
     // Determinar sobre qué columna está el dedo
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const column = elementBelow?.closest('.kanban-column');
-    
+
     // Remover highlight de todas las columnas
     document.querySelectorAll('.kanban-column').forEach(col => {
       col.classList.remove('drag-over');
     });
-    
+
     // Agregar highlight a la columna actual
     if (column) {
       column.classList.add('drag-over');
@@ -137,44 +137,44 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
   if (!draggedElement) return;
-  
+
   e.preventDefault();
-  
+
   // Remover elemento ghost
   const ghostElement = document.getElementById('touch-ghost');
   if (ghostElement) {
     ghostElement.remove();
   }
-  
+
   // Remover clase visual
   draggedElement.classList.remove('opacity-50');
-  
+
   // Remover highlight de todas las columnas
   document.querySelectorAll('.kanban-column').forEach(col => {
     col.classList.remove('drag-over');
   });
-  
+
   if (isDragging) {
     const touch = e.changedTouches[0];
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetColumn = elementBelow?.closest('.kanban-column');
-    
+
     if (targetColumn && targetColumn !== draggedElement.closest('.kanban-column')) {
       // Solo permitir si la tarjeta es draggable
       if (draggedElement.draggable) {
         // Encontrar el contenedor de cartas dentro de la columna
         const cardsContainer = targetColumn.querySelector('[id$="-cards"]');
-        
+
         if (cardsContainer) {
           cardsContainer.appendChild(draggedElement);
 
           // Determinar nuevo status basado en el ID de la columna
           let newStatus = getStatusFromColumn(targetColumn);
-          
+
           if (newStatus) {
             const cardId = draggedElement.id;
             const pedidoIds = draggedElement.dataset.pedidoIds;
-            
+
             // Si es una orden agrupada, actualizar todos los pedidos
             if (pedidoIds) {
               updateGroupedOrder(pedidoIds.split(','), newStatus, draggedElement);
@@ -187,14 +187,14 @@ function handleTouchEnd(e) {
       }
     }
   }
-  
+
   draggedElement = null;
   isDragging = false;
 }
 
 function getStatusFromColumn(column) {
   const columnId = column.id;
-  
+
   // Mapear IDs de columna a status
   const statusMap = {
     'pendiente-column': 'pendiente',
@@ -211,8 +211,8 @@ async function updateGroupedOrder(pedidoIds, newStatus, cardElement) {
   try {
     const userIdElement = document.getElementById("user-id-data");
     const userId = userIdElement ? userIdElement.dataset.userId : null;
-    
-    const assignedEmployeeId = 
+
+    const assignedEmployeeId =
       (newStatus === "en preparacion" || newStatus === "finalizado") ? userId : null;
 
     // Actualizar cada pedido individualmente
@@ -253,8 +253,8 @@ async function updateGroupedOrder(pedidoIds, newStatus, cardElement) {
 function updateSingleOrder(cardId, newStatus, cardElement) {
   const userIdElement = document.getElementById("user-id-data");
   const userId = userIdElement ? userIdElement.dataset.userId : null;
-  
-  const assignedEmployeeId = 
+
+  const assignedEmployeeId =
     (newStatus === "en preparacion" || newStatus === "finalizado") ? userId : null;
 
   fetch("/comedor/order/update-status/", {
@@ -332,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ['pendiente', 'en preparacion', 'finalizado', 'entregado'].forEach(estado => {
           if (data[estado]) {
             data[estado].forEach(order => {
-              allOrders.push({id: order.id, estado, order});
+              allOrders.push({ id: order.id, estado, order });
               activeOrderIds.add(order.id);
             });
           }
@@ -368,6 +368,9 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
 
+        // Actualizar badge de turno activo
+        updateTurnoBadge(data.turno_activo);
+
         // Actualizar el set de IDs
         currentOrderIds = new Set(allOrders.map(o => o.id));
       });
@@ -393,6 +396,9 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         }
       });
+      // Actualizar badge de turno activo
+      updateTurnoBadge(data.turno_activo);
+
       // Configurar drag and drop para todas las tarjetas
       const cards = document.querySelectorAll("[draggable='true']");
       cards.forEach((card) => {
@@ -419,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
 function createOrderCard(order) {
   const div = document.createElement('div');
   div.id = `order-${order.id}`;
-  div.className = `bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing ${['finalizado','entregado'].includes(order.status) ? 'opacity-80' : ''}`;
+  div.className = `bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing ${['finalizado', 'entregado'].includes(order.status) ? 'opacity-80' : ''}`;
   div.setAttribute('draggable', order.is_employee ? 'true' : 'false');
   div.dataset.pedidoIds = order.pedido_ids.join(',');
 
@@ -447,7 +453,7 @@ function createOrderCard(order) {
             </div>
             <span class="text-sm text-gray-600">$${parseFloat(platillo.precio).toFixed(2)}</span>
           </div>
-          ${platillo.ingredientes && platillo.ingredientes.length ? `<p class="text-xs text-gray-500 mt-1"><strong>Ingredientes:</strong> ${platillo.ingredientes.join(', ').slice(0,50)}${platillo.ingredientes.join(', ').length > 50 ? '...' : ''}</p>` : ''}
+          ${platillo.ingredientes && platillo.ingredientes.length ? `<p class="text-xs text-gray-500 mt-1"><strong>Ingredientes:</strong> ${platillo.ingredientes.join(', ').slice(0, 50)}${platillo.ingredientes.join(', ').length > 50 ? '...' : ''}</p>` : ''}
           ${platillo.nota ? `<p class="text-xs text-blue-600 mt-1"><strong>Nota:</strong> ${platillo.nota}</p>` : ''}
         </div>
       `).join('')}
@@ -465,4 +471,17 @@ function createOrderCard(order) {
     ${order.is_employee ? `<p class="text-xs text-gray-500 encargado-field"><strong>Encargado:</strong> ${order.encargado}</p>` : ''}
   `;
   return div;
+}
+
+function updateTurnoBadge(turnoActivo) {
+  const badge = document.getElementById('turno-activo-badge');
+  if (badge) {
+    if (turnoActivo) {
+      badge.textContent = `Turno: ${turnoActivo}`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.textContent = '';
+      badge.classList.add('hidden');
+    }
+  }
 }

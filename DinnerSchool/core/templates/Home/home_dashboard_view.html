@@ -106,6 +106,32 @@
       </a>
       {% endif %} {% if is_admin or is_tutor or is_profesor%}
       <!-- Tarjeta de Pedidos con icono SVG y nombre claro -->
+      {% if pedidos_bloqueados %}
+      <div
+        class="group block bg-gray-100 p-6 rounded-lg shadow-custom border border-gray-300 opacity-60 cursor-not-allowed"
+        title="El registro de pedidos está cerrado después de las 2:00 PM"
+      >
+        <div class="flex flex-col items-center">
+          <!-- Icono de Pedidos (SVG de carrito de compras) -->
+          <svg
+            class="w-12 h-12 text-gray-400 mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+            ></path>
+          </svg>
+          <span class="text-lg font-semibold text-gray-400">Crear pedido</span>
+          <span class="text-xs text-red-500 mt-1 font-medium">Cerrado después de las 2:00 PM</span>
+        </div>
+      </div>
+      {% else %}
       <a
         href="/comedor/order/create/"
         class="group block bg-white p-6 rounded-lg shadow-custom hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 border border-gray-200"
@@ -132,6 +158,7 @@
           >
         </div>
       </a>
+      {% endif %}
       <!-- Tarjeta de Historial de Pedidos con icono SVG y nombre claro -->
       <a
         href="/comedor/order/history/"

@@ -397,8 +397,11 @@ def order(request):
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
                 
         try:
-            # Obtener todos los pedidos del día
-            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+            # Obtener turnos activos según la hora actual
+            turnos_activos = get_turnos_activos()
+            
+            # Obtener pedidos del día filtrados por turnos activos
+            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3], turno__in=turnos_activos).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
 
             # Diccionario para agrupar pedidos
             orders_dict = {}
@@ -573,6 +576,11 @@ def createOrder(request):
     """    
     if request.method == "POST":
         try:
+            # Bloquear pedidos después de las 2:00 PM (excepto admins)
+            if not request.user.is_staff and datetime.now().hour >= 14:
+                messages.error(request, "No se pueden registrar pedidos después de las 2:00 PM.")
+                return redirect('core:dashboard')
+
             # Obtener datos del carrito
             cart_data = request.POST.get("cart_data")
             alumno_id = request.POST.get("alumno")
@@ -631,7 +639,7 @@ def createOrder(request):
                         fecha_entrega = date.fromisoformat(fechaPedido)
                     else:
                         hora_actual = datetime.now().hour
-                        fecha_entrega = date.today() if hora_actual < 15 else date.today() + timedelta(days=1)
+                        fecha_entrega = date.today() if hora_actual < 14 else date.today() + timedelta(days=1)
                     
                     # Crear el pedido
                     nuevo_pedido = Pedido(
@@ -710,6 +718,11 @@ def createOrder(request):
             return redirect('comedor:createOrder')
     
     # GET request - código existente para mostrar el formulario
+    # Bloquear acceso al formulario después de las 2:00 PM (excepto admins)
+    if not request.user.is_staff and datetime.now().hour >= 14:
+        messages.error(request, "El registro de pedidos está cerrado después de las 2:00 PM. Intenta mañana.")
+        return redirect('core:dashboard')
+
     # Verificar crédito
     creditoTutor = Credito.objects.filter(tutorId__usuario__email=request.user.username).first()
     if creditoTutor and creditoTutor.monto < -200:
@@ -1581,6 +1594,23 @@ def get_movimientos(request):
             'message': f'Error interno del servidor: {str(e)}'
         })
         
+def get_turnos_activos():
+    """Retorna los turnos que deben mostrarse según la hora actual.
+    - 8:00 a 9:59: solo Receso 1
+    - 10:00 a 10:59: Receso 1 + Receso 2
+    - 11:00+: todos los turnos
+    - Antes de 8:00: ninguno
+    """
+    hora_actual = datetime.now().hour
+    if hora_actual < 8:
+        return []
+    elif hora_actual < 10:
+        return [0]       # Receso 1
+    elif hora_actual < 11:
+        return [0, 1]    # Receso 1 + Receso 2
+    else:
+        return [0, 1, 2] # Todos los turnos
+
 # Endpoint AJAX para pedidos agrupados por estado (Kanban)
 @require_GET
 def kanban_orders_api(request):
@@ -1596,7 +1626,8 @@ def kanban_orders_api(request):
     }
     is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
 
-    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+    turnos_activos = get_turnos_activos()
+    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3], turno__in=turnos_activos).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
     orders_dict = {}
 
     for pedido in pedidos_hoy:
@@ -1656,5 +1687,9 @@ def kanban_orders_api(request):
     result = {"pendiente": [], "en preparacion": [], "finalizado": [], "entregado": []}
     for order in orders_dict.values():
         result[order["status"]].append(order)
+
+    # Incluir info del turno activo para el frontend
+    turno_labels = {0: 'Receso 1', 1: 'Receso 2', 2: 'Comida'}
+    result["turno_activo"] = turno_labels.get(turnos_activos[-1]) if turnos_activos else None
 
     return JsonResponse(result)
