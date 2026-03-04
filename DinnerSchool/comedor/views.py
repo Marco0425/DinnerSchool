@@ -402,7 +402,7 @@ def order(request):
             # turnos_activos = get_turnos_activos()
             
             # Obtener pedidos del día filtrados por turnos activos
-            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3], turno__in=turnos_activos).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
 
             # Diccionario para agrupar pedidos
             orders_dict = {}
