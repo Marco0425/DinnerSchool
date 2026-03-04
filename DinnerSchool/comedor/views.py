@@ -399,7 +399,7 @@ def order(request):
                 
         try:
             # Obtener turnos activos según la hora actual
-            turnos_activos = get_turnos_activos()
+            # turnos_activos = get_turnos_activos()
             
             # Obtener pedidos del día filtrados por turnos activos
             pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3], turno__in=turnos_activos).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
@@ -469,7 +469,7 @@ def order(request):
             grouped_orders = list(orders_dict.values())
             
             # Ordenar por: estado, turno, fecha de creación
-            grouped_orders.sort(key=lambda x: (x["status_num"], x["turno_num"], x["fecha"]))
+            # grouped_orders.sort(key=lambda x: (x["status_num"], x["turno_num"], x["fecha"]))
             
             return render(request, 'Orders/orders_kanban_view.html', {'orders': grouped_orders})
             
