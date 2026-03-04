@@ -1628,7 +1628,7 @@ def kanban_orders_api(request):
     is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
 
     turnos_activos = get_turnos_activos()
-    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3], turno__in=turnos_activos).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
+    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
     orders_dict = {}
 
     for pedido in pedidos_hoy:
@@ -1691,6 +1691,6 @@ def kanban_orders_api(request):
 
     # Incluir info del turno activo para el frontend
     turno_labels = {0: 'Receso 1', 1: 'Receso 2', 2: 'Comida'}
-    result["turno_activo"] = turno_labels.get(turnos_activos[-1]) if turnos_activos else None
+    result["turno_activo"] = None
 
     return JsonResponse(result)
