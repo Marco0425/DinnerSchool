@@ -23,5 +23,15 @@
   </head>
   <body class="flex items-center justify-center min-h-screen p-4">
     {% block content %} {% endblock %}
+  <script>
+    // Bloquea botones de submit al enviar cualquier formulario para evitar doble envío
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (btn) {
+        btn.disabled = true;
+        if (btn.dataset.loadingText) btn.textContent = btn.dataset.loadingText;
+      });
+    });
+  </script>
   </body>
 </html>

@@ -149,45 +149,43 @@ def logout_view(request):
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
 def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, registerPassword, userType, userphone, is_active=True):
-    # Capitalizar nombres y apellidos
+    from django.db import transaction
+
     username = username.title().strip()
     userlastname = userlastname.title().strip()
     userlastname2 = userlastname2.title().strip() if userlastname2 else ''
 
-    # 1. Crear usuario base
-    user = User.objects.create_user(
-        username=useremail,
-        email=useremail,
-        password=registerPassword,
-        first_name=username,
-        last_name=f"{userlastname} {userlastname2}".strip(),
-        is_active=is_active,
-    )
+    with transaction.atomic():
+        group = Group.objects.get(pk=3 if userType in [3, 4] else userType)
 
-    group = Group.objects.get(pk=3 if userType in [3, 4] else userType)
-    user.groups.add(group)
-    user.save()
+        user = User.objects.create_user(
+            username=useremail,
+            email=useremail,
+            password=registerPassword,
+            first_name=username,
+            last_name=f"{userlastname} {userlastname2}".strip(),
+            is_active=is_active,
+        )
+        user.groups.add(group)
 
-    # 2. Crear usuario extendido
-    usuario = Usuarios.objects.create(
-        user=user,
-        groupId=group,
-        email=useremail,
-        nombre=username,
-        paterno=userlastname,
-        materno=userlastname2,
-        telefono=userphone or ''
-    )
+        usuario = Usuarios.objects.create(
+            user=user,
+            groupId=group,
+            email=useremail,
+            nombre=username,
+            paterno=userlastname,
+            materno=userlastname2,
+            telefono=userphone or ''
+        )
 
-    # 3. Crear perfil según tipo
-    if userType == 1:
-        tutor = Tutor.objects.create(usuario=usuario)
-        Credito.objects.create(tutorId=tutor, monto=0, fecha=datetime.today())
-    elif userType in [3, 4]:
-        puesto = 'Cocinero' if userType == 3 else 'Profesor'
-        empleado = Empleados.objects.create(usuario=usuario, puesto=puesto)
-        if '@liceoemperadores.edu.mx' in useremail:
-            Credito.objects.create(profesorId=empleado, monto=0, fecha=datetime.today())
+        if userType == 1:
+            tutor = Tutor.objects.create(usuario=usuario)
+            Credito.objects.create(tutorId=tutor, monto=0, fecha=datetime.today())
+        elif userType in [3, 4]:
+            puesto = 'Cocinero' if userType == 3 else 'Profesor'
+            empleado = Empleados.objects.create(usuario=usuario, puesto=puesto)
+            if '@liceoemperadores.edu.mx' in useremail:
+                Credito.objects.create(profesorId=empleado, monto=0, fecha=datetime.today())
 
     return user, usuario
 
