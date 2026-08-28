@@ -3,7 +3,6 @@ from cloudinary.models import CloudinaryField
 
 from .choices import *
 from core.models import Tutor, Alumnos, NivelEducativo, Usuarios, Empleados
-from .choices import STATUSPEDIDO, TURNO, TIPOANUNCIO
 
 # Create your models here.
 class Credito(models.Model):
@@ -41,7 +40,34 @@ class Platillo(models.Model):
     def __str__(self):
         return self.nombre
     
+class Orden(models.Model):
+    alumnoId = models.ForeignKey(Alumnos, on_delete=models.CASCADE, verbose_name='Alumno', null=True, blank=True)
+    profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True, related_name='profesor_ordenes')
+    nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
+    turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
+    fecha = models.DateField(verbose_name='Fecha')
+    status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado')
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Total')
+    encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_ordenes')
+    creado = models.DateTimeField(auto_now_add=True, verbose_name='Creado')
+    modificado = models.DateTimeField(auto_now=True, verbose_name='Modificado')
+
+    def get_status_label(self):
+        return dict(STATUSPEDIDO).get(self.status)
+
+    def get_turno_label(self):
+        return dict(TURNO).get(self.turno)
+
+    class Meta:
+        verbose_name = 'Orden'
+        verbose_name_plural = 'Órdenes'
+
+    def __str__(self):
+        return f"Orden #{self.pk} — {self.fecha}"
+
+
 class Pedido(models.Model):
+    orden = models.ForeignKey(Orden, on_delete=models.CASCADE, verbose_name='Orden', null=True, blank=True, related_name='items')
     platillo = models.ForeignKey(Platillo, on_delete=models.PROTECT, verbose_name='Platillo')
     ingredientePlatillo = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Ingredientes del Platillo')
     nota = models.TextField(max_length=300, blank=True, null=True, verbose_name='Nota')
@@ -49,12 +75,13 @@ class Pedido(models.Model):
     profesorId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Profesor', null=True, blank=True, related_name='profesor_pedidos')
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel Educativo', null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Total')
-    fecha = models.DateField(verbose_name='Fecha')  # Removido auto_now=True
+    fecha = models.DateField(verbose_name='Fecha')
     status = models.PositiveIntegerField(choices=STATUSPEDIDO, default=0, verbose_name='Estado del Pedido')
     turno = models.PositiveIntegerField(choices=TURNO, default=0, verbose_name='Turno')
     encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_pedidos')
     cantidad = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
-    creado = models.DateTimeField(auto_now=True, verbose_name='Fecha de Creación')
+    creado = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
+    modificado = models.DateTimeField(auto_now=True, verbose_name='Última Modificación')
 
     def get_status_label(self):
         """Devuelve la etiqueta legible del estado del pedido."""

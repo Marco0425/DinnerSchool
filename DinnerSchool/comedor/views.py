@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-from comedor.models import Ingredientes, Platillo, Pedido, Credito, CreditoDiario, Noticias
+from comedor.models import Ingredientes, Platillo, Pedido, Orden, Credito, CreditoDiario, Noticias
 from django.db.models import Q
 from core.models import Alumnos, Usuarios, Tutor, Empleados
 from core.choices import *
@@ -293,7 +293,71 @@ def cancelOrder(request, pedido_id):
             'success': False,
             'message': f'Error interno del servidor: {str(e)}'
         }, status=500)
-        
+
+
+@login_required
+@require_POST
+def cancelOrden(request, orden_id):
+    """Cancela una Orden completa (todos sus Pedidos) y reembolsa el crédito."""
+    try:
+        with transaction.atomic():
+            orden = get_object_or_404(
+                Orden.objects.prefetch_related('items'),
+                id=orden_id
+            )
+
+            owner_email = None
+            if orden.alumnoId:
+                owner_email = orden.alumnoId.tutorId.usuario.email
+            elif orden.profesorId:
+                owner_email = orden.profesorId.usuario.email
+
+            if owner_email != request.user.username and not request.user.is_staff:
+                return JsonResponse({'success': False, 'message': 'Sin permisos'}, status=403)
+
+            if orden.status not in [0, 1]:
+                return JsonResponse({'success': False, 'message': 'La orden no se puede cancelar en su estado actual'}, status=400)
+
+            credito = None
+            if orden.alumnoId:
+                credito = Credito.objects.select_for_update().filter(tutorId=orden.alumnoId.tutorId).first()
+            elif orden.profesorId:
+                credito = Credito.objects.select_for_update().filter(profesorId=orden.profesorId).first()
+
+            if not credito:
+                return JsonResponse({'success': False, 'message': 'Crédito no encontrado'}, status=404)
+
+            total_reembolso = orden.total
+            tutor_obj = orden.alumnoId.tutorId if orden.alumnoId else None
+
+            for pedido in orden.items.all():
+                pedido.status = 4
+                pedido.save(update_fields=['status'])
+                CreditoDiario.objects.create(
+                    pedido=pedido,
+                    tutorId=tutor_obj,
+                    profesorId=orden.profesorId,
+                    monto=pedido.total,
+                    fecha=date.today(),
+                )
+
+            credito.monto += total_reembolso
+            credito.fecha = date.today()
+            credito.save()
+
+            orden.status = 4
+            orden.save(update_fields=['status'])
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Orden #{orden_id} cancelada. Se reembolsaron ${total_reembolso} a tu cuenta.',
+                'nuevo_credito': float(credito.monto),
+            })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+
 def ads(request):
     """
     Vista para manejar los anuncios.
@@ -380,97 +444,76 @@ def order(request):
         HttpResponse: Respuesta HTTP que renderiza la vista kanban con órdenes agrupadas.
     """
     if request.user.is_authenticated:
-        grouped_orders = []
-        
         today = date.today()
-        
-        status_map = {
-            0: "pendiente",
-            1: "en preparacion",
-            2: "finalizado",
-            3: "entregado",
-        }
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
-                
-        try:
-            # Obtener turnos activos según la hora actual
-            # turnos_activos = get_turnos_activos()
-            
-            # Obtener pedidos del día filtrados por turnos activos
-            pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
 
-            # Diccionario para agrupar pedidos
-            orders_dict = {}
-            
-            for pedido in pedidos_hoy:
-                is_profesor = pedido.profesorId is not None
-                
-                # Crear clave única para agrupar: usuario + turno + fecha
+        status_map = {0: "pendiente", 1: "en preparacion", 2: "finalizado", 3: "entregado"}
+
+        try:
+            ordenes_hoy = (
+                Orden.objects
+                .filter(fecha=today, status__in=[0, 1, 2, 3])
+                .select_related('alumnoId__nivelEducativo', 'profesorId__usuario', 'encargadoId__usuario')
+                .prefetch_related('items__platillo')
+                .order_by('turno', 'alumnoId', 'profesorId')
+            )
+
+            grouped_orders = []
+            for orden in ordenes_hoy:
+                is_profesor = orden.profesorId is not None
                 if is_profesor:
-                    user_key = f"profesor_{pedido.profesorId.id}"
-                    user_name = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
+                    user_name = f"{orden.profesorId.usuario.nombre} {orden.profesorId.usuario.paterno}"
                     user_level = "Profesor"
                 else:
-                    user_key = f"alumno_{pedido.alumnoId.id}"
-                    user_name = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
-                    user_level = f"{getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)} - {getChoiceLabel(GRADO, pedido.nivelEducativo.grado)}{getChoiceLabel(GRUPO, pedido.nivelEducativo.grupo)}"
-                
-                group_key = f"{user_key}_{pedido.turno}_{pedido.fecha}"
-                
-                # Si el grupo no existe, crearlo
-                if group_key not in orders_dict:
-                    orders_dict[group_key] = {
-                        "id": group_key,
-                        "user_name": user_name,
-                        "user_level": user_level,
-                        "turno": pedido.get_turno_label(),
-                        "turno_num": pedido.turno,
-                        "fecha": pedido.fecha,
-                        "is_profesor": is_profesor,
-                        "is_employee": is_employee,
-                        "status": status_map.get(pedido.status, "pendiente"),
-                        "status_num": pedido.status,
-                        "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado",
-                        "encargado_id": pedido.encargadoId.id if pedido.encargadoId else None,
-                        "platillos": [],
-                        "total_cantidad": 0,
-                        "total_precio": Decimal('0'),
-                        "pedido_ids": []  # Para trackear los IDs individuales
-                    }
-                
-                # Agregar platillo al grupo
-                pedido.ingredientePlatillo = ast.literal_eval(pedido.ingredientePlatillo)
-                platillo_info = {
-                    "id": pedido.id,
-                    "nombre": pedido.platillo.nombre,
-                    "ingredientes": pedido.ingredientePlatillo,
-                    "nota": pedido.nota,
-                    "cantidad": pedido.cantidad if hasattr(pedido, 'cantidad') else 1,
-                    "precio": pedido.total
-                }
-                
-                orders_dict[group_key]["platillos"].append(platillo_info)
-                orders_dict[group_key]["total_cantidad"] += platillo_info["cantidad"]
-                orders_dict[group_key]["total_precio"] += platillo_info["precio"]
-                orders_dict[group_key]["pedido_ids"].append(pedido.id)
-                
-                # El status de la orden será el menor status de todos los pedidos
-                # (si hay uno pendiente, toda la orden está pendiente)
-                if pedido.status < orders_dict[group_key]["status_num"]:
-                    orders_dict[group_key]["status"] = status_map.get(pedido.status, "pendiente")
-                    orders_dict[group_key]["status_num"] = pedido.status
-            
-            # Convertir diccionario a lista y ordenar
-            grouped_orders = list(orders_dict.values())
-            
-            # Ordenar por: estado, turno, fecha de creación
-            # grouped_orders.sort(key=lambda x: (x["status_num"], x["turno_num"], x["fecha"]))
-            
+                    user_name = f"{orden.alumnoId.nombre} {orden.alumnoId.paterno}"
+                    nv = orden.nivelEducativo
+                    user_level = (
+                        f"{getChoiceLabel(NIVELEDUCATIVO, nv.nivel)} - "
+                        f"{getChoiceLabel(GRADO, nv.grado)}{getChoiceLabel(GRUPO, nv.grupo)}"
+                        if nv else ""
+                    )
+
+                platillos = []
+                for pedido in orden.items.all():
+                    try:
+                        ingredientes = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+                    except (ValueError, SyntaxError):
+                        ingredientes = []
+                    platillos.append({
+                        "id": pedido.id,
+                        "nombre": pedido.platillo.nombre,
+                        "ingredientes": ingredientes,
+                        "nota": pedido.nota,
+                        "cantidad": pedido.cantidad,
+                        "precio": pedido.total,
+                    })
+
+                grouped_orders.append({
+                    "id": orden.id,
+                    "orden_id": orden.id,
+                    "user_name": user_name,
+                    "user_level": user_level,
+                    "turno": orden.get_turno_label(),
+                    "turno_num": orden.turno,
+                    "fecha": orden.fecha,
+                    "is_profesor": is_profesor,
+                    "is_employee": is_employee,
+                    "status": status_map.get(orden.status, "pendiente"),
+                    "status_num": orden.status,
+                    "encargado": (
+                        f"{orden.encargadoId.usuario.nombre} {orden.encargadoId.usuario.paterno}"
+                        if orden.encargadoId else "No asignado"
+                    ),
+                    "encargado_id": orden.encargadoId.id if orden.encargadoId else None,
+                    "platillos": platillos,
+                    "total_cantidad": sum(p["cantidad"] for p in platillos),
+                    "total_precio": orden.total,
+                })
+
             return render(request, 'Orders/orders_kanban_view.html', {'orders': grouped_orders})
-            
+
         except Exception as e:
-            print("Error en la vista order:")
-            print(f"Error: {str(e)}")
+            import traceback
             traceback.print_exc()
             return render(request, 'Orders/orders_kanban_view.html', {'orders': []})
     else:
@@ -641,34 +684,51 @@ def createOrder(request):
 
             try:
                 with transaction.atomic():
+                    # Agrupar items por turno → una Orden por turno
+                    items_por_turno = {}
+                    for item in cart_items:
+                        t = item['turno']
+                        items_por_turno.setdefault(t, []).append(item)
+
+                    ordenes_creadas = []
                     pedidos_creados = []
 
-                    for item in cart_items:
-                        platillo = Platillo.objects.get(id=item['platillo_id'])
-                        subtotal = Decimal(str(item['subtotal']))
-                        nuevo_pedido = Pedido(
-                            platillo=platillo,
-                            ingredientePlatillo=item.get('ingredientes', ''),
-                            nota=item.get('notas', ''),
-                            cantidad=item['cantidad'],
+                    for turno_num, items in items_por_turno.items():
+                        total_turno = sum(Decimal(str(i['subtotal'])) for i in items)
+                        orden = Orden.objects.create(
                             alumnoId=alumno_obj if not is_profesor else None,
-                            nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
                             profesorId=profesor_actual if profesor_actual else None,
-                            turno=item['turno'],
-                            total=subtotal,
+                            nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
+                            turno=turno_num,
                             fecha=fecha_entrega,
+                            total=total_turno,
                         )
-                        nuevo_pedido.save()
-                        pedidos_creados.append(nuevo_pedido)
+                        ordenes_creadas.append(orden)
 
-                    for pedido in pedidos_creados:
-                        CreditoDiario.objects.create(
-                            pedido=pedido,
-                            tutorId=tutor_actual,
-                            profesorId=profesor_actual,
-                            monto=-pedido.total,
-                            fecha=fecha_entrega
-                        )
+                        for item in items:
+                            platillo = Platillo.objects.get(id=item['platillo_id'])
+                            subtotal = Decimal(str(item['subtotal']))
+                            pedido = Pedido.objects.create(
+                                orden=orden,
+                                platillo=platillo,
+                                ingredientePlatillo=item.get('ingredientes', ''),
+                                nota=item.get('notas', ''),
+                                cantidad=item['cantidad'],
+                                alumnoId=alumno_obj if not is_profesor else None,
+                                nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
+                                profesorId=profesor_actual if profesor_actual else None,
+                                turno=turno_num,
+                                total=subtotal,
+                                fecha=fecha_entrega,
+                            )
+                            pedidos_creados.append(pedido)
+                            CreditoDiario.objects.create(
+                                pedido=pedido,
+                                tutorId=tutor_actual,
+                                profesorId=profesor_actual,
+                                monto=-subtotal,
+                                fecha=fecha_entrega
+                            )
 
                     if is_admin:
                         credito_usuario = (Credito.objects.get(profesorId=profesor_actual)
@@ -697,8 +757,8 @@ def createOrder(request):
                 messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
             elif 0 < credito_usuario.monto <= 100:
                 messages.info(request, f"Tu crédito actual es ${credito_usuario.monto}. Te recomendamos recargar pronto.")
-            
-            messages.success(request, f"¡Orden creada exitosamente! Se procesaron {len(pedidos_creados)} platillos por un total de ${total_carrito}.")
+
+            messages.success(request, f"¡Orden creada exitosamente! {len(ordenes_creadas)} turno(s), {len(pedidos_creados)} platillos — total ${total_carrito}.")
             return redirect('core:dashboard')
             
         except json.JSONDecodeError:
@@ -828,47 +888,41 @@ def createOrder(request):
     return render(request, 'Orders/orders_form_view.html', context)
 
 def update_order_status(request):
-    """
-    Vista para actualizar el status de un pedido vía AJAX.
-    """
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-            order_id = data.get("order_id")
-            new_status = data.get("new_status")
+    """Actualiza el status de una Orden y todos sus Pedidos vía AJAX."""
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
-            if not order_id or not new_status:
-                return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        orden_id = data.get("order_id")
+        new_status = data.get("new_status")
 
-            status_map = {
-                "pendiente": 0,
-                "en preparacion": 1,
-                "finalizado": 2,
-                "entregado": 3,
-            }
-            if new_status not in status_map:
-                return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
-            
-            pedido_id = int(order_id.replace("order-", ""))
-            pedido = Pedido.objects.get(id=pedido_id)
-            empleado = Empleados.objects.filter(usuario__email=request.user.username).first()
-            
-            # Asigna el encargado solo si se encontró un empleado
-            pedido.encargadoId = empleado
-            
-            pedido.status = status_map[new_status]
-            pedido.save()
+        if not orden_id or not new_status:
+            return JsonResponse({"success": False, "error": "Datos incompletos"}, status=400)
 
-            # Devuelve el nombre del encargado para que el frontend lo actualice
-            encargado_nombre = f"{empleado.usuario.nombre} {empleado.usuario.paterno}" if empleado else "No asignado"
-            return JsonResponse({"success": True, "encargado": encargado_nombre})
-            
-        except Pedido.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Pedido no encontrado"}, status=404)
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
-    
-    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
+        status_map = {"pendiente": 0, "en preparacion": 1, "finalizado": 2, "entregado": 3}
+        if new_status not in status_map:
+            return JsonResponse({"success": False, "error": "Status inválido"}, status=400)
+
+        status_num = status_map[new_status]
+        empleado = Empleados.objects.filter(usuario__email=request.user.username).first()
+
+        with transaction.atomic():
+            orden = Orden.objects.get(id=int(orden_id))
+            orden.status = status_num
+            orden.encargadoId = empleado
+            orden.save()
+            orden.items.all().update(status=status_num, encargadoId=empleado)
+
+        encargado_nombre = (
+            f"{empleado.usuario.nombre} {empleado.usuario.paterno}" if empleado else "No asignado"
+        )
+        return JsonResponse({"success": True, "encargado": encargado_nombre})
+
+    except Orden.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Orden no encontrada"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 
@@ -999,221 +1053,198 @@ def generarReporte(request):
         return redirect('comedor:credit')
 
 @login_required
-def order_details_api(request, order_id):
-    """
-    Vista para obtener los detalles de un pedido específico vía API.
-    Esta vista se encarga de devolver la información completa de un pedido
-    incluyendo sus items y totales.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-        order_id: ID del pedido a consultar.
-    Returns:
-        JsonResponse: Respuesta JSON con los detalles del pedido.
-    """
+def order_details_api(request, orden_id):
     try:
-        # Obtener el pedido
-        pedido = get_object_or_404(Pedido, id=order_id)
-        
-        # Verificar que el pedido pertenezca al usuario actual
-        user_email = request.user.username
-        pedido_user_email = None
-        
-        if pedido.alumnoId:
-            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
-        elif pedido.profesorId:
-            pedido_user_email = pedido.profesorId.usuario.email
-        
-        # Verificar permisos: el pedido debe pertenecer al usuario o ser admin/empleado
+        orden = get_object_or_404(
+            Orden.objects.prefetch_related('items__platillo'),
+            id=orden_id
+        )
+
         is_admin = request.user.is_staff
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
-        
-        if not is_admin and not is_employee and pedido_user_email != user_email:
-            return JsonResponse({
-                'error': 'No tienes permisos para ver este pedido'
-            }, status=403)
-        
-        # Procesar ingredientes del platillo
-        try:
-            ingredientes_platillo = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
-        except (ValueError, SyntaxError):
-            ingredientes_platillo = []
-        
-        # Preparar datos del pedido
-        order_data = {
-            'id': pedido.id,
-            'fecha': pedido.fecha.strftime('%d/%m/%Y'),
-            'turno_label': pedido.get_turno_label(),
-            'status_label': pedido.get_status_label(),
-            'total': str(pedido.total),
-            'items': [
-                {
-                    'platillo_nombre': pedido.platillo.nombre,
-                    'cantidad': getattr(pedido, 'cantidad', 1),  # Cantidad por defecto 1 si no existe el campo
-                    'subtotal': str(pedido.total),
-                    'ingredientes': ingredientes_platillo,
-                    'nota': pedido.nota or ''
-                }
-            ]
-        }
-        
-        return JsonResponse(order_data)
-        
-    except Pedido.DoesNotExist:
-        return JsonResponse({'error': 'Pedido no encontrado'}, status=404)
+
+        owner_email = None
+        if orden.alumnoId:
+            owner_email = orden.alumnoId.tutorId.usuario.email
+        elif orden.profesorId:
+            owner_email = orden.profesorId.usuario.email
+
+        if not is_admin and not is_employee and owner_email != request.user.username:
+            return JsonResponse({'error': 'No tienes permisos para ver esta orden'}, status=403)
+
+        items = []
+        for pedido in orden.items.all():
+            try:
+                ings = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+            except (ValueError, SyntaxError):
+                ings = []
+            items.append({
+                'platillo_nombre': pedido.platillo.nombre,
+                'cantidad': pedido.cantidad,
+                'subtotal': str(pedido.total),
+                'ingredientes': ings,
+                'nota': pedido.nota or '',
+            })
+
+        return JsonResponse({
+            'id': orden.id,
+            'fecha': orden.fecha.strftime('%d/%m/%Y'),
+            'turno_label': orden.get_turno_label(),
+            'status_label': orden.get_status_label(),
+            'total': str(orden.total),
+            'items': items,
+        })
+
     except Exception as e:
         return JsonResponse({'error': f'Error interno del servidor: {str(e)}'}, status=500)
 
 @login_required
-def modify_order_view(request, order_id):
-    """
-    Vista para mostrar la página de modificación de un pedido.
-    Esta vista se encarga de renderizar el formulario para modificar un pedido existente.
-    Args:
-        request: Objeto HttpRequest que contiene la solicitud del usuario.
-        order_id: ID del pedido a modificar.
-    Returns:
-        HttpResponse: Respuesta HTTP que renderiza el formulario de modificación.
-    """
+def modify_order_view(request, orden_id):
     try:
-        # Obtener el pedido
-        pedido = get_object_or_404(Pedido, id=order_id)
-        
-        # Verificar que el pedido pertenezca al usuario actual
-        user_email = request.user.username
-        pedido_user_email = None
-        
-        if pedido.alumnoId:
-            pedido_user_email = pedido.alumnoId.tutorId.usuario.email
-        elif pedido.profesorId:
-            pedido_user_email = pedido.profesorId.usuario.email
-        
-        # Verificar permisos
+        orden = get_object_or_404(
+            Orden.objects.prefetch_related('items__platillo'),
+            id=orden_id
+        )
+
         is_admin = request.user.is_staff
         is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
-        
-        if not is_admin and not is_employee and pedido_user_email != user_email:
-            messages.error(request, 'No tienes permisos para modificar este pedido.')
+
+        owner_email = None
+        if orden.alumnoId:
+            owner_email = orden.alumnoId.tutorId.usuario.email
+        elif orden.profesorId:
+            owner_email = orden.profesorId.usuario.email
+
+        if not is_admin and not is_employee and owner_email != request.user.username:
+            messages.error(request, 'No tienes permisos para modificar esta orden.')
             return redirect('core:dashboard')
-        
-        # Verificar que el pedido se pueda modificar (solo pendiente)
-        if pedido.status != 0:  # 0 = Pendiente
-            messages.error(request, 'Solo se pueden modificar pedidos en estado pendiente.')
+
+        if orden.status != 0:
+            messages.error(request, 'Solo se pueden modificar órdenes en estado pendiente.')
             return redirect('core:dashboard')
-        
-        # Obtener todos los platillos disponibles
-        platillos = Platillo.objects.all()
-        
-        # Procesar ingredientes del pedido actual
-        try:
-            ingredientes_actuales = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
-        except (ValueError, SyntaxError):
-            ingredientes_actuales = []
-        
-        # Preparar contexto para el template
-        context = {
-            'pedido': pedido,
-            'platillos': [
-                {
-                    "id": platillo.id,
-                    "nombre": platillo.nombre,
-                    "ingredientes": json.dumps([
-                        Ingredientes.objects.get(id=int(ing)).nombre 
-                        for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') 
-                        if ing
-                    ]),
-                    "precio": float(platillo.precio)
-                } for platillo in platillos
-            ],
-            'pedido_data': {
-                'id': pedido.id,
+
+        all_ingredients = {ing.id: ing.nombre for ing in Ingredientes.objects.all()}
+        platillos = Platillo.objects.filter(disponible=True)
+
+        items_data = []
+        for pedido in orden.items.all():
+            try:
+                ings = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+            except (ValueError, SyntaxError):
+                ings = []
+            items_data.append({
                 'platillo_id': pedido.platillo.id,
                 'platillo_nombre': pedido.platillo.nombre,
-                'ingredientes_seleccionados': ingredientes_actuales,
+                'precio': float(pedido.platillo.precio),
+                'cantidad': pedido.cantidad,
                 'nota': pedido.nota or '',
-                'cantidad': getattr(pedido, 'cantidad', 1),
-                'turno': pedido.turno,
-                'total_actual': float(pedido.total)
-            },
-            'is_modification': True,
-            'user_type': 'tutor' if pedido.alumnoId else 'profesor'
+                'ingredientes': ings,
+            })
+
+        platillos_json = []
+        for p in platillos:
+            raw_ids = [i for i in p.ingredientes.strip('[]').replace("'", "").split(', ') if i]
+            nombres_ings = [all_ingredients.get(int(i), '') for i in raw_ids if i.isdigit()]
+            platillos_json.append({
+                'id': p.id,
+                'nombre': p.nombre,
+                'precio': float(p.precio),
+                'ingredientes': nombres_ings,
+            })
+
+        context = {
+            'orden': orden,
+            'items_data_json': json.dumps(items_data),
+            'platillos_json': json.dumps(platillos_json),
+            'turno_label': orden.get_turno_label(),
         }
-        
-        # Procesar el POST para actualizar el pedido
-        if request.method == "POST":
+
+        if request.method == 'POST':
             try:
+                cart = json.loads(request.POST.get('cart_json', '[]'))
+
+                if not cart:
+                    messages.error(request, 'El carrito no puede estar vacío.')
+                    return render(request, 'Orders/modify_order_view.html', context)
+
+                platillo_cache = {p.id: p for p in Platillo.objects.filter(
+                    id__in=[item['platillo_id'] for item in cart]
+                )}
+                new_total = sum(
+                    platillo_cache[item['platillo_id']].precio * int(item['cantidad'])
+                    for item in cart
+                )
+
                 with transaction.atomic():
-                    # Obtener datos del formulario
-                    nuevo_platillo_id = request.POST.get("platillo_id")
-                    nuevos_ingredientes = request.POST.get("ingredientes", "[]")
-                    nueva_nota = request.POST.get("nota", "")
-                    nueva_cantidad = int(request.POST.get("cantidad", 1))
-                    nuevo_turno = int(request.POST.get("turno"))
-                    
-                    # Obtener el nuevo platillo
-                    nuevo_platillo = get_object_or_404(Platillo, id=nuevo_platillo_id)
-                    
-                    # Calcular el nuevo total
-                    nuevo_total = nuevo_platillo.precio * nueva_cantidad
-                    diferencia_precio = nuevo_total - pedido.total
-                    
-                    # Verificar crédito si el precio aumenta
-                    if diferencia_precio > 0:
-                        credito = None
-                        if pedido.alumnoId:
-                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
-                        elif pedido.profesorId:
-                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
-                        
-                        if not credito or credito.monto < diferencia_precio:
-                            messages.error(request, 'No hay crédito suficiente para esta modificación.')
-                            return render(request, 'Orders/modify_order_view.html', context)
-                        
-                        # Descontar la diferencia del crédito
-                        credito.monto -= diferencia_precio
-                        credito.save()
-                    
-                    elif diferencia_precio < 0:
-                        # Si el precio disminuye, devolver la diferencia al crédito
-                        credito = None
-                        if pedido.alumnoId:
-                            credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
-                        elif pedido.profesorId:
-                            credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
-                        
-                        if credito:
-                            credito.monto += abs(diferencia_precio)
-                            credito.save()
-                    
-                    # Actualizar el pedido
-                    pedido.platillo = nuevo_platillo
-                    pedido.ingredientePlatillo = nuevos_ingredientes
-                    pedido.nota = nueva_nota
-                    if hasattr(pedido, 'cantidad'):
-                        pedido.cantidad = nueva_cantidad
-                    pedido.turno = nuevo_turno
-                    pedido.total = nuevo_total
-                    pedido.save()
-                    
-                    # Actualizar el crédito diario si existe
-                    try:
-                        credito_diario = CreditoDiario.objects.get(pedido=pedido)
-                        credito_diario.monto = -nuevo_total
-                        credito_diario.save()
-                    except CreditoDiario.DoesNotExist:
-                        pass
-                    
-                    messages.success(request, f'Pedido #{pedido.id} modificado exitosamente.')
-                    return redirect('core:dashboard')
-                    
-            except Exception as e:
-                messages.error(request, f'Error al modificar el pedido: {str(e)}')
+                    credito = None
+                    if orden.alumnoId:
+                        credito = Credito.objects.select_for_update().filter(
+                            tutorId=orden.alumnoId.tutorId
+                        ).first()
+                    elif orden.profesorId:
+                        credito = Credito.objects.select_for_update().filter(
+                            profesorId=orden.profesorId
+                        ).first()
+
+                    if not credito:
+                        messages.error(request, 'No se encontró el crédito asociado.')
+                        return render(request, 'Orders/modify_order_view.html', context)
+
+                    available = credito.monto + orden.total
+                    if available < new_total:
+                        messages.error(
+                            request,
+                            f'Crédito insuficiente. Disponible: ${available:.2f}, necesario: ${new_total:.2f}'
+                        )
+                        return render(request, 'Orders/modify_order_view.html', context)
+
+                    # Delete old items (CreditoDiario cascade-deletes via FK)
+                    orden.items.all().delete()
+
+                    tutor_obj = orden.alumnoId.tutorId if orden.alumnoId else None
+                    for item in cart:
+                        pl = platillo_cache[item['platillo_id']]
+                        cantidad = int(item['cantidad'])
+                        subtotal = pl.precio * cantidad
+                        pedido = Pedido.objects.create(
+                            orden=orden,
+                            platillo=pl,
+                            ingredientePlatillo=item.get('ingredientes', '[]'),
+                            nota=item.get('nota') or None,
+                            alumnoId=orden.alumnoId,
+                            profesorId=orden.profesorId,
+                            nivelEducativo=orden.nivelEducativo,
+                            total=subtotal,
+                            fecha=orden.fecha,
+                            status=orden.status,
+                            turno=orden.turno,
+                            cantidad=cantidad,
+                        )
+                        CreditoDiario.objects.create(
+                            fecha=orden.fecha,
+                            monto=-subtotal,
+                            tutorId=tutor_obj,
+                            profesorId=orden.profesorId,
+                            pedido=pedido,
+                        )
+
+                    credito.monto = available - new_total
+                    credito.save()
+                    orden.total = new_total
+                    orden.save()
+
+                messages.success(request, f'Orden #{orden.id} modificada exitosamente.')
+                return redirect('core:dashboard')
+
+            except (json.JSONDecodeError, KeyError, ValueError) as e:
+                messages.error(request, f'Datos inválidos: {str(e)}')
                 return render(request, 'Orders/modify_order_view.html', context)
-        
+            except Exception as e:
+                messages.error(request, f'Error al modificar la orden: {str(e)}')
+                return render(request, 'Orders/modify_order_view.html', context)
+
         return render(request, 'Orders/modify_order_view.html', context)
-        
-    except Pedido.DoesNotExist:
-        messages.error(request, 'Pedido no encontrado.')
-        return redirect('core:dashboard')
+
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
         return redirect('core:dashboard')
@@ -1570,84 +1601,77 @@ def get_movimientos(request):
             'message': f'Error interno del servidor: {str(e)}'
         })
         
-# Endpoint AJAX para pedidos agrupados por estado (Kanban)
+# Endpoint AJAX para órdenes agrupadas por estado (Kanban)
 @require_GET
 def kanban_orders_api(request):
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'No autenticado'}, status=401)
 
     today = date.today()
-    status_map = {
-        0: "pendiente",
-        1: "en preparacion",
-        2: "finalizado",
-        3: "entregado",
-    }
+    status_map = {0: "pendiente", 1: "en preparacion", 2: "finalizado", 3: "entregado"}
     is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
 
-    pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
-    orders_dict = {}
+    ordenes_hoy = (
+        Orden.objects
+        .filter(fecha=today, status__in=[0, 1, 2, 3])
+        .select_related('alumnoId__nivelEducativo', 'profesorId__usuario', 'encargadoId__usuario')
+        .prefetch_related('items__platillo')
+        .order_by('turno', 'alumnoId', 'profesorId')
+    )
 
-    for pedido in pedidos_hoy:
-        is_profesor = pedido.profesorId is not None
+    result = {"pendiente": [], "en preparacion": [], "finalizado": [], "entregado": [], "turno_activo": None}
+
+    for orden in ordenes_hoy:
+        is_profesor = orden.profesorId is not None
         if is_profesor:
-            user_key = f"profesor_{pedido.profesorId.id}"
-            user_name = f"{pedido.profesorId.usuario.nombre} {pedido.profesorId.usuario.paterno}"
+            user_name = f"{orden.profesorId.usuario.nombre} {orden.profesorId.usuario.paterno}"
             user_level = "Profesor"
         else:
-            user_key = f"alumno_{pedido.alumnoId.id}"
-            user_name = f"{pedido.alumnoId.nombre} {pedido.alumnoId.paterno}"
-            user_level = f"{getChoiceLabel(NIVELEDUCATIVO, pedido.nivelEducativo.nivel)} - {getChoiceLabel(GRADO, pedido.nivelEducativo.grado)}{getChoiceLabel(GRUPO, pedido.nivelEducativo.grupo)}"
+            user_name = f"{orden.alumnoId.nombre} {orden.alumnoId.paterno}"
+            nv = orden.nivelEducativo
+            user_level = (
+                f"{getChoiceLabel(NIVELEDUCATIVO, nv.nivel)} - "
+                f"{getChoiceLabel(GRADO, nv.grado)}{getChoiceLabel(GRUPO, nv.grupo)}"
+                if nv else ""
+            )
 
-        group_key = f"{user_key}_{pedido.turno}_{pedido.fecha}"
+        platillos = []
+        for pedido in orden.items.all():
+            try:
+                ingredientes = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
+            except (ValueError, SyntaxError):
+                ingredientes = []
+            platillos.append({
+                "id": pedido.id,
+                "nombre": pedido.platillo.nombre,
+                "ingredientes": ingredientes,
+                "nota": pedido.nota,
+                "cantidad": pedido.cantidad,
+                "precio": float(pedido.total),
+            })
 
-        if group_key not in orders_dict:
-            orders_dict[group_key] = {
-                "id": group_key,
-                "user_name": user_name,
-                "user_level": user_level,
-                "turno": pedido.get_turno_label(),
-                "turno_num": pedido.turno,
-                "fecha": str(pedido.fecha),
-                "is_profesor": is_profesor,
-                "is_employee": is_employee,
-                "status": status_map.get(pedido.status, "pendiente"),
-                "status_num": pedido.status,
-                "encargado": f"{pedido.encargadoId.usuario.nombre} {pedido.encargadoId.usuario.paterno}" if pedido.encargadoId else "No asignado",
-                "encargado_id": pedido.encargadoId.id if pedido.encargadoId else None,
-                "platillos": [],
-                "total_cantidad": 0,
-                "total_precio": float(0),
-                "pedido_ids": []
-            }
-
-        # Agregar platillo al grupo
-        import ast
-        pedido.ingredientePlatillo = ast.literal_eval(pedido.ingredientePlatillo)
-        platillo_info = {
-            "id": pedido.id,
-            "nombre": pedido.platillo.nombre,
-            "ingredientes": pedido.ingredientePlatillo,
-            "nota": pedido.nota,
-            "cantidad": pedido.cantidad if hasattr(pedido, 'cantidad') else 1,
-            "precio": float(pedido.total)
+        entry = {
+            "id": orden.id,
+            "orden_id": orden.id,
+            "user_name": user_name,
+            "user_level": user_level,
+            "turno": orden.get_turno_label(),
+            "turno_num": orden.turno,
+            "fecha": str(orden.fecha),
+            "is_profesor": is_profesor,
+            "is_employee": is_employee,
+            "status": status_map.get(orden.status, "pendiente"),
+            "status_num": orden.status,
+            "encargado": (
+                f"{orden.encargadoId.usuario.nombre} {orden.encargadoId.usuario.paterno}"
+                if orden.encargadoId else "No asignado"
+            ),
+            "encargado_id": orden.encargadoId.id if orden.encargadoId else None,
+            "platillos": platillos,
+            "total_cantidad": sum(p["cantidad"] for p in platillos),
+            "total_precio": float(orden.total),
         }
-        orders_dict[group_key]["platillos"].append(platillo_info)
-        orders_dict[group_key]["total_cantidad"] += platillo_info["cantidad"]
-        orders_dict[group_key]["total_precio"] += platillo_info["precio"]
-        orders_dict[group_key]["pedido_ids"].append(pedido.id)
-
-        if pedido.status < orders_dict[group_key]["status_num"]:
-            orders_dict[group_key]["status"] = status_map.get(pedido.status, "pendiente")
-            orders_dict[group_key]["status_num"] = pedido.status
-
-    # Agrupar por estado para el frontend
-    result = {"pendiente": [], "en preparacion": [], "finalizado": [], "entregado": []}
-    for order in orders_dict.values():
-        result[order["status"]].append(order)
-
-    # Incluir info del turno activo para el frontend
-    turno_labels = {0: 'Receso 1', 1: 'Receso 2', 2: 'Comida'}
-    result["turno_activo"] = None
+        status_label = status_map.get(orden.status, "pendiente")
+        result[status_label].append(entry)
 
     return JsonResponse(result)

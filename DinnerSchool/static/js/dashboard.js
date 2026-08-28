@@ -280,6 +280,113 @@ function closeModal() {
     }
 }
 
+// ── Cancelar Orden (todos los items del turno) ─────────────────────────────
+
+function showCancelOrdenModal(ordenId, total) {
+    let modal = document.getElementById('cancelOrdenModal');
+    const updateText = () => {
+        document.getElementById('cancelOrdenText').innerHTML =
+            `¿Cancelar la Orden #${ordenId}?<br><br>Se reembolsará $${total} a tu cuenta.`;
+    };
+
+    if (modal) {
+        modal.dataset.ordenId = ordenId;
+        modal.dataset.total = total;
+        updateText();
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        return;
+    }
+
+    modal = document.createElement('div');
+    modal.id = 'cancelOrdenModal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 hidden';
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-50" onclick="closeCancelOrdenModal()"></div>
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden z-50 sm:w-full sm:max-w-md">
+            <div class="px-6 py-5">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Cancelar Orden</h3>
+                <p id="cancelOrdenText" class="text-sm text-gray-600"></p>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex flex-row-reverse gap-3">
+                <button id="confirmCancelOrdenBtn"
+                        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                    Sí, cancelar
+                </button>
+                <button onclick="closeCancelOrdenModal()"
+                        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+                    Descartar
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('confirmCancelOrdenBtn').addEventListener('click', () => {
+        const oId = modal.dataset.ordenId;
+        const oTotal = modal.dataset.total;
+        closeCancelOrdenModal();
+        cancelarOrden(oId, oTotal);
+    });
+
+    modal.dataset.ordenId = ordenId;
+    modal.dataset.total = total;
+    updateText();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCancelOrdenModal() {
+    const modal = document.getElementById('cancelOrdenModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+function cancelarOrden(ordenId, total) {
+    const btn = document.getElementById('btnCancelOrden' + ordenId);
+    if (btn) { btn.disabled = true; }
+
+    fetch(`/comedor/orden/${ordenId}/cancel/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            mostrarNotificacion(data.message, 'success');
+
+            const card = document.getElementById('ordenCard' + ordenId);
+            if (card) {
+                const badge = card.querySelector('.inline-flex.items-center');
+                if (badge) {
+                    badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                    badge.textContent = 'Cancelado';
+                }
+                const btnArea = card.querySelector('.flex.gap-2');
+                if (btnArea) btnArea.remove();
+            }
+
+            const creditAmount = document.getElementById('creditAmount');
+            if (creditAmount && data.nuevo_credito !== undefined) {
+                creditAmount.textContent = parseFloat(data.nuevo_credito).toFixed(2);
+                creditAmount.parentElement.style.transform = 'scale(1.05)';
+                creditAmount.parentElement.style.transition = 'transform 0.2s ease';
+                setTimeout(() => { creditAmount.parentElement.style.transform = 'scale(1)'; }, 200);
+            }
+        } else {
+            mostrarNotificacion(data.message || 'Error al cancelar', 'error');
+            if (btn) btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        mostrarNotificacion('Error de conexión', 'error');
+        if (btn) btn.disabled = false;
+    });
+}
+
 /**
  * Función para cancelar un pedido.
  * Esta función es llamada desde el modal.

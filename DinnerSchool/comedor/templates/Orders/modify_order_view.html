@@ -2,162 +2,117 @@
 {% load static %}
 
 {% block content %}
-<script src="{% static 'js/modifiedOrder.js' %}"></script>
+{{ items_data_json|json_script:"current-items-data" }}
+{{ platillos_json|json_script:"platillos-data" }}
 
-<!-- Script con datos del pedido actual -->
-{{ pedido_data|json_script:"current-order-data" }}
-
-<div class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red">
+<div class="bg-white p-8 rounded-lg shadow-xl max-w-5xl w-full border-t-8 border-primary-red">
     <div class="flex flex-col items-center mb-6">
-        <!-- Logo -->
-        <img src="{% static 'img/logos/logo.png' %}" alt="Logo de la Cafetería Certo"
+        <img src="{% static 'img/logos/logo.png' %}" alt="Logo"
              class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover" />
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Modificar Pedido #{{ pedido.id }}</h1>
-        <p class="text-gray-600 text-center">
-            Fecha: {{ pedido.fecha|date:"d/m/Y" }} | 
-            Estado: {{ pedido.get_status_label }} |
-            Total actual: ${{ pedido.total }}
+        <h1 class="text-3xl font-bold text-gray-800 mb-1">Modificar Orden #{{ orden.id }}</h1>
+        <p class="text-gray-600 text-sm">
+            Fecha: {{ orden.fecha|date:"d/m/Y" }} &nbsp;|&nbsp;
+            Turno: {{ turno_label }} &nbsp;|&nbsp;
+            Estado: {{ orden.get_status_label }}
         </p>
     </div>
 
-    <!-- Bloque para mensajes -->
     {% if messages %}
-    <div class="mb-4" style="margin-top: 1.5rem">
+    <div class="mb-4">
         {% for message in messages %}
-        <div class="p-3 rounded-md text-center text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200{% elif message.tags == 'info' %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+        <div class="p-3 rounded-md text-center text-sm font-medium
+            {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200
+            {% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200
+            {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
             {{ message }}
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <!-- Información actual del pedido -->
-    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-        <div class="flex">
-            <div class="ml-3">
-                <p class="text-sm text-blue-700">
-                    <strong>Pedido actual:</strong> {{ pedido.platillo.nombre }} | 
-                    <strong>Cantidad:</strong> {{ pedido_data.cantidad }} | 
-                    <strong>Turno:</strong> {{ pedido.get_turno_label }}
-                    {% if pedido.nota %}
-                    <br><strong>Nota:</strong> {{ pedido.nota }}
-                    {% endif %}
-                </p>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Panel izquierdo: agregar platillo -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800">Agregar platillo</h2>
+
+            <div>
+                <label for="platillo_select" class="block text-sm font-medium text-gray-700 mb-1">Platillo</label>
+                <select id="platillo_select"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                    <option value="">Selecciona un platillo...</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
+                <textarea id="ingredientes_display" rows="3" readonly
+                          class="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 sm:text-sm"
+                          placeholder="Los ingredientes aparecerán aquí..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="cantidad_input" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <input type="number" id="cantidad_input" min="1" max="10" value="1"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                </div>
+                <div>
+                    <label for="nota_input" class="block text-sm font-medium text-gray-700 mb-1">Nota</label>
+                    <input type="text" id="nota_input" placeholder="Sin cebolla..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
+                </div>
+            </div>
+
+            <button type="button" id="add_item_btn"
+                    class="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                + Agregar al carrito
+            </button>
+        </div>
+
+        <!-- Panel derecho: carrito actual -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800">Carrito</h2>
+
+            <div id="cart_empty" class="text-sm text-gray-500 italic">No hay platillos en el carrito.</div>
+
+            <table id="cart_table" class="min-w-full text-sm hidden">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Platillo</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-600 uppercase">Cant.</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase">Subtotal</th>
+                        <th class="px-3 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody id="cart_body" class="divide-y divide-gray-200"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="px-3 py-2 text-right font-semibold text-gray-700">Total:</td>
+                        <td class="px-3 py-2 text-right font-bold text-primary-red" id="cart_total">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div id="credit_info" class="text-xs text-gray-500 hidden">
+                Crédito disponible después de esta modificación: <span id="credit_remaining" class="font-semibold"></span>
             </div>
         </div>
     </div>
 
-    <!-- Formulario de modificación -->
+    <!-- Formulario oculto para envío -->
     <form method="POST" id="modifyOrderForm">
         {% csrf_token %}
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Formulario para modificar platillo -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Modificar Platillo</h2>
-                
-                <!-- Selección de platillo -->
-                <div>
-                    <label for="platillo_select" class="block text-sm font-medium text-gray-700 mb-1">
-                        Platillo*
-                    </label>
-                    <select id="platillo_select" name="platillo_id" 
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
-                        <option value="">Selecciona un platillo...</option>
-                        {% for platillo in platillos %}
-                        <option value="{{ platillo.id }}" 
-                                data-ingredientes="{{ platillo.ingredientes }}" 
-                                data-precio="{{ platillo.precio }}"
-                                data-nombre="{{ platillo.nombre }}"
-                                {% if platillo.id == pedido_data.platillo_id %}selected{% endif %}>
-                            {{ platillo.nombre }} - ${{ platillo.precio }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+        <input type="hidden" id="cart_json" name="cart_json" value="[]">
 
-                <!-- Ingredientes (solo lectura) -->
-                <div>
-                    <label for="ingredientes-display" class="block text-sm font-medium text-gray-700 mb-1">
-                        Ingredientes
-                    </label>
-                    <textarea
-                        id="ingredientes-display"
-                        rows="3"
-                        readonly
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm"
-                        placeholder="Los ingredientes aparecerán aquí..."
-                    ></textarea>
-                </div>
-
-                <!-- Notas -->
-                <div>
-                    <label for="nota" class="block text-sm font-medium text-gray-700 mb-1">
-                        Notas especiales
-                    </label>
-                    <input type="text" id="nota" name="nota" 
-                           value="{{ pedido_data.nota }}"
-                           placeholder="Ejemplo: Sin cebolla"
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
-                </div>
-
-                <!-- Cantidad -->
-                <div>
-                    <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-1">
-                        Cantidad*
-                    </label>
-                    <input type="number" id="cantidad" name="cantidad" min="1" max="10" 
-                           value="{{ pedido_data.cantidad }}"
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
-                </div>
-
-                <!-- Turno -->
-                <div>
-                    <label for="turno" class="block text-sm font-medium text-gray-700 mb-1">
-                        Turno*
-                    </label>
-                    <select id="turno" name="turno" 
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm">
-                        <option value="0" {% if pedido_data.turno == 0 %}selected{% endif %}>Receso 1</option>
-                        <option value="1" {% if pedido_data.turno == 1 %}selected{% endif %}>Receso 2</option>
-                        <option value="2" {% if pedido_data.turno == 2 %}selected{% endif %}>Comida</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Resumen del pedido -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Resumen de Modificación</h2>
-                
-                <div id="order_summary" class="space-y-2" style="display: none;">
-                    <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
-                        <div id="summary_content">
-                            <!-- El resumen se llenará dinámicamente -->
-                        </div>
-                        <div class="border-t pt-3 mt-3">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-lg font-semibold">Total:</span>
-                                <span class="text-xl font-bold text-primary-red" id="total_price">$0.00</span>
-                            </div>
-                            <div class="text-sm text-gray-600">
-                                <span id="price_difference"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Campo oculto para ingredientes -->
-        <input type="hidden" id="ingredientes" name="ingredientes" value="">
-
-        <!-- Botones finales -->
         <div class="flex justify-end space-x-4 pt-6 mt-6 border-t">
-            <a href="{% url 'core:dashboard' %}" 
+            <a href="{% url 'core:dashboard' %}"
                class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50">
                 Descartar
             </a>
-            <button type="submit" id="submit_btn" 
+            <button type="button" id="submit_btn"
                     class="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-red hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled>
                 Guardar Cambios
@@ -165,4 +120,182 @@
         </div>
     </form>
 </div>
+
+<!-- Modal de confirmación -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50" onclick="document.getElementById('confirmModal').classList.add('hidden');document.getElementById('confirmModal').classList.remove('flex');"></div>
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden z-50 sm:w-full sm:max-w-md">
+        <div class="px-6 py-5">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Confirmar modificación</h3>
+            <p id="modal_body" class="text-sm text-gray-600"></p>
+        </div>
+        <div class="bg-gray-50 px-6 py-3 flex flex-row-reverse gap-3">
+            <button id="confirm_yes_btn"
+                    class="px-4 py-2 rounded-md text-sm font-medium text-white bg-primary-red hover:bg-red-700">
+                Sí, guardar
+            </button>
+            <button onclick="document.getElementById('confirmModal').classList.add('hidden');document.getElementById('confirmModal').classList.remove('flex');"
+                    class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    // ── Data from server ────────────────────────────────────────────────────
+    const PLATILLOS = JSON.parse(document.getElementById('platillos-data').textContent);
+    const platilloMap = Object.fromEntries(PLATILLOS.map(p => [p.id, p]));
+
+    let cart = JSON.parse(document.getElementById('current-items-data').textContent) || [];
+
+    // ── Elements ────────────────────────────────────────────────────────────
+    const platilloSelect     = document.getElementById('platillo_select');
+    const ingredientesDisplay = document.getElementById('ingredientes_display');
+    const cantidadInput      = document.getElementById('cantidad_input');
+    const notaInput          = document.getElementById('nota_input');
+    const addItemBtn         = document.getElementById('add_item_btn');
+    const cartEmpty          = document.getElementById('cart_empty');
+    const cartTable          = document.getElementById('cart_table');
+    const cartBody           = document.getElementById('cart_body');
+    const cartTotalEl        = document.getElementById('cart_total');
+    const submitBtn          = document.getElementById('submit_btn');
+    const cartJsonInput      = document.getElementById('cart_json');
+    const confirmModal       = document.getElementById('confirmModal');
+    const modalBody          = document.getElementById('modal_body');
+    const confirmYesBtn      = document.getElementById('confirm_yes_btn');
+
+    // ── Populate platillo select ─────────────────────────────────────────────
+    PLATILLOS.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.nombre} - $${p.precio.toFixed(2)}`;
+        platilloSelect.appendChild(opt);
+    });
+
+    // ── Platillo change ──────────────────────────────────────────────────────
+    platilloSelect.addEventListener('change', function () {
+        const p = platilloMap[parseInt(this.value)];
+        if (p) {
+            ingredientesDisplay.value = p.ingredientes.length ? p.ingredientes.join(', ') : 'Sin ingredientes';
+            addItemBtn.disabled = false;
+        } else {
+            ingredientesDisplay.value = '';
+            addItemBtn.disabled = true;
+        }
+    });
+
+    // ── Add item ─────────────────────────────────────────────────────────────
+    addItemBtn.addEventListener('click', function () {
+        const p = platilloMap[parseInt(platilloSelect.value)];
+        if (!p) return;
+        const cantidad = Math.max(1, parseInt(cantidadInput.value) || 1);
+        cart.push({
+            platillo_id: p.id,
+            platillo_nombre: p.nombre,
+            precio: p.precio,
+            cantidad,
+            nota: notaInput.value.trim(),
+            ingredientes: JSON.stringify(p.ingredientes),
+        });
+        // Reset add-panel
+        platilloSelect.value = '';
+        ingredientesDisplay.value = '';
+        cantidadInput.value = 1;
+        notaInput.value = '';
+        addItemBtn.disabled = true;
+        renderCart();
+    });
+
+    // ── Render cart ──────────────────────────────────────────────────────────
+    function escapeHtml(text) {
+        return String(text || '').replace(/[&<>"']/g, c =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])
+        );
+    }
+
+    function renderCart() {
+        cartBody.innerHTML = '';
+        if (cart.length === 0) {
+            cartTable.classList.add('hidden');
+            cartEmpty.classList.remove('hidden');
+            submitBtn.disabled = true;
+            cartJsonInput.value = '[]';
+            return;
+        }
+        cartEmpty.classList.add('hidden');
+        cartTable.classList.remove('hidden');
+
+        let total = 0;
+        cart.forEach((item, idx) => {
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-3 py-2">
+                    <div class="font-medium text-gray-900">${escapeHtml(item.platillo_nombre)}</div>
+                    ${item.nota ? `<div class="text-xs text-gray-500">${escapeHtml(item.nota)}</div>` : ''}
+                </td>
+                <td class="px-3 py-2 text-center">
+                    <input type="number" min="1" max="10" value="${item.cantidad}"
+                           class="w-14 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+                           onchange="updateQty(${idx}, this.value)">
+                </td>
+                <td class="px-3 py-2 text-right text-gray-700">$${subtotal.toFixed(2)}</td>
+                <td class="px-3 py-2 text-center">
+                    <button type="button" onclick="removeItem(${idx})"
+                            class="text-red-500 hover:text-red-700 text-xs font-medium">Quitar</button>
+                </td>
+            `;
+            cartBody.appendChild(tr);
+        });
+
+        cartTotalEl.textContent = `$${total.toFixed(2)}`;
+        cartJsonInput.value = JSON.stringify(cart.map(i => ({
+            platillo_id: i.platillo_id,
+            cantidad: i.cantidad,
+            nota: i.nota,
+            ingredientes: i.ingredientes,
+        })));
+        submitBtn.disabled = false;
+    }
+
+    window.removeItem = function (idx) {
+        cart.splice(idx, 1);
+        renderCart();
+    };
+
+    window.updateQty = function (idx, val) {
+        cart[idx].cantidad = Math.max(1, parseInt(val) || 1);
+        renderCart();
+    };
+
+    // ── Submit → modal ───────────────────────────────────────────────────────
+    submitBtn.addEventListener('click', function () {
+        if (cart.length === 0) return;
+        const total = cart.reduce((s, i) => s + i.precio * i.cantidad, 0);
+        const lines = cart.map(i =>
+            `• ${escapeHtml(i.platillo_nombre)} × ${i.cantidad} — $${(i.precio * i.cantidad).toFixed(2)}`
+        ).join('<br>');
+        modalBody.innerHTML = `
+            ¿Confirmar la modificación de la Orden #{{ orden.id }}?<br><br>
+            ${lines}<br><br>
+            <strong>Total nuevo: $${total.toFixed(2)}</strong>
+        `;
+        confirmModal.classList.remove('hidden');
+        confirmModal.classList.add('flex');
+    });
+
+    confirmYesBtn.addEventListener('click', function () {
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+        document.getElementById('modifyOrderForm').submit();
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    renderCart();
+})();
+</script>
 {% endblock %}
