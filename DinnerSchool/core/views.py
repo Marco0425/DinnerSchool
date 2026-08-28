@@ -17,10 +17,11 @@ from .choices import *
 from .herramientas import *
 from django.conf import settings
 
-# Imports para reset de contraseña
+# Imports para reset de contraseña y email
 import json
 import string
 import random
+from .emails import enviar_verificacion_email, enviar_contrasena_temporal
 
 # Imports del core
 from .models import *
@@ -58,19 +59,24 @@ def reset_password(request):
         # Por seguridad, generar una contraseña temporal
         temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         
-        # Cambiar la contraseña
-        print(f"[reset_password] Cambiando contraseña para {email} a {temp_password}")
-        print(f"[reset_password] User antes del cambio: {user}")
+        # Cambiar la contraseña y enviar por correo
         user.set_password(temp_password)
         user.save()
-        
+
         logger.info(f"Password reset for user: {email}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Tu nueva contraseña temporal es: {temp_password}. Te recomendamos cambiarla en tus ajustes de cuenta.',
-            'temp_password': temp_password
-        })
+
+        try:
+            enviar_contrasena_temporal(user, temp_password)
+            return JsonResponse({
+                'success': True,
+                'message': 'Se ha enviado tu contraseña temporal al correo. Cámbiala desde tus ajustes después de iniciar sesión.',
+            })
+        except Exception as email_err:
+            logger.error(f"Error enviando email de reset a {email}: {email_err}")
+            return JsonResponse({
+                'success': True,
+                'message': f'Contraseña restablecida. Tu contraseña temporal es: {temp_password}. Cámbiala en tus ajustes.',
+            })
         
     except Exception as e:
         logger.error(f"Error in reset_password view: {str(e)}")
@@ -142,19 +148,20 @@ def logout_view(request):
     else:
         return redirect('core:signInUp')  # Redirigir a la página de inicio de sesión/registro si no está autenticado
 
-def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, registerPassword, userType, userphone):
+def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, registerPassword, userType, userphone, is_active=True):
     # Capitalizar nombres y apellidos
     username = username.title().strip()
     userlastname = userlastname.title().strip()
     userlastname2 = userlastname2.title().strip() if userlastname2 else ''
-    
+
     # 1. Crear usuario base
     user = User.objects.create_user(
         username=useremail,
         email=useremail,
         password=registerPassword,
         first_name=username,
-        last_name=f"{userlastname} {userlastname2}".strip()
+        last_name=f"{userlastname} {userlastname2}".strip(),
+        is_active=is_active,
     )
 
     group = Group.objects.get(pk=3 if userType in [3, 4] else userType)
@@ -263,20 +270,18 @@ def signInUp(request):
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
                 try:
-                    if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
-                        raise ValueError("Faltan campos obligatorios.")
                     user, usuario = crearUsuarioYPerfil(
-                        username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
+                        username, userlastname, userlastname2, useremail, registerPassword, userType, userphone,
+                        is_active=False
                     )
-                    # Login automático tras registro
-                    userAuth = authenticate(request, username=useremail, password=registerPassword)
-                    if userAuth is not None:
-                        login(request, userAuth)
-                        messages.success(request, 'Registro exitoso. ¡Bienvenido!')
-                        return redirect('core:dashboard')
-                    else:
-                        messages.error(request, 'Error en la autenticación después del registro.')
-                        return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+                    verificacion = VerificacionEmail.objects.create(user=user)
+                    try:
+                        enviar_verificacion_email(user, verificacion.token)
+                        messages.success(request, 'Cuenta creada. Revisa tu correo para verificar tu cuenta antes de iniciar sesión.')
+                    except Exception as email_err:
+                        logger.error(f"Error enviando verificación a {useremail}: {email_err}")
+                        messages.warning(request, 'Cuenta creada pero no se pudo enviar el correo de verificación. Contacta al administrador.')
+                    return redirect('core:signInUp')
                 except Group.DoesNotExist:
                     messages.error(request, 'Tipo de usuario inválido.')
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
@@ -288,9 +293,7 @@ def signInUp(request):
                 # Es login - no necesita capitalización
                 correo = request.POST.get("username")
                 contrasena = request.POST.get("password")
-                
-                print(f"[LOGIN] Intentando login con: {correo}")
-                
+
                 if not correo or not contrasena:
                     messages.error(request, 'Por favor, ingresa tu correo y contraseña.')
                     return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
@@ -301,8 +304,6 @@ def signInUp(request):
                     messages.success(request, 'Inicio de sesión exitoso.')
                     return redirect('core:dashboard')
                 else:
-                    print(f"[LOGIN] Autenticación fallida para: {correo}")
-                    # Verificar si el usuario existe
                     if User.objects.filter(email=correo).exists():
                         messages.error(request, 'Contraseña incorrecta.')
                     else:
@@ -311,11 +312,36 @@ def signInUp(request):
 
         return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
 
+def verificar_email(request, token):
+    try:
+        verificacion = VerificacionEmail.objects.select_related('user').get(token=token)
+    except VerificacionEmail.DoesNotExist:
+        messages.error(request, 'El enlace de verificación no es válido.')
+        return redirect('core:signInUp')
+
+    if verificacion.verificado:
+        messages.info(request, 'Tu cuenta ya estaba verificada. Puedes iniciar sesión.')
+        return redirect('core:signInUp')
+
+    if verificacion.ha_expirado():
+        messages.error(request, 'El enlace de verificación ha expirado. Solicita uno nuevo al administrador.')
+        return redirect('core:signInUp')
+
+    user = verificacion.user
+    user.is_active = True
+    user.save()
+    verificacion.verificado = True
+    verificacion.save()
+
+    messages.success(request, '¡Cuenta verificada! Ya puedes iniciar sesión.')
+    return redirect('core:signInUp')
+
+
 def dashboard(request):
     """
     Vista para el dashboard del usuario autenticado.
     Esta vista muestra información relevante al usuario que ha iniciado sesión.
-    
+
     Args:
         request: Objeto HttpRequest que contiene la solicitud del usuario.
     Returns:
@@ -564,27 +590,40 @@ def user_list_view(request):
         correo = request.GET.get('correo', '').strip()
         tipo = request.GET.get('tipo', '').strip()
 
-        users = Usuarios.objects.filter(groupId__name__in=["Tutor", "Empleado"])
+        users = Usuarios.objects.filter(
+            groupId__name__in=["Tutor", "Empleado"]
+        ).select_related('groupId')
         # Aplicar filtros
         if nombre:
             users = users.filter(nombre__icontains=nombre)
         if correo:
             users = users.filter(email__icontains=correo)
         if tipo:
-            # tipo puede ser Tutor, Cocinero, Profesor
             if tipo == 'Tutor':
                 users = users.filter(groupId__name='Tutor')
             elif tipo in ['Cocinero', 'Profesor']:
                 empleados_ids = Empleados.objects.filter(puesto=tipo).values_list('usuario_id', flat=True)
                 users = users.filter(id__in=empleados_ids)
 
+        # Pre-fetch empleados y alumnos para evitar N+1
+        user_ids = list(users.values_list('id', flat=True))
+        empleados_map = {e.usuario_id: e for e in Empleados.objects.filter(usuario_id__in=user_ids)}
+        alumnos_map = {}
+        for alumno in Alumnos.objects.filter(
+            tutorId__usuario_id__in=user_ids
+        ).select_related('tutorId'):
+            uid = alumno.tutorId.usuario_id
+            alumnos_map.setdefault(uid, []).append(alumno)
+
         usersData = []
         for user in users:
             if user.groupId.name == 'Tutor':
-                grupo = user.groupId.name
+                grupo = 'Tutor'
             elif user.groupId.name == 'Empleado':
-                empleado = Empleados.objects.get(usuario=user)
-                grupo = user.groupId.name if empleado.puesto == 'Cocinero' else empleado.puesto
+                empleado = empleados_map.get(user.id)
+                grupo = user.groupId.name if (empleado and empleado.puesto == 'Cocinero') else (empleado.puesto if empleado else 'Empleado')
+            else:
+                grupo = user.groupId.name
             usersData.append({
                 'id': user.id,
                 'nombre': user.nombre,
@@ -592,7 +631,7 @@ def user_list_view(request):
                 'materno': user.materno,
                 'email': user.email,
                 'tipo': grupo,
-                'alumnos': Alumnos.objects.filter(tutorId__usuario=user).all() if user.groupId.name == 'Tutor' else '',
+                'alumnos': alumnos_map.get(user.id, '') if user.groupId.name == 'Tutor' else '',
             })
 
         paginator = Paginator(usersData, 10) # Muestra 10 usuarios por página

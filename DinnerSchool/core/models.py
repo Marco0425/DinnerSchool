@@ -1,5 +1,6 @@
+import uuid
 from django.db import models
-
+from django.utils import timezone
 from django.contrib.auth.models import Group, User
 from .choices import *
 
@@ -68,3 +69,20 @@ class Alumnos(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.paterno} {self.materno}"
+
+
+class VerificacionEmail(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='verificacion_email')
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    verificado = models.BooleanField(default=False)
+
+    def ha_expirado(self):
+        return timezone.now() > self.creado + timezone.timedelta(hours=48)
+
+    class Meta:
+        verbose_name = 'Verificación de Email'
+        verbose_name_plural = 'Verificaciones de Email'
+
+    def __str__(self):
+        return f"Verificación para {self.user.email}"

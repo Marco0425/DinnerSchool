@@ -1,17 +1,10 @@
-from django.views.decorators.http import require_GET
-from django.http import HttpResponse, FileResponse
+from django.views.decorators.http import require_GET, require_POST
+from django.http import JsonResponse, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User, Group
-from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
-from django.contrib.auth import logout as django_logout
-from django.views.decorators.http import require_POST
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
 from django.apps import apps
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 from django.core.paginator import Paginator
 from decimal import Decimal
 from django.db import transaction
@@ -103,7 +96,10 @@ def credit(request):
     """
     if request.user.is_authenticated:
         userCreditos = []
-        creditos = Credito.objects.all()
+        creditos = Credito.objects.select_related(
+            'tutorId__usuario',
+            'profesorId__usuario',
+        ).prefetch_related('tutorId__alumnos_set').all()
         for user in creditos:
             userCreditos.append({
                 'id': user.id,
@@ -112,7 +108,7 @@ def credit(request):
                 'materno': user.tutorId.usuario.materno if user.tutorId else user.profesorId.usuario.materno,
                 'monto': float(user.monto) if isinstance(user.monto, Decimal) else '0.00',
                 'tipo': 'Profesor' if user.profesorId else 'Tutor',
-                'alumnos': Alumnos.objects.filter(tutorId=user.tutorId).all() if user.tutorId else '',
+                'alumnos': user.tutorId.alumnos_set.all() if user.tutorId else '',
             })
         
         return render(request, 'Credit/credit_list_view.html', {'creditos': userCreditos})
@@ -272,14 +268,13 @@ def cancelOrder(request, pedido_id):
             pedido.status = 4  # Asumiendo que 4 = Cancelado
             pedido.save()
             # Registrar el movimiento en CreditoDiario como positivo (reembolso)
-            creditoDiario = CreditoDiario.objects.create(
+            CreditoDiario.objects.create(
                 pedido=pedido,
                 tutorId=pedido.alumnoId.tutorId if pedido.alumnoId else None,
                 profesorId=pedido.profesorId if pedido.profesorId else None,
-                monto=Decimal(str(total_reembolso)),  # Positivo para reembolso
+                monto=Decimal(str(total_reembolso)),
                 fecha=date.today()
             )
-            creditoDiario.save()
             
             if request.user.is_staff:
                 message = f'Pedido #{pedido_id} cancelado exitosamente por el administrador. Se reembolsaron ${total_reembolso} al usuario.'
@@ -502,6 +497,8 @@ def orderHistory(request):
             Pedidos = Pedido.objects.filter(profesorId__usuario__email=request.user.username)
         elif is_tutor:
             Pedidos = Pedido.objects.filter(alumnoId__tutorId__usuario__email=request.user.username)
+        else:
+            Pedidos = Pedido.objects.none()
 
         # Filtros por GET
         usuario = request.GET.get('usuario', '').strip()
@@ -551,17 +548,22 @@ def orderHistory(request):
         Pedidos = Pedidos.order_by('-fecha')
 
         # Paginación
-        from django.core.paginator import Paginator
         paginator = Paginator(Pedidos, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+
+        # Preservar filtros activos al paginar
+        query_params = request.GET.copy()
+        query_params.pop('page', None)
+        query_string = query_params.urlencode()
 
         context = {
             'is_staff': is_admin,
             'order_list': page_obj,
             'page_obj': page_obj,
+            'query_string': query_string,
         }
-        
+
         return render(request, 'Orders/orders_history_view.html', context)
     else:
         return redirect('core:signInUp')
@@ -625,88 +627,76 @@ def createOrder(request):
             if alumno_id and (tutor_actual or not is_profesor):
                 alumno_obj = Alumnos.objects.get(id=alumno_id)
             
-            # Lista para almacenar los pedidos creados
-            pedidos_creados = []
-            total_calculado = Decimal('0')
-            
-            # Crear cada pedido del carrito
-            for item in cart_items:
-                try:
-                    platillo = Platillo.objects.get(id=item['platillo_id'])
-                    subtotal = Decimal(str(item['subtotal']))
-                    total_calculado += subtotal
-                    
-                    if fechaPedido:
-                        fecha_entrega = date.fromisoformat(fechaPedido)
-                    else:
-                        hora_actual = timezone.localtime().hour
-                        fecha_entrega = date.today() if hora_actual < 14 else date.today() + timedelta(days=1)
-                    
-                    # Crear el pedido
-                    nuevo_pedido = Pedido(
-                        platillo=platillo,
-                        ingredientePlatillo=item.get('ingredientes', ''),
-                        nota=item.get('notas', ''),
-                        cantidad=item['cantidad'],  # Asumiendo que tienes este campo
-                        alumnoId=alumno_obj if not is_profesor else None,
-                        nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
-                        profesorId=profesor_actual if profesor_actual else None,
-                        turno=item['turno'],
-                        total=subtotal,
-                        fecha=fecha_entrega,
-                    )
-                    nuevo_pedido.save()
-                    pedidos_creados.append(nuevo_pedido)
-                    
-                except Platillo.DoesNotExist:
-                    messages.error(request, f"Platillo con ID {item['platillo_id']} no encontrado.")
-                    return redirect('comedor:createOrder')
-                except Exception as e:
-                    messages.error(request, f"Error al crear pedido: {str(e)}")
-                    return redirect('comedor:createOrder')
-            
-            # Verificar que el total calculado coincida
+            # Verificar total antes de tocar la BD
+            total_calculado = sum(Decimal(str(item['subtotal'])) for item in cart_items)
             if abs(total_calculado - total_carrito) > Decimal('0.01'):
                 messages.error(request, "Error en el cálculo del total del carrito.")
                 return redirect('comedor:createOrder')
-            
-            # Crear los créditos diarios para cada pedido
-            for pedido in pedidos_creados:
-                CreditoDiario.objects.create(
-                    pedido=pedido,
-                    tutorId=tutor_actual,
-                    profesorId=profesor_actual,
-                    monto= -pedido.total,
-                    fecha=fecha_entrega
-                )
-            
-            # Actualizar crédito total (descontar el total del carrito)
-            try:
-                if is_admin:
-                    credito_usuario = (Credito.objects.get(profesorId=profesor_actual) 
-                                     if profesor_actual 
-                                     else Credito.objects.get(tutorId=tutor_actual))
-                else:
-                    credito_usuario = (Credito.objects.get(profesorId=profesorRequest) 
-                                     if is_profesor 
-                                     else Credito.objects.get(tutorId=tutor_actual))
 
-                credito_usuario.monto -= total_carrito
-                credito_usuario.fecha = date.today()
-                credito_usuario.save()
-                
-                # Mensajes de advertencia sobre el crédito
-                if credito_usuario.monto <= 0:
-                    messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
-                elif 0 < credito_usuario.monto <= 100:
-                    messages.info(request, f"Tu crédito actual es ${credito_usuario.monto}. Te recomendamos recargar pronto.")
-                
+            if fechaPedido:
+                fecha_entrega = date.fromisoformat(fechaPedido)
+            else:
+                hora_actual = timezone.localtime().hour
+                fecha_entrega = date.today() if hora_actual < 14 else date.today() + timedelta(days=1)
+
+            try:
+                with transaction.atomic():
+                    pedidos_creados = []
+
+                    for item in cart_items:
+                        platillo = Platillo.objects.get(id=item['platillo_id'])
+                        subtotal = Decimal(str(item['subtotal']))
+                        nuevo_pedido = Pedido(
+                            platillo=platillo,
+                            ingredientePlatillo=item.get('ingredientes', ''),
+                            nota=item.get('notas', ''),
+                            cantidad=item['cantidad'],
+                            alumnoId=alumno_obj if not is_profesor else None,
+                            nivelEducativo=alumno_obj.nivelEducativo if alumno_obj else None,
+                            profesorId=profesor_actual if profesor_actual else None,
+                            turno=item['turno'],
+                            total=subtotal,
+                            fecha=fecha_entrega,
+                        )
+                        nuevo_pedido.save()
+                        pedidos_creados.append(nuevo_pedido)
+
+                    for pedido in pedidos_creados:
+                        CreditoDiario.objects.create(
+                            pedido=pedido,
+                            tutorId=tutor_actual,
+                            profesorId=profesor_actual,
+                            monto=-pedido.total,
+                            fecha=fecha_entrega
+                        )
+
+                    if is_admin:
+                        credito_usuario = (Credito.objects.get(profesorId=profesor_actual)
+                                         if profesor_actual
+                                         else Credito.objects.get(tutorId=tutor_actual))
+                    else:
+                        credito_usuario = (Credito.objects.get(profesorId=profesorRequest)
+                                         if is_profesor
+                                         else Credito.objects.get(tutorId=tutor_actual))
+
+                    credito_usuario.monto -= total_carrito
+                    credito_usuario.fecha = date.today()
+                    credito_usuario.save()
+
+            except Platillo.DoesNotExist as e:
+                messages.error(request, f"Platillo no encontrado: {str(e)}")
+                return redirect('comedor:createOrder')
             except Credito.DoesNotExist:
                 messages.error(request, "No se encontró crédito disponible para este usuario.")
-                # Eliminar pedidos creados si no hay crédito
-                for pedido in pedidos_creados:
-                    pedido.delete()
                 return redirect('comedor:createOrder')
+            except Exception as e:
+                messages.error(request, f"Error al crear la orden: {str(e)}")
+                return redirect('comedor:createOrder')
+
+            if credito_usuario.monto <= 0:
+                messages.warning(request, "Tu crédito ha llegado a 0 o es negativo. Es necesario recargar para futuros pedidos.")
+            elif 0 < credito_usuario.monto <= 100:
+                messages.info(request, f"Tu crédito actual es ${credito_usuario.monto}. Te recomendamos recargar pronto.")
             
             messages.success(request, f"¡Orden creada exitosamente! Se procesaron {len(pedidos_creados)} platillos por un total de ${total_carrito}.")
             return redirect('core:dashboard')
@@ -837,7 +827,6 @@ def createOrder(request):
     context["today"] = date.today().isoformat()
     return render(request, 'Orders/orders_form_view.html', context)
 
-@csrf_exempt
 def update_order_status(request):
     """
     Vista para actualizar el status de un pedido vía AJAX.
@@ -910,10 +899,15 @@ def saucers(request):
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
+        all_ingredients = {ing.id: ing.nombre for ing in Ingredientes.objects.all()}
         saucers_for_template = []
         for platillo in page_obj:
             ingredient_ids = platillo.ingredientes.strip('[]').replace("'", "").split(', ')
-            ingredient_names = [Ingredientes.objects.get(id=int(ing)).nombre for ing in ingredient_ids if ing]
+            ingredient_names = [
+                all_ingredients[int(ing)]
+                for ing in ingredient_ids
+                if ing.strip() and ing.strip().lstrip('-').isdigit() and int(ing) in all_ingredients
+            ]
             saucers_for_template.append({
                 'id': platillo.id,
                 'nombre': platillo.nombre,
@@ -981,24 +975,6 @@ def createSaucer(request):
         return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
     
     return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
-
-def ejemplo_uso_reportes():
-    """Ejemplos de cómo usar las funciones de reportes."""
-    
-    # 1. Generar reporte para el día actual
-    archivo_hoy = generar_reporte_gastos_diarios()
-    
-    # 2. Generar reporte para una fecha específica
-    fecha_especifica = date(2025, 8, 20)
-    archivo_fecha = generar_reporte_gastos_diarios(
-        fecha_reporte=fecha_especifica,
-        nombre_archivo="reporte_especial.xlsx"
-    )
-    
-    # 3. Generar reporte para un rango de fechas (última semana)
-    fecha_fin = date.today()
-    fecha_inicio = fecha_fin - timedelta(days=7)
-    archivo_rango = generar_reporte_rango_fechas(fecha_inicio, fecha_fin)
 
 def generarReporte(request):
     """Vista para generar y descargar reporte desde Django."""
@@ -1302,7 +1278,6 @@ def accountStatements(request):
     else:
         return redirect('core:signInUp')
 
-@csrf_exempt
 def get_movimientos(request):
     """
     Vista AJAX para obtener los movimientos de un usuario específico.
@@ -1595,23 +1570,6 @@ def get_movimientos(request):
             'message': f'Error interno del servidor: {str(e)}'
         })
         
-def get_turnos_activos():
-    """Retorna los turnos que deben mostrarse según la hora actual.
-    - 8:00 a 9:59: solo Receso 1
-    - 10:00 a 10:59: Receso 1 + Receso 2
-    - 11:00+: todos los turnos
-    - Antes de 8:00: ninguno
-    """
-    hora_actual = timezone.localtime().hour
-    if hora_actual < 8:
-        return []
-    elif hora_actual < 10:
-        return [0]       # Receso 1
-    elif hora_actual < 11:
-        return [0, 1]    # Receso 1 + Receso 2
-    else:
-        return [0, 1, 2] # Todos los turnos
-
 # Endpoint AJAX para pedidos agrupados por estado (Kanban)
 @require_GET
 def kanban_orders_api(request):
@@ -1627,7 +1585,6 @@ def kanban_orders_api(request):
     }
     is_employee = Empleados.objects.filter(usuario__email=request.user.username).exists()
 
-    turnos_activos = get_turnos_activos()
     pedidos_hoy = Pedido.objects.filter(fecha=today, status__in=[0, 1, 2, 3]).order_by('fecha', 'turno', 'alumnoId', 'profesorId')
     orders_dict = {}
 

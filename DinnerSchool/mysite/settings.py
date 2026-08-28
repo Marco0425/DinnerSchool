@@ -155,15 +155,30 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de seguridad para producción
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    ALLOWED_HOSTS.extend(['.onrender.com'])
 
-else:
-    DEBUG = True
+# Hosts adicionales vía env (útil para Docker)
+_extra_hosts = os.getenv('EXTRA_ALLOWED_HOSTS', '')
+if _extra_hosts:
+    ALLOWED_HOSTS.extend([h.strip() for h in _extra_hosts.split(',') if h.strip()])
+
+# Configuración de correo — Hostinger SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.hostinger.com'
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'info@cafeteriacerto.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'CafeteriaCerto <{EMAIL_HOST_USER}>'
+SERVER_EMAIL = EMAIL_HOST_USER
+
+# URL base del sitio (para links en correos)
+SITE_URL = os.getenv('SITE_URL', 'https://cafeteriacerto.com')
 
 LOGGING = {
     'version': 1,
