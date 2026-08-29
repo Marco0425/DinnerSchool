@@ -21,7 +21,7 @@
         Volver
       </a>
       <a
-        href="/core/signInUp/"
+        href="{% url 'core:register' %}"
         class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
       >
         + Añadir Usuario
@@ -106,10 +106,13 @@
               Tipo de Usuario
             </th>
             <th
-              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg"
+              class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
             >
               Alumnos Asignados
             </th>
+            {% if request.user.is_staff %}
+            <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider rounded-tr-lg">Estado</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -146,6 +149,17 @@
               Sin alumnos asignados
               {% endif %}
             </td>
+            {% if request.user.is_staff %}
+            <td class="py-3 px-4 whitespace-nowrap text-sm">
+              <button
+                onclick="toggleUsuario({{ user.id }}, this)"
+                data-active="{{ user.is_active|yesno:'true,false' }}"
+                class="px-3 py-1 rounded-full text-xs font-semibold transition
+                  {% if user.is_active %}bg-green-100 text-green-700 hover:bg-green-200{% else %}bg-red-100 text-red-700 hover:bg-red-200{% endif %}">
+                {% if user.is_active %}Activo{% else %}Inactivo{% endif %}
+              </button>
+            </td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>
@@ -240,4 +254,25 @@
   {% endif %}
 </div>
 <script src="{% static 'js/list.js' %}"></script>
+{% if request.user.is_staff %}
+<script>
+function toggleUsuario(usuarioId, btn) {
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  fetch('/core/usuario/' + usuarioId + '/toggle-active/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (!data.success) { alert(data.message || 'Error'); return; }
+    var active = data.is_active;
+    btn.dataset.active = active ? 'true' : 'false';
+    btn.textContent = active ? 'Activo' : 'Inactivo';
+    btn.className = 'px-3 py-1 rounded-full text-xs font-semibold transition ' +
+      (active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200');
+  })
+  .catch(function() { alert('Error de conexión'); });
+}
+</script>
+{% endif %}
 {% endblock %}

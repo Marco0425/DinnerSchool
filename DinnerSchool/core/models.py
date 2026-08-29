@@ -62,6 +62,7 @@ class Alumnos(models.Model):
     materno = models.CharField(max_length=100, verbose_name='Apellido Materno')
     tutorId = models.ForeignKey(Tutor, on_delete=models.CASCADE, verbose_name='Tutor')
     nivelEducativo = models.ForeignKey(NivelEducativo, on_delete=models.CASCADE, verbose_name='Nivel educativo')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
 
     class Meta:
         verbose_name_plural = 'Alumnos'

@@ -16,5 +16,8 @@ urlpatterns = [
     path("users/", views.user_list_view, name="user_list_view"),
     path("account_settings/", views.account_settings_form_view, name="account_settings"),
     path('reset-password/', views.reset_password, name='reset_password'),
+    path('register/', views.register, name='register'),
     path('verificar-email/<uuid:token>/', views.verificar_email, name='verificar_email'),
+    path('usuario/<int:usuario_id>/toggle-active/', views.toggle_usuario_active, name='toggle_usuario_active'),
+    path('alumno/<int:alumno_id>/toggle-active/', views.toggle_alumno_active, name='toggle_alumno_active'),
 ]

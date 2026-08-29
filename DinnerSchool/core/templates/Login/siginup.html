@@ -1,353 +1,151 @@
-{% extends "main.html" %} {% load static %}{% block content %}
-<script src="{% static 'js/login.js' %}"></script>
-<div
-  class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full border-t-8 border-primary-red relative"
->
-  <!-- Botón Go Back to Dashboard -->
-  {% if is_staff %}
-  <a
-    href="/core/dashboard/"
-    class="absolute left-4 top-4 flex items-center text-primary-red hover:text-red-700 font-semibold text-sm bg-gray-100 px-3 py-1 rounded shadow transition duration-200"
-  >
-    Dashboard
-  </a>
-  {% endif %}
-  <!-- Bloque para mensajes -->
+{% extends "main.html" %}{% load static %}{% block content %}
+<div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full border-t-8 border-primary-red">
+
+  <div class="flex flex-col items-center mb-6">
+    <img src="{% static 'img/logos/logo.png' %}" alt="Logo"
+         class="w-24 h-24 mb-4 rounded-full border-2 border-primary-red p-1 object-cover" />
+    <h1 class="text-3xl font-bold text-gray-800 mb-1">Cafetería Escolar</h1>
+    <p class="text-gray-500 text-sm" id="form-description">Inicia sesión para acceder a tu cuenta</p>
+  </div>
+
   {% if messages %}
-  <div class="mb-4" style="margin-top: 1.5rem">
+  <div class="mb-4 space-y-2">
     {% for message in messages %}
-    <div
-      class="p-3 rounded-md text-center text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200{% elif message.tags == 'info' %}bg-blue-100 text-blue-800 border border-blue-200{% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}"
-    >
+    <div class="p-3 rounded-md text-center text-sm font-medium
+      {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200
+      {% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200
+      {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+      {% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
       {{ message }}
     </div>
     {% endfor %}
   </div>
   {% endif %}
-  <div class="flex flex-col items-center mb-6">
-    <!-- Logo de la cafetería - Ahora con una imagen de marcador de posición funcional -->
-    <img
-      src="{% static 'img/logos/logo.png' %}"
-      alt="Logo de la Cafetería Certo"
-      class="w-24 h-24 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
-    />
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Cafetería Escolar</h1>
-    <p class="text-gray-600 text-center" id="form-description">
-      Inicia sesión para acceder a tu cuenta
-    </p>
-  </div>
 
-  {% if not only_register %}
-  <!-- Contenedor del formulario de Inicio de Sesión -->
+  <!-- Login -->
   <div id="loginContainer">
-    <form id="loginForm" class="space-y-4">
+    <form method="POST" action="{% url 'core:signInUp' %}" class="space-y-4">
+      {% csrf_token %}
       <div>
-        <label
-          for="loginUsername"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Correo eléctronico*</label
-        >
-        <input
-          type="text"
-          id="loginUsername"
-          name="username"
-          placeholder="Tu correo eléctronico"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        />
+        <label for="loginUsername" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico*</label>
+        <input type="email" id="loginUsername" name="username" required placeholder="tu@correo.com"
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm" />
       </div>
-
       <div>
-        <label
-          for="loginPassword"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Contraseña*</label
-        >
+        <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Contraseña*</label>
         <div class="relative">
-          <input
-            type="password"
-            id="loginPassword"
-            name="password"
-            placeholder="Tu contraseña"
-            class="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center"
-            onclick="togglePasswordVisibility('loginPassword', this)"
-          >
+          <input type="password" id="loginPassword" name="password" required placeholder="Tu contraseña"
+                 class="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm" />
+          <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onclick="togglePasswordVisibility('loginPassword', this)">
             <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           </button>
         </div>
       </div>
-
-      <button
-        type="submit"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
-      >
+      <button type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 transition duration-200">
         Iniciar Sesión
       </button>
     </form>
-    <div class="mt-4 text-center space-y-2">
+
+    <div class="mt-5 text-center space-y-2">
       <p class="text-sm text-gray-600">
         ¿No tienes una cuenta?
-        <a
-          href="#"
-          id="showRegisterForm"
-          class="font-medium text-primary-red hover:text-red-700"
-          >Crea una aquí</a
-        >
+        <a href="{% url 'core:register' %}" class="font-medium text-primary-red hover:text-red-700">Crea una aquí</a>
       </p>
       <p class="text-sm text-gray-600">
         ¿Olvidaste tu contraseña?
-        <a
-          href="#"
-          id="showResetForm"
-          class="font-medium text-primary-red hover:text-red-700"
-          >Resetear aquí</a
-        >
+        <a href="#" id="showResetForm" class="font-medium text-primary-red hover:text-red-700">Recupérala aquí</a>
       </p>
     </div>
   </div>
-  {% endif %}
 
-  <!-- Contenedor del formulario de Reset de Contraseña (inicialmente oculto) -->
-  <div id="resetContainer" class="hidden-form">
-    <form id="resetForm" class="space-y-4" method="post" action="/core/reset-password/">
+  <!-- Reset contraseña (oculto por defecto) -->
+  <div id="resetContainer" class="hidden">
+    <p class="text-center text-sm text-gray-500 mb-4">Ingresa tu correo y te enviaremos una contraseña temporal.</p>
+    <form id="resetForm" method="POST" action="{% url 'core:reset_password' %}" class="space-y-4">
       {% csrf_token %}
       <div>
-        <label
-          for="resetEmail"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Correo electrónico*</label
-        >
-        <input
-          type="email"
-          id="resetEmail"
-          name="email"
-          placeholder="Ingresa tu correo electrónico"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        />
+        <label for="resetEmail" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico*</label>
+        <input type="email" id="resetEmail" name="email" required placeholder="tu@correo.com"
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm" />
       </div>
-
-      <button
-        type="submit"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
-      >
-        Enviar enlace de reseteo
+      <button type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 transition duration-200">
+        Enviar contraseña temporal
       </button>
     </form>
-
     <p class="mt-4 text-center text-sm text-gray-600">
-      ¿Recordaste tu contraseña?
-      <a
-        href="#"
-        id="showLoginFromReset"
-        class="font-medium text-primary-red hover:text-red-700"
-        >Volver al login</a
-      >
+      <a href="#" id="backToLogin" class="font-medium text-primary-red hover:text-red-700">← Volver al inicio de sesión</a>
     </p>
+    <div id="resetMessage" class="mt-4 hidden p-3 rounded-md text-sm text-center"></div>
   </div>
 
-  <!-- Contenedor del formulario de Registro (inicialmente oculto) -->
-  <div
-    id="registerContainer"
-    class="{% if only_register %}{% else %}hidden-form{% endif %}"
-  >
-    <form
-      id="registerForm"
-      class="space-y-4"
-      method="post"
-      action="/core/signInUp/"
-    >
-      {% csrf_token %}
-      <div>
-        <label
-          for="registerUsername"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Nombre*</label
-        >
-        <input
-          type="text"
-          id="registerUsername"
-          name="username"
-          placeholder="Tu nombre"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        />
-      </div>
-      <div>
-        <label
-          for="registerUserlastname"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Apellido Paterno*</label
-        >
-        <input
-          type="text"
-          id="registerUserlastname"
-          name="userlastname"
-          placeholder="Tu apellido"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        />
-      </div>
-      <div>
-        <label
-          for="registerUserlastname2"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Apellido Materno</label
-        >
-        <input
-          type="text"
-          id="registerUserlastname2"
-          name="userlastname2"
-          placeholder="Tu segundo apellido"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-        />
-      </div>
-      <div>
-        <label
-          for="registerUseremail"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Correo eléctronico*</label
-        >
-        <input
-          type="text"
-          id="registerUseremail"
-          name="useremail"
-          placeholder="Tu correo eléctronico"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        />
-      </div>
-
-      <div>
-        <label
-          for="registerUserphone"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Número de celular</label
-        >
-        <input
-          type="text"
-          id="registerUserphone"
-          name="userphone"
-          placeholder="Tu número de celular"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-        />
-      </div>
-
-      <div>
-        <label
-          for="registerPassword"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Contraseña*</label
-        >
-        <div class="relative">
-          <input
-            type="password"
-            id="registerPassword"
-            name="password"
-            placeholder="Crea tu contraseña"
-            class="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center"
-            onclick="togglePasswordVisibility('registerPassword', this)"
-          >
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <label
-          for="confirmPassword"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Confirmar Contraseña*</label
-        >
-        <div class="relative">
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            placeholder="Confirma tu contraseña"
-            class="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-            required
-          />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center"
-            onclick="togglePasswordVisibility('confirmPassword', this)"
-          >
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      {% if is_staff %}
-      <div>
-        <label
-          for="registerUserType"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          >Tipo de Usuario*</label
-        >
-        <select
-          id="registerUserType"
-          name="userType"
-          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm"
-          required
-        >
-          <option value="">Selecciona tu tipo de usuario</option>
-          <option value="1">Tutor</option>
-          <option value="3">Empleado</option>
-          <option value="4">Profesor</option>
-        </select>
-      </div>
-      {% endif %} {% comment %}
-      <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
-      <script
-        src="https://www.google.com/recaptcha/api.js"
-        async
-        defer
-      ></script>
-      {% endcomment %}
-      <button
-        type="submit"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-red transition duration-300 ease-in-out"
-      >
-        Registrarse
-      </button>
-    </form>
-
-    {% if not only_register %}
-    <p class="mt-4 text-center text-sm text-gray-600">
-      ¿Ya tienes una cuenta?
-      <a
-        href="#"
-        id="showLoginForm"
-        class="font-medium text-primary-red hover:text-red-700"
-        >Inicia sesión aquí</a
-      >
-    </p>
-    {% endif %}
-  </div>
-
-  <!-- Mensaje de estado (inicialmente oculto) -->
-  <div
-    id="message"
-    class="mt-6 p-3 text-sm text-center rounded-md hidden"
-  ></div>
 </div>
+
+<script>
+(function () {
+  var loginContainer = document.getElementById('loginContainer');
+  var resetContainer = document.getElementById('resetContainer');
+  var descEl = document.getElementById('form-description');
+
+  document.getElementById('showResetForm').addEventListener('click', function (e) {
+    e.preventDefault();
+    loginContainer.classList.add('hidden');
+    resetContainer.classList.remove('hidden');
+    descEl.textContent = 'Recupera tu contraseña';
+  });
+
+  document.getElementById('backToLogin').addEventListener('click', function (e) {
+    e.preventDefault();
+    resetContainer.classList.add('hidden');
+    loginContainer.classList.remove('hidden');
+    descEl.textContent = 'Inicia sesión para acceder a tu cuenta';
+  });
+
+  document.getElementById('resetForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = this.querySelector('button[type="submit"]');
+    var msgDiv = document.getElementById('resetMessage');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    var formData = new FormData(this);
+    fetch('{% url "core:reset_password" %}', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      msgDiv.classList.remove('hidden');
+      if (data.success) {
+        msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-green-100 text-green-800 border border-green-200';
+        msgDiv.textContent = 'Contraseña temporal enviada a tu correo. Revisa tu bandeja de entrada.';
+        document.getElementById('resetForm').reset();
+      } else {
+        msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-red-100 text-red-800 border border-red-200';
+        msgDiv.textContent = data.message || 'No se encontró una cuenta con ese correo.';
+        btn.disabled = false;
+        btn.textContent = 'Enviar contraseña temporal';
+      }
+    })
+    .catch(function () {
+      msgDiv.classList.remove('hidden');
+      msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-red-100 text-red-800 border border-red-200';
+      msgDiv.textContent = 'Error de conexión. Inténtalo de nuevo.';
+      btn.disabled = false;
+      btn.textContent = 'Enviar contraseña temporal';
+    });
+  });
+})();
+
+function togglePasswordVisibility(id, btn) {
+  var input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+</script>
 {% endblock %}

@@ -36,6 +36,14 @@
   </div>
   {% endif %}
 
+  <!-- Filtros rápidos de período -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button data-period="today"   class="quick-filter px-3 py-1 text-sm rounded-full border border-gray-300 text-gray-600 hover:bg-primary-red hover:text-white hover:border-primary-red transition">Hoy</button>
+    <button data-period="week"    class="quick-filter px-3 py-1 text-sm rounded-full border border-gray-300 text-gray-600 hover:bg-primary-red hover:text-white hover:border-primary-red transition">Esta semana</button>
+    <button data-period="month"   class="quick-filter px-3 py-1 text-sm rounded-full border border-gray-300 text-gray-600 hover:bg-primary-red hover:text-white hover:border-primary-red transition">Este mes</button>
+    <button data-period="year"    class="quick-filter px-3 py-1 text-sm rounded-full border border-gray-300 text-gray-600 hover:bg-primary-red hover:text-white hover:border-primary-red transition">Este año</button>
+  </div>
+
   <!-- Filtros -->
   <div class="bg-gray-50 p-4 rounded-lg mb-6">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -57,7 +65,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
           </div>
-          
+
           <!-- Select oculto para enviar el valor -->
           <select id="user-select" name="user-select" class="hidden">
             <option value="">Seleccionar...</option>
@@ -67,16 +75,17 @@
               {% endfor %}
             {% endif %}
           </select>
-          
+
           <!-- Lista desplegable personalizada -->
           <div id="user-dropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
             <div id="user-options">
               {% if all_users %}
                 {% for user in all_users %}
-                  <div class="user-option px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                       data-value="{{ user.id }}" 
+                  <div class="user-option px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                       data-value="{{ user.id }}"
                        data-search="{{ user.nombre|lower }} {{ user.descripcion|lower }}"
-                       data-tipo="{{ user.tipo }}">
+                       data-tipo="{{ user.tipo }}"
+                       data-alumnos='{{ user.alumnos|default:"[]" }}'>
                     <div class="font-medium text-sm">{{ user.nombre }}</div>
                     <div class="text-xs text-gray-500">{{ user.tipo }} - {{ user.descripcion|truncatechars:60 }}</div>
                   </div>
@@ -88,6 +97,14 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Filtro por alumno (solo para tutores) -->
+      <div id="alumno-filter-wrap" class="hidden">
+        <label for="alumno-select" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por alumno</label>
+        <select id="alumno-select" class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-red focus:border-primary-red text-sm">
+          <option value="">Todos los alumnos</option>
+        </select>
       </div>
 
       <!-- Fecha Inicio -->

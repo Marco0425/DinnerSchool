@@ -1,9 +1,11 @@
 # Imports de Django
 import logging
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.contrib.staticfiles import finders
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
@@ -58,25 +60,28 @@ def reset_password(request):
         
         # Por seguridad, generar una contraseña temporal
         temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        
-        # Cambiar la contraseña y enviar por correo
+
+        # Enviar primero: solo si el correo llega de verdad se aplica el cambio.
+        # Así nunca se cambia la contraseña de alguien sin que la reciba, y nunca
+        # se revela la contraseña temporal en la respuesta HTTP.
+        try:
+            enviar_contrasena_temporal(user, temp_password)
+        except Exception as email_err:
+            logger.error(f"Error enviando email de reset a {email}: {email_err}")
+            return JsonResponse({
+                'success': False,
+                'message': 'No se pudo enviar el correo. Intenta más tarde o contacta al administrador.',
+            })
+
         user.set_password(temp_password)
         user.save()
 
         logger.info(f"Password reset for user: {email}")
 
-        try:
-            enviar_contrasena_temporal(user, temp_password)
-            return JsonResponse({
-                'success': True,
-                'message': 'Se ha enviado tu contraseña temporal al correo. Cámbiala desde tus ajustes después de iniciar sesión.',
-            })
-        except Exception as email_err:
-            logger.error(f"Error enviando email de reset a {email}: {email_err}")
-            return JsonResponse({
-                'success': True,
-                'message': f'Contraseña restablecida. Tu contraseña temporal es: {temp_password}. Cámbiala en tus ajustes.',
-            })
+        return JsonResponse({
+            'success': True,
+            'message': 'Se ha enviado tu contraseña temporal al correo. Cámbiala desde tus ajustes después de iniciar sesión.',
+        })
         
     except Exception as e:
         logger.error(f"Error in reset_password view: {str(e)}")
@@ -190,125 +195,96 @@ def crearUsuarioYPerfil(username, userlastname, userlastname2, useremail, regist
     return user, usuario
 
 def signInUp(request):
+    # Staff autenticado: redirigir directo a registro
     if request.user.is_authenticated and request.user.is_staff:
-        # Staff: solo registro
-        if request.method == "POST":
-            username = request.POST.get("username", "").title().strip()
-            userlastname = request.POST.get("userlastname", "").title().strip()
-            userlastname2 = request.POST.get("userlastname2", "").title().strip()
-            useremail = request.POST.get("useremail").lower()
-            registerPassword = request.POST.get("password")
-            confirmPassword = request.POST.get("confirmPassword")
-            userType = request.POST.get("userType")
-            userphone = request.POST.get("userphone")
-            
-            # Validaciones consolidadas
-            if User.objects.filter(email=useremail).exists():
-                messages.error(request, 'El correo electrónico ya está en uso.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-            
-            if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
-                messages.error(request, 'Por favor, completa todos los campos obligatorios.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-            
-            if registerPassword != confirmPassword:
-                messages.error(request, 'Las contraseñas no coinciden.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+        return redirect('core:register')
 
-            if User.objects.filter(username=useremail).exists():
-                messages.error(request, 'Ya existe un usuario con ese correo.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+    if request.method == "POST":
+        correo = request.POST.get("username", "").strip()
+        contrasena = request.POST.get("password", "")
 
+        if not correo or not contrasena:
+            messages.error(request, 'Por favor, ingresa tu correo y contraseña.')
+            return render(request, 'Login/siginup.html')
+
+        user = authenticate(request, username=correo, password=contrasena)
+        if user is not None:
+            login(request, user)
+            return redirect('core:dashboard')
+        else:
+            if User.objects.filter(email=correo).exists():
+                messages.error(request, 'Contraseña incorrecta.')
+            else:
+                messages.error(request, 'No existe una cuenta con ese correo electrónico.')
+            return render(request, 'Login/siginup.html')
+
+    return render(request, 'Login/siginup.html')
+
+
+def register(request):
+    is_staff = request.user.is_authenticated and request.user.is_staff
+
+    if request.method == "POST":
+        username     = request.POST.get("username", "").strip()
+        userlastname = request.POST.get("userlastname", "").strip()
+        userlastname2 = request.POST.get("userlastname2", "").strip()
+        useremail    = request.POST.get("useremail", "").lower().strip()
+        password     = request.POST.get("password", "")
+        confirm      = request.POST.get("confirmPassword", "")
+        userphone    = request.POST.get("userphone", "")
+        userType     = request.POST.get("userType", "1")
+
+        ctx = {'is_staff': is_staff}
+
+        if not all([username, userlastname, useremail, password, confirm]):
+            messages.error(request, 'Completa todos los campos obligatorios.')
+            return render(request, 'Login/register.html', ctx)
+
+        if password != confirm:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'Login/register.html', ctx)
+
+        if User.objects.filter(email=useremail).exists():
+            messages.error(request, 'El correo electrónico ya está en uso.')
+            return render(request, 'Login/register.html', ctx)
+
+        if is_staff:
+            # Solo un admin autenticado puede elegir el tipo de cuenta a crear.
             try:
                 userType = int(userType)
-                user, usuario = crearUsuarioYPerfil(
-                    username, userlastname, userlastname2, useremail, registerPassword, userType, userphone
-                )
-                messages.success(request, f'El usuario {useremail} ha sido creado exitosamente.')
-                return redirect('core:signInUp')
-            except Group.DoesNotExist:
-                messages.error(request, 'Tipo de usuario inválido.')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-            except Exception as e:
-                messages.error(request, f'Error creando usuario: {e}')
-                return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
+            except (ValueError, TypeError):
+                userType = 1
+        else:
+            # Autorregistro público: nunca se confía el userType del cliente.
+            # Solo el dominio institucional puede autoasignarse Profesor; el resto, Tutor.
+            userType = 4 if '@liceoemperadores.edu.mx' in useremail else 1
 
-        # GET: mostrar solo el registro
-        return render(request, 'Login/siginup.html', {'is_staff': True, 'only_register': True})
-
-    else:
-        # No autenticado: login y registro normal
-        if request.method == "POST":
-            # Detectar si es login o registro
-            if 'useremail' in request.POST:
-                # Es registro
-                username = request.POST.get("username", "").title().strip()
-                userlastname = request.POST.get("userlastname", "").title().strip()
-                userlastname2 = request.POST.get("userlastname2", "").title().strip()
-                useremail = request.POST.get("useremail").lower()
-                registerPassword = request.POST.get("password")
-                confirmPassword = request.POST.get("confirmPassword")
-                userType = int(request.POST.get("userType")) if request.POST.get("userType") else 1
-                userphone = request.POST.get("userphone")
-                
-                if '@liceoemperadores.edu.mx' in useremail:
-                    userType = 4  # Profesor
-
-                # Validaciones
-                if User.objects.filter(email=useremail).exists():
-                    messages.error(request, 'El correo electrónico ya está en uso.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-                
-                if not all([username, userlastname, useremail, registerPassword, confirmPassword]):
-                    messages.error(request, 'Por favor, completa todos los campos obligatorios.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-                
-                if registerPassword != confirmPassword:
-                    messages.error(request, 'Las contraseñas no coinciden.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-
-                try:
-                    user, usuario = crearUsuarioYPerfil(
-                        username, userlastname, userlastname2, useremail, registerPassword, userType, userphone,
-                        is_active=False
-                    )
-                    verificacion = VerificacionEmail.objects.create(user=user)
-                    try:
-                        enviar_verificacion_email(user, verificacion.token)
-                        messages.success(request, 'Cuenta creada. Revisa tu correo para verificar tu cuenta antes de iniciar sesión.')
-                    except Exception as email_err:
-                        logger.error(f"Error enviando verificación a {useremail}: {email_err}")
-                        messages.warning(request, 'Cuenta creada pero no se pudo enviar el correo de verificación. Contacta al administrador.')
-                    return redirect('core:signInUp')
-                except Group.DoesNotExist:
-                    messages.error(request, 'Tipo de usuario inválido.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-                except Exception as e:
-                    messages.error(request, f'Error creando usuario: {e}')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-            
+        try:
+            user, usuario = crearUsuarioYPerfil(
+                username, userlastname, userlastname2, useremail, password, userType, userphone,
+                is_active=is_staff,  # staff activa directo; público espera verificación
+            )
+            if is_staff:
+                messages.success(request, f'Usuario {useremail} creado exitosamente.')
+                return redirect('core:register')
             else:
-                # Es login - no necesita capitalización
-                correo = request.POST.get("username")
-                contrasena = request.POST.get("password")
+                verificacion = VerificacionEmail.objects.create(user=user)
+                try:
+                    enviar_verificacion_email(user, verificacion.token)
+                    messages.success(request, 'Cuenta creada. Revisa tu correo para verificarla.')
+                except Exception as email_err:
+                    logger.error(f"Error enviando verificación a {useremail}: {email_err}")
+                    messages.warning(request, 'Cuenta creada, pero no se pudo enviar el correo. Contacta al administrador.')
+                return redirect('core:signInUp')
 
-                if not correo or not contrasena:
-                    messages.error(request, 'Por favor, ingresa tu correo y contraseña.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
-                
-                user = authenticate(request, username=correo, password=contrasena)
-                if user is not None:
-                    login(request, user)
-                    messages.success(request, 'Inicio de sesión exitoso.')
-                    return redirect('core:dashboard')
-                else:
-                    if User.objects.filter(email=correo).exists():
-                        messages.error(request, 'Contraseña incorrecta.')
-                    else:
-                        messages.error(request, 'No existe una cuenta con ese correo electrónico.')
-                    return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+        except Group.DoesNotExist:
+            messages.error(request, 'Tipo de usuario inválido.')
+            return render(request, 'Login/register.html', ctx)
+        except Exception as e:
+            messages.error(request, f'Error al crear la cuenta: {e}')
+            return render(request, 'Login/register.html', ctx)
 
-        return render(request, 'Login/siginup.html', {'recaptcha_site_key': settings.SITE_KEY})
+    return render(request, 'Login/register.html', {'is_staff': is_staff})
 
 def verificar_email(request, token):
     try:
@@ -333,6 +309,17 @@ def verificar_email(request, token):
 
     messages.success(request, '¡Cuenta verificada! Ya puedes iniciar sesión.')
     return redirect('core:signInUp')
+
+
+def service_worker(request):
+    """
+    Sirve el service worker en la raíz del sitio (/sw.js) en lugar de /static/js/sw.js,
+    para que su scope cubra todo el dominio y no solo la carpeta de estáticos.
+    """
+    sw_path = finders.find('js/sw.js')
+    with open(sw_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    return HttpResponse(content, content_type='application/javascript')
 
 
 def dashboard(request):
@@ -436,7 +423,8 @@ def students(request):
             'materno': student.materno,
             'nivel': getChoiceLabel(NIVELEDUCATIVO, student.nivelEducativo.nivel),
             'grupo': getChoiceLabel(GRUPO, student.nivelEducativo.grupo),
-            'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado)
+            'grado': getChoiceLabel(GRADO, student.nivelEducativo.grado),
+            'is_active': student.is_active,
         })
 
     if students_list:
@@ -597,7 +585,7 @@ def user_list_view(request):
 
         users = Usuarios.objects.filter(
             groupId__name__in=["Tutor", "Empleado"]
-        ).select_related('groupId')
+        ).select_related('groupId', 'user')
         # Aplicar filtros
         if nombre:
             users = users.filter(nombre__icontains=nombre)
@@ -637,6 +625,7 @@ def user_list_view(request):
                 'email': user.email,
                 'tipo': grupo,
                 'alumnos': alumnos_map.get(user.id, '') if user.groupId.name == 'Tutor' else '',
+                'is_active': user.user.is_active,
             })
 
         paginator = Paginator(usersData, 10) # Muestra 10 usuarios por página
@@ -715,6 +704,42 @@ def account_settings_form_view(request):
     # GET: mostrar datos actuales
     return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
             
+@login_required
+@require_POST
+def toggle_usuario_active(request, usuario_id):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Sin permiso'}, status=403)
+    try:
+        usuario = Usuarios.objects.select_related('user', 'groupId').get(id=usuario_id)
+        new_state = not usuario.user.is_active
+        usuario.user.is_active = new_state
+        usuario.user.save()
+        # Cascada: desactivar tutor → desactiva todos sus alumnos
+        if not new_state and usuario.groupId.name == 'Tutor':
+            try:
+                tutor = Tutor.objects.get(usuario=usuario)
+                Alumnos.objects.filter(tutorId=tutor).update(is_active=False)
+            except Tutor.DoesNotExist:
+                pass
+        return JsonResponse({'success': True, 'is_active': new_state})
+    except Usuarios.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Usuario no encontrado'}, status=404)
+
+
+@login_required
+@require_POST
+def toggle_alumno_active(request, alumno_id):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Sin permiso'}, status=403)
+    try:
+        alumno = Alumnos.objects.get(id=alumno_id)
+        alumno.is_active = not alumno.is_active
+        alumno.save()
+        return JsonResponse({'success': True, 'is_active': alumno.is_active})
+    except Alumnos.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Alumno no encontrado'}, status=404)
+
+
 def custom_404(request, exception):
     """Vista personalizada para error 404"""
     logger.warning(f"Error 404: {request.path} - IP: {request.META.get('REMOTE_ADDR')}")
