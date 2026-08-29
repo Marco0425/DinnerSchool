@@ -137,7 +137,11 @@
         {% for pedido in order_list %}
         <tr class="hover:bg-gray-50">
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            {% if pedido.alumnoId %}
+            {% if pedido.esVentaDirecta %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Venta Directa{% if pedido.orden.clienteNombre %} — {{ pedido.orden.clienteNombre }}{% endif %}
+              </span>
+            {% elif pedido.alumnoId %}
               {{ pedido.alumnoId.nombre }} {{ pedido.alumnoId.paterno }} {{ pedido.alumnoId.materno }}
             {% elif pedido.profesorId %}
               {{ pedido.profesorId.usuario.nombre }} {{ pedido.profesorId.usuario.paterno }} {{ pedido.profesorId.usuario.materno }}

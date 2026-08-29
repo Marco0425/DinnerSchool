@@ -14,6 +14,7 @@ urlpatterns = [
     path("order/", views.order, name="order"),
     path("order/history/", views.orderHistory, name="orderHistory"),
     path("order/create/", views.createOrder, name="createOrder"),
+    path("order/direct/", views.directSale, name="createDirectOrder"),
     path("credit/", views.credit, name="credit"),
     path("credit/create/", views.createCredit, name="createCredit"),
     path("ads/", views.ads, name="ads"),

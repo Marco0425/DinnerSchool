@@ -51,6 +51,8 @@ class Orden(models.Model):
     encargadoId = models.ForeignKey(Empleados, on_delete=models.CASCADE, verbose_name='Encargado', null=True, blank=True, related_name='encargado_ordenes')
     creado = models.DateTimeField(auto_now_add=True, verbose_name='Creado')
     modificado = models.DateTimeField(auto_now=True, verbose_name='Modificado')
+    esVentaDirecta = models.BooleanField(default=False, verbose_name='Venta Directa')
+    clienteNombre = models.CharField(max_length=100, blank=True, null=True, verbose_name='Nombre del Cliente')
 
     def get_status_label(self):
         return dict(STATUSPEDIDO).get(self.status)
@@ -82,6 +84,7 @@ class Pedido(models.Model):
     cantidad = models.PositiveIntegerField(default=1, verbose_name='Cantidad')
     creado = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
     modificado = models.DateTimeField(auto_now=True, verbose_name='Última Modificación')
+    esVentaDirecta = models.BooleanField(default=False, verbose_name='Venta Directa')
 
     def get_status_label(self):
         """Devuelve la etiqueta legible del estado del pedido."""

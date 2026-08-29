@@ -379,8 +379,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar el set de IDs al cargar la página
   fetchOrderIds().then(ids => { currentOrderIds = new Set(ids); });
 
-  // Revisar cada 5 segundos
-  setInterval(checkForNewOrders, 5000);
+  // El WebSocket (kanbanNotifications.js) avisa al instante cuando hay pedido nuevo,
+  // así que este poll queda solo como respaldo por si el socket se cae; se espacía
+  // a 30s en vez de 5s para no duplicar la consulta pesada del kanban innecesariamente.
+  setInterval(checkForNewOrders, 30000);
+  // Expuesta para que kanbanNotifications.js (WebSocket) pueda forzar un refresh inmediato
+  window.checkForNewOrders = checkForNewOrders;
   // Cargar pedidos por AJAX y renderizar cards
   fetch('/comedor/kanban/orders/')
     .then(response => response.json())
@@ -433,9 +437,12 @@ function createOrderCard(order) {
   div.innerHTML = `
     <div class="flex justify-between items-start mb-3">
       <div>
-        <h3 class="font-bold text-gray-900 mb-1">${order.user_name}</h3>
+        <h3 class="font-bold text-gray-900 mb-1">
+          ${order.user_name}
+          ${order.is_venta_directa ? '<span class="inline-block align-middle ml-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Venta Directa</span>' : ''}
+        </h3>
         <p class="text-sm text-gray-600">
-          ${order.is_profesor ? '<strong>Profesor</strong>' : `<strong>${order.user_level}</strong>`}
+          ${order.is_venta_directa ? '' : order.is_profesor ? '<strong>Profesor</strong>' : `<strong>${order.user_level}</strong>`}
         </p>
       </div>
       <div class="text-right">

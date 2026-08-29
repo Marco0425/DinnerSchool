@@ -273,6 +273,33 @@
         </div>
       </a>
       {% endif %} {% if is_admin %}
+      <!-- Tarjeta de Venta Directa con icono SVG y nombre -->
+      <a
+        href="/comedor/order/direct/"
+        class="group block bg-white p-6 rounded-lg shadow-custom hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 border border-gray-200"
+      >
+        <div class="flex flex-col items-center">
+          <!-- Icono de caja registradora -->
+          <svg
+            class="w-12 h-12 text-green-600 mb-3 group-hover:text-green-700 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M5 10V6a2 2 0 012-2h10a2 2 0 012 2v4m-14 0v8a2 2 0 002 2h10a2 2 0 002-2v-8M9 14h6M9 17h3"
+            ></path>
+          </svg>
+          <span
+            class="text-lg font-semibold text-gray-700 group-hover:text-gray-900"
+            >Venta Directa</span
+          >
+        </div>
+      </a>
       <!-- Tarjeta de Anuncios con icono SVG y nombre -->
       <a
         href="/comedor/ads/"

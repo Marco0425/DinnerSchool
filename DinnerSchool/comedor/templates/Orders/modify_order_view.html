@@ -291,6 +291,11 @@
     confirmYesBtn.addEventListener('click', function () {
         confirmModal.classList.add('hidden');
         confirmModal.classList.remove('flex');
+        // form.submit() vía JS no dispara el evento 'submit' (no lo cachan los
+        // listeners globales), así que hay que bloquear el botón aquí mismo
+        // para evitar doble envío si el usuario da doble clic.
+        confirmYesBtn.disabled = true;
+        submitBtn.disabled = true;
         document.getElementById('modifyOrderForm').submit();
     });
 
