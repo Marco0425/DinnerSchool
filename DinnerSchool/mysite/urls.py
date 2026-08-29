@@ -19,9 +19,11 @@ from django.urls import include, path
 from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
+from core.views import service_worker
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/core/dashboard/', permanent=True)),
+    path('sw.js', service_worker, name='sw.js'),
     path("comedor/", include("comedor.urls")),
     path("core/", include("core.urls")),
     path('admin/', admin.site.urls),

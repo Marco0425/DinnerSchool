@@ -18,4 +18,4 @@ WORKDIR /app/DinnerSchool
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --no-input && python manage.py crear_grupos && python manage.py collectstatic --no-input && gunicorn mysite.wsgi:application --bind 0.0.0.0:8000 --workers 3"]
+CMD ["sh", "-c", "python manage.py migrate --no-input && python manage.py crear_grupos && python manage.py collectstatic --no-input && daphne -b 0.0.0.0 -p 8000 mysite.asgi:application"]

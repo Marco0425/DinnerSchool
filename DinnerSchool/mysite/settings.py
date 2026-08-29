@@ -36,9 +36,17 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://dinnerschool.onrender.com',
 ]
+_extra_csrf_origins = os.getenv('EXTRA_CSRF_TRUSTED_ORIGINS', '')
+if _extra_csrf_origins:
+    CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _extra_csrf_origins.split(',') if o.strip()])
+
+# Confía en el header que pone el proxy (Render, ngrok) para saber que la conexión
+# real del navegador es HTTPS, aunque internamente llegue como HTTP al contenedor.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',  # Debe ir primero: sustituye el runserver de Django por el de Channels
     'core.apps.CoreConfig',
     'comedor.apps.ComedorConfig',
     'django.contrib.admin',
@@ -50,7 +58,18 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',  # Para archivos estáticos
     'cloudinary_storage',  # Cloudinary para imágenes
     'cloudinary',  # Cloudinary
+    'channels',
 ]
+
+ASGI_APPLICATION = 'mysite.asgi.application'
+
+# Channel layer en memoria: alcanza porque Render corre una sola instancia/proceso (Daphne).
+# Si en algún momento se escala a más de un worker/instancia, hay que migrar a channels_redis.
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
