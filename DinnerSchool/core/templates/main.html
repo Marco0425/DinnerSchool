@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cafetería Escolar</title>
     <link rel="icon" type="image/png" href="{% static 'img/icon/icon.png' %}" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="{% static 'manifest.json' %}" />
+    <meta name="theme-color" content="#dc2626" />
+    <link rel="apple-touch-icon" href="{% static 'img/logos/icon-192.png' %}" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Certo" />
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link
@@ -32,6 +41,15 @@
         if (btn.dataset.loadingText) btn.textContent = btn.dataset.loadingText;
       });
     });
+
+    // Registro del service worker (PWA)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (err) {
+          console.error('Error registrando el service worker:', err);
+        });
+      });
+    }
   </script>
   </body>
 </html>
