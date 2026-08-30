@@ -5,7 +5,7 @@
   <div class="flex flex-col items-center mb-6">
     <!-- Logo de la cafetería -->
     <img
-      src="{% static 'img/logos/logo.png' %}"
+      src="{% static 'img/logos/logo.svg' %}"
       alt="Logo de la Cafetería Certo"
       class="w-20 h-20 mb-4 rounded-full border-2 border-primary-red p-1 object-cover"
     />
@@ -51,7 +51,7 @@
         multiple
       >
       {% for ingrediente in ingredientes %}
-        <option value="{{ ingrediente.id }}" {% if platillo and ingrediente.id|stringformat:'s' in platillo.ingredientes %}selected{% endif %}>{{ ingrediente.nombre }}</option>
+        <option value="{{ ingrediente.id }}" {% if ingrediente.id|stringformat:'s' in selected_ingredientes %}selected{% endif %}>{{ ingrediente.nombre }}</option>
       {% endfor %}
       </select>
     </div>

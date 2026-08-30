@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from django.contrib.auth import logout as django_logout
+from django.db.models import ProtectedError
 from comedor.models import Ingredientes, Noticias, Pedido, Credito, Orden
 from core.models import Empleados
 from django.views.decorators.http import require_POST, require_http_methods
@@ -61,9 +62,7 @@ def reset_password(request):
         # Por seguridad, generar una contraseña temporal
         temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
-        # Enviar primero: solo si el correo llega de verdad se aplica el cambio.
-        # Así nunca se cambia la contraseña de alguien sin que la reciba, y nunca
-        # se revela la contraseña temporal en la respuesta HTTP.
+        # Solo se cambia la contraseña si el correo se envía con éxito.
         try:
             enviar_contrasena_temporal(user, temp_password)
         except Exception as email_err:
@@ -134,7 +133,25 @@ def bulk_delete(request, model_name, redirect_url):
                 usuario.delete()
         else:
             print(f"[bulk_delete] Eliminando objetos de {Model} con IDs: {valid_ids}")
-            Model.objects.filter(id__in=valid_ids).delete()
+            eliminados = 0
+            protegidos = []
+            for obj in Model.objects.filter(id__in=valid_ids):
+                try:
+                    obj.delete()
+                    eliminados += 1
+                except ProtectedError:
+                    protegidos.append(str(obj))
+
+            if protegidos:
+                nombres = ', '.join(protegidos[:5])
+                if len(protegidos) > 5:
+                    nombres += f' y {len(protegidos) - 5} más'
+                messages.error(
+                    request,
+                    f"No se pudo eliminar: {nombres}. Tiene(n) pedidos u otros registros asociados."
+                )
+            if eliminados:
+                messages.success(request, f"{eliminados} elemento(s) eliminado(s) correctamente.")
     return redirect(redirect_url)
 
 def logout_view(request):
@@ -207,7 +224,9 @@ def signInUp(request):
             messages.error(request, 'Por favor, ingresa tu correo y contraseña.')
             return render(request, 'Login/siginup.html')
 
-        user = authenticate(request, username=correo, password=contrasena)
+        # Autentica por username, no por email: se busca el usuario por email primero.
+        user_obj = User.objects.filter(email__iexact=correo).first()
+        user = authenticate(request, username=user_obj.username, password=contrasena) if user_obj else None
         if user is not None:
             login(request, user)
             return redirect('core:dashboard')

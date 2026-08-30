@@ -74,8 +74,6 @@ window.CartCommon = (function () {
             ${item.notas ? '<p class="text-sm text-gray-600">Notas: </p>' : ''}
             <p class="text-sm font-medium text-gray-900">Subtotal: $${item.subtotal.toFixed(2)}</p>
           `;
-          // Los campos de texto libre (nombre de platillo, notas) se llenan con
-          // textContent para no abrir una vía de inyección de HTML.
           const [h4, turnoP, cantidadP, notasP] = info.querySelectorAll("h4, p");
           h4.textContent = item.platillo_nombre;
           turnoP.textContent = `Turno: ${item.turno_text}`;

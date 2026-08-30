@@ -40,8 +40,7 @@ _extra_csrf_origins = os.getenv('EXTRA_CSRF_TRUSTED_ORIGINS', '')
 if _extra_csrf_origins:
     CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _extra_csrf_origins.split(',') if o.strip()])
 
-# Confía en el header que pone el proxy (Render, ngrok) para saber que la conexión
-# real del navegador es HTTPS, aunque internamente llegue como HTTP al contenedor.
+# Confía en el header del proxy para detectar HTTPS (Render, ngrok).
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
@@ -63,8 +62,7 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = 'mysite.asgi.application'
 
-# Channel layer en memoria: alcanza porque Render corre una sola instancia/proceso (Daphne).
-# Si en algún momento se escala a más de un worker/instancia, hay que migrar a channels_redis.
+# Si se escala a más de una instancia, migrar a channels_redis.
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',

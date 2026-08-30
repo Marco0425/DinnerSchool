@@ -68,8 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Enviar orden
   submitOrderBtn.addEventListener("click", function () {
-    // form.submit() por JS no dispara el evento 'submit', así que el bloqueo
-    // global de main.html no aplica aquí: hay que evitar el doble clic a mano.
+    // form.submit() no dispara 'submit', hay que evitar el doble clic a mano.
     if (submitOrderBtn.disabled) return;
 
     const cart = cartCtl.getCart();

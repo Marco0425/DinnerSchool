@@ -617,18 +617,18 @@ def orderHistory(request):
         return redirect('core:signInUp')
 
 
-def _crear_ordenes_desde_carrito(cart_items, fecha, orden_extra, pedido_extra_fn=None):
-    """
-    Agrupa los items del carrito por turno y crea una Orden (con sus Pedidos)
-    por cada turno. Usado tanto por createOrder (pedido de alumno/profesor,
-    con crédito) como por directSale (venta de mostrador, sin crédito) para
-    no duplicar el algoritmo de agrupación/creación entre las dos vistas.
+def _nombres_ingredientes(platillo, all_ingredients):
+    if not platillo.ingredientes:
+        return []
+    ids = platillo.ingredientes.strip('[]').replace("'", "").split(', ')
+    return [
+        all_ingredients[int(ing)]
+        for ing in ids
+        if ing.strip() and ing.strip().lstrip('-').isdigit() and int(ing) in all_ingredients
+    ]
 
-    orden_extra: dict de campos fijos para Orden.objects.create (además de
-    turno/fecha/total, que ya arma este helper).
-    pedido_extra_fn: función opcional item -> dict de campos extra para Pedido
-    (por ejemplo alumnoId/profesorId, o esVentaDirecta/encargadoId).
-    """
+
+def _crear_ordenes_desde_carrito(cart_items, fecha, orden_extra, pedido_extra_fn=None):
     items_por_turno = {}
     for item in cart_items:
         items_por_turno.setdefault(item['turno'], []).append(item)
@@ -729,20 +729,12 @@ def directSale(request):
     platillos = Platillo.objects.filter(disponible=True)
     all_ingredients = {ing.id: ing.nombre for ing in Ingredientes.objects.all()}
 
-    def _ingredientes_de(platillo):
-        ids = platillo.ingredientes.strip('[]').replace("'", "").split(', ')
-        return [
-            all_ingredients[int(ing)]
-            for ing in ids
-            if ing.strip() and ing.strip().lstrip('-').isdigit() and int(ing) in all_ingredients
-        ]
-
     context = {
         "Platillos": [
             {
                 "id": platillo.id,
                 "nombre": platillo.nombre,
-                "ingredientes": json.dumps(_ingredientes_de(platillo)),
+                "ingredientes": json.dumps(_nombres_ingredientes(platillo, all_ingredients)),
                 "precio": float(platillo.precio)
             } for platillo in platillos
         ],
@@ -911,7 +903,8 @@ def createOrder(request):
     is_admin = request.user.is_staff
     
     platillos = Platillo.objects.all()
-    
+    all_ingredients = {ing.id: ing.nombre for ing in Ingredientes.objects.all()}
+
     if is_tutor:
         platillos = Platillo.objects.all().filter(disponible=True)
         # Para tutores: solo mostrar sus alumnos, no el campo de selección de usuario
@@ -923,7 +916,7 @@ def createOrder(request):
                 {
                     "id": platillo.id,
                     "nombre": platillo.nombre,
-                    "ingredientes": json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                    "ingredientes": json.dumps(_nombres_ingredientes(platillo, all_ingredients)),
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
@@ -948,7 +941,7 @@ def createOrder(request):
                 {
                     "id": platillo.id,
                     "nombre": platillo.nombre,
-                    "ingredientes": json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                    "ingredientes": json.dumps(_nombres_ingredientes(platillo, all_ingredients)),
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
@@ -986,7 +979,7 @@ def createOrder(request):
                 {
                     "id": platillo.id,
                     "nombre": platillo.nombre,
-                    "ingredientes": json.dumps([Ingredientes.objects.get(id=int(ing)).nombre for ing in platillo.ingredientes.strip('[]').replace("'", "").split(', ') if ing]),
+                    "ingredientes": json.dumps(_nombres_ingredientes(platillo, all_ingredients)),
                     "precio": float(platillo.precio)
                 } for platillo in platillos
             ],
@@ -1119,16 +1112,21 @@ def createSaucer(request):
 
     ingredientes = Ingredientes.objects.all()
 
+    def _selected_ids(pl):
+        if not pl or not pl.ingredientes:
+            return []
+        return [i.strip() for i in pl.ingredientes.strip('[]').replace("'", "").split(', ') if i.strip()]
+
     if request.method == "POST":
         nombre = request.POST.get("platillo", "").title().strip()  # Capitalizar nombre del platillo
         ingredientes_ids = request.POST.getlist("ingredientes")
         precio = request.POST.get("precio")
         disponible = False if request.POST.get("disponible") == None else True
-        
+
         if not precio:
             messages.error(request, "Por favor, ingresa un precio para el platillo.")
-            return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
-        
+            return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo, 'selected_ingredientes': ingredientes_ids})
+
         if nombre and ingredientes_ids:
             if platillo:
                 platillo.nombre = nombre
@@ -1144,11 +1142,11 @@ def createSaucer(request):
             return redirect('comedor:saucers')
         else:
             messages.error(request, "Por favor, ingresa un nombre para el platillo y selecciona ingredientes.")
-        
+
         # Si hay error, mostrar el form con el contexto
-        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
-    
-    return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo})
+        return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo, 'selected_ingredientes': ingredientes_ids})
+
+    return render(request, 'Saucer/saucer_form_view.html', {'ingredientes': ingredientes, 'platillo': platillo, 'selected_ingredientes': _selected_ids(platillo)})
 
 def generarReporte(request):
     """Vista para generar y descargar reporte desde Django."""
@@ -1274,8 +1272,9 @@ def modify_order_view(request, orden_id):
 
         context = {
             'orden': orden,
-            'items_data_json': json.dumps(items_data),
-            'platillos_json': json.dumps(platillos_json),
+            # No usar json.dumps(): |json_script ya serializa.
+            'items_data_json': items_data,
+            'platillos_json': platillos_json,
             'turno_label': orden.get_turno_label(),
         }
 

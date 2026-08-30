@@ -30,13 +30,11 @@
   }
 
   function showToast(data) {
-    // Todo el contenido dinámico (titulo/turno/total pueden venir de texto libre
-    // como el nombre de cliente de una venta directa) se inserta con textContent,
-    // nunca con innerHTML, para no abrir una vía de XSS almacenado hacia otros admins.
+    // Contenido dinámico vía textContent, nunca innerHTML (evita XSS).
     const container = ensureToastContainer();
     const toast = document.createElement('div');
     toast.style.cssText =
-      'background:#fff; border-left:4px solid #dc2626; box-shadow:0 4px 12px rgba(0,0,0,0.15); border-radius:8px; padding:12px 16px; min-width:260px; font-family:inherit;';
+      'background:#fff; border-left:4px solid #e62e2d; box-shadow:0 4px 12px rgba(0,0,0,0.15); border-radius:8px; padding:12px 16px; min-width:260px; font-family:inherit;';
 
     const header = document.createElement('div');
     header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;';

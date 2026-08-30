@@ -379,11 +379,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar el set de IDs al cargar la página
   fetchOrderIds().then(ids => { currentOrderIds = new Set(ids); });
 
-  // El WebSocket (kanbanNotifications.js) avisa al instante cuando hay pedido nuevo,
-  // así que este poll queda solo como respaldo por si el socket se cae; se espacía
-  // a 30s en vez de 5s para no duplicar la consulta pesada del kanban innecesariamente.
+  // Respaldo del WebSocket por si se cae la conexión.
   setInterval(checkForNewOrders, 30000);
-  // Expuesta para que kanbanNotifications.js (WebSocket) pueda forzar un refresh inmediato
   window.checkForNewOrders = checkForNewOrders;
   // Cargar pedidos por AJAX y renderizar cards
   fetch('/comedor/kanban/orders/')
