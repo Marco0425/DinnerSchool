@@ -23,8 +23,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first para HTML (para no servir vistas obsoletas de pedidos/kanban),
-// cache-first para estáticos.
+// Network-first para HTML, cache-first para estáticos.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;

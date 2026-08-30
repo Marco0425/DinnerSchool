@@ -481,7 +481,7 @@ function initializeTableFilters() {
                 } else {
                     indicator.innerHTML = '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"/>';
                 }
-                indicator.style.color = '#dc2626'; // text-red-600
+                indicator.style.color = '#e62e2d'; // rojo de marca
             } else {
                 // Restaurar icono original de doble flecha
                 indicator.innerHTML = '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 20V7m0 13-4-4m4 4 4-4m4-12v13m0-13 4 4m-4-4-4 4"/>';

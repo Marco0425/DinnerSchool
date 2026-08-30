@@ -1,30 +1,125 @@
-body {
-    font-family: "Inter", sans-serif;
-    background-color: #f3f4f6; /* Un gris claro para el fondo */
+:root {
+  --paper: #f6f5f2;
+  --surface: #ffffff;
+  --ink: #1c1b1a;
+  --ink-soft: #63615c;
+  --ink-faint: #8a8781;
+  --line: #e4e1da;
+  --line-strong: #cfcbc2;
+  --brand: #e62e2d;
+  --brand-dark: #a52120;
+  --brand-light: #fceaea;
+  --ok: #2f6b3a;
+  --ok-bg: #e6f0e7;
+  --warn: #a66a0a;
+  --warn-bg: #f6ecd9;
+  --pending: #6b6862;
+  --pending-bg: #ececea;
+  --font-display: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-body: "IBM Plex Sans", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
 }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.border-t-8.border-primary-red {
+  border-top-width: 8px;
+  border-top-style: solid;
+  border-top-color: var(--brand);
+}
+
 .bg-primary-red {
-    background-color: #dc2626; /* Rojo del logo */
+  background-color: var(--brand);
 }
 .text-primary-red {
-    color: #dc2626; /* Rojo del logo */
+  color: var(--brand);
 }
 .border-primary-red {
-    border-color: #dc2626; /* Rojo del logo */
-}
-/* Oculta los contenedores inicialmente para ser controlados por JS */
-.hidden-form {
-    display: none;
+  border-color: var(--brand);
 }
 
 .shadow-custom {
-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(28, 27, 26, 0.04), 0 8px 24px -8px rgba(28, 27, 26, 0.12);
 }
-/* Estilos para el arrastrar y soltar */
+
+thead.bg-gray-100 th,
+thead.bg-gray-200 th {
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  border-bottom: 2px solid var(--ink);
+}
+thead.bg-gray-100,
+thead.bg-gray-200 {
+  background: transparent;
+}
+
+.chip {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+.chip:hover {
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+.chip:active {
+  transform: scale(0.97);
+}
+.chip-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.chip-primary:hover {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+  color: #fff;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-pending { background: var(--pending-bg); color: var(--pending); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-ok { background: var(--ok-bg); color: var(--ok); }
+.badge-brand { background: var(--brand-light); color: var(--brand-dark); }
+
+.hidden-form {
+  display: none;
+}
+
 .dragging {
-opacity: 0.5;
-border: 2px dashed #dc2626;
+  opacity: 0.5;
+  border: 2px dashed var(--brand);
 }
 .drag-over {
-background-color: #fbd38d; /* Un color suave para indicar que se puede soltar */
+  background-color: #fbd38d;
 }

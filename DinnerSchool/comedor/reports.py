@@ -26,7 +26,7 @@ class ReporteGastosDiarios:
         
         # Definir colores del tema (puedes cambiar estos colores por los de tu front)
         colores = {
-            'header_bg': 'dc2626',      # Azul principal
+            'header_bg': 'e62e2d',      # Rojo de marca (Certo)
             'header_text': 'FFFFFFFF',     # Blanco
             'row_even': 'FFF8F9FA',       # Gris muy claro
             'row_odd': 'FFFFFFFF',        # Blanco

@@ -9,7 +9,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="{% static 'manifest.json' %}" />
-    <meta name="theme-color" content="#dc2626" />
+    <meta name="theme-color" content="#e62e2d" />
     <link rel="apple-touch-icon" href="{% static 'img/logos/icon-192.png' %}" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -17,15 +17,38 @@
     <meta name="apple-mobile-web-app-title" content="Certo" />
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              paper: '#F6F5F2',
+              ink: '#1C1B1A',
+              'ink-soft': '#63615C',
+              'ink-faint': '#8A8781',
+              line: '#E4E1DA',
+              'line-strong': '#CFCBC2',
+              brand: { DEFAULT: '#E62E2D', dark: '#A52120', light: '#FCEAEA' },
+              ok: { DEFAULT: '#2F6B3A', bg: '#E6F0E7' },
+              warn: { DEFAULT: '#A66A0A', bg: '#F6ECD9' },
+              pending: { DEFAULT: '#6B6862', bg: '#ECECEA' },
+            },
+            fontFamily: {
+              display: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+              body: ['"IBM Plex Sans"', 'ui-sans-serif', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
     <link
       href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
       rel="stylesheet"
     />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Carga de la fuente Inter de Google Fonts -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
