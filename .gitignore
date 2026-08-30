@@ -78,6 +78,8 @@ Thumbs.db
 # Archivos de respaldo
 *.bak
 *.backup
+*.dump
+backups/
 
 # Ignorar entorno virtual
 entorno/
