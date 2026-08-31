@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first para HTML, cache-first para estáticos.
+// Network-first para HTML, stale-while-revalidate para estáticos.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -32,16 +32,21 @@ self.addEventListener('fetch', (event) => {
   const isStatic = url.pathname.startsWith('/static/');
 
   if (isStatic) {
+    // Sirve lo cacheado al instante (rápido/offline) pero SIEMPRE relanza
+    // la petición de red en paralelo y actualiza la caché para la próxima
+    // vez. Así un deploy nuevo se refleja en la siguiente carga sin
+    // depender de que alguien suba CACHE_NAME manualmente.
     event.respondWith(
       caches.match(request).then((cached) => {
-        return (
-          cached ||
-          fetch(request).then((response) => {
+        const networkFetch = fetch(request)
+          .then((response) => {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             return response;
           })
-        );
+          .catch(() => cached);
+
+        return cached || networkFetch;
       })
     );
     return;
