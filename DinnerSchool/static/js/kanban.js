@@ -299,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Eliminar cards de órdenes canceladas
         document.querySelectorAll('[id^="order-"]').forEach(card => {
-          const cardId = card.id.replace('order-', '');
+          const cardId = Number(card.id.replace('order-', ''));
           if (!activeOrderIds.has(cardId)) {
             card.remove();
           }
