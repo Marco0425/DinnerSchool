@@ -29,12 +29,16 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '.onrender.com',  # Para Render.com
     'dinnerschool.onrender.com',  # Tu dominio específico
+    'cafeteriacerto.com',
+    'www.cafeteriacerto.com',
 ]
 
 # Configuración CSRF y seguridad
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://dinnerschool.onrender.com',
+    'https://cafeteriacerto.com',
+    'https://www.cafeteriacerto.com',
 ]
 _extra_csrf_origins = os.getenv('EXTRA_CSRF_TRUSTED_ORIGINS', '')
 if _extra_csrf_origins:
