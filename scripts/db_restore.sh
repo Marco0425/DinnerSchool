@@ -28,9 +28,13 @@ until docker compose exec -T db pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/nul
   sleep 1
 done
 
+echo "Reiniciando el schema 'public' para evitar conflictos de dependencias..."
+docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" \
+  -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
 echo "Restaurando $ARCHIVO -> $DB_NAME ..."
 cat "$ARCHIVO" | docker compose exec -T db pg_restore -U "$DB_USER" -d "$DB_NAME" \
-  --clean --if-exists --no-owner --no-privileges
+  --no-owner --no-privileges
 
 echo "Restauración completa. Corriendo migraciones por si faltara alguna..."
 docker compose exec -T web python manage.py migrate --no-input || true
