@@ -1,11 +1,6 @@
 function dragStart(event) {
   event.dataTransfer.setData("text/plain", event.target.id);
   event.target.classList.add("dragging");
-
-  // Si es una orden agrupada, también pasar los IDs de pedidos individuales
-  if (event.target.dataset.pedidoIds) {
-    event.dataTransfer.setData("text/pedido-ids", event.target.dataset.pedidoIds);
-  }
 }
 
 function allowDrop(event) {
@@ -25,7 +20,6 @@ function dragLeave(event) {
 function drop(event) {
   event.preventDefault();
   const cardId = event.dataTransfer.getData("text/plain");
-  const pedidoIds = event.dataTransfer.getData("text/pedido-ids");
   const draggedCard = document.getElementById(cardId);
   const targetColumn = event.currentTarget;
 
@@ -48,13 +42,7 @@ function drop(event) {
       let newStatus = getStatusFromColumn(targetColumn);
 
       if (newStatus) {
-        // Si es una orden agrupada, actualizar todos los pedidos
-        if (pedidoIds) {
-          updateGroupedOrder(pedidoIds.split(','), newStatus, draggedCard);
-        } else {
-          // Orden individual (lógica original)
-          updateSingleOrder(cardId, newStatus, draggedCard);
-        }
+        updateSingleOrder(cardId, newStatus, draggedCard);
       }
     }
   }
@@ -173,15 +161,7 @@ function handleTouchEnd(e) {
 
           if (newStatus) {
             const cardId = draggedElement.id;
-            const pedidoIds = draggedElement.dataset.pedidoIds;
-
-            // Si es una orden agrupada, actualizar todos los pedidos
-            if (pedidoIds) {
-              updateGroupedOrder(pedidoIds.split(','), newStatus, draggedElement);
-            } else {
-              // Orden individual (lógica original)
-              updateSingleOrder(cardId, newStatus, draggedElement);
-            }
+            updateSingleOrder(cardId, newStatus, draggedElement);
           }
         }
       }
@@ -207,49 +187,6 @@ function getStatusFromColumn(column) {
   return statusMap[columnId] || null;
 }
 
-async function updateGroupedOrder(pedidoIds, newStatus, cardElement) {
-  try {
-    const userIdElement = document.getElementById("user-id-data");
-    const userId = userIdElement ? userIdElement.dataset.userId : null;
-
-    const assignedEmployeeId =
-      (newStatus === "en preparacion" || newStatus === "finalizado") ? userId : null;
-
-    // Actualizar cada pedido individualmente
-    const promises = pedidoIds.map((pedidoId) =>
-      fetch("/comedor/order/update-status/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({
-          order_id: `order-${pedidoId}`,
-          new_status: newStatus,
-          assigned_employee_id: assignedEmployeeId,
-        }),
-      }).then((response) => response.json())
-    );
-
-    const results = await Promise.all(promises);
-    const allSuccess = results.every((result) => result.success);
-
-    if (allSuccess) {
-      // Actualizar información del encargado en la tarjeta
-      if (results[0].encargado) {
-        const assigneeElement = cardElement.querySelector('.encargado-field');
-        if (assigneeElement) {
-          assigneeElement.innerHTML = `<strong>Encargado:</strong> ${results[0].encargado}`;
-        }
-      }
-    } else {
-      location.reload();
-    }
-  } catch (error) {
-    location.reload();
-  }
-}
-
 function updateSingleOrder(cardId, newStatus, cardElement) {
   const userIdElement = document.getElementById("user-id-data");
   const userId = userIdElement ? userIdElement.dataset.userId : null;
@@ -264,7 +201,7 @@ function updateSingleOrder(cardId, newStatus, cardElement) {
       "X-CSRFToken": getCookie("csrftoken"),
     },
     body: JSON.stringify({
-      order_id: cardId,
+      order_id: cardId.replace('order-', ''),
       new_status: newStatus,
       assigned_employee_id: assignedEmployeeId,
     }),
