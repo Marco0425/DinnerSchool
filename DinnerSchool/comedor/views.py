@@ -495,6 +495,7 @@ def order(request):
                 grouped_orders.append({
                     "id": orden.id,
                     "orden_id": orden.id,
+                    "pedido_ids": [p["id"] for p in platillos],
                     "user_name": user_name,
                     "user_level": user_level,
                     "turno": orden.get_turno_label(),
@@ -1776,6 +1777,7 @@ def kanban_orders_api(request):
         entry = {
             "id": orden.id,
             "orden_id": orden.id,
+            "pedido_ids": [p["id"] for p in platillos],
             "user_name": user_name,
             "user_level": user_level,
             "turno": orden.get_turno_label(),
