@@ -1,4 +1,4 @@
-const CACHE_NAME = 'certo-shell-v2';
+const CACHE_NAME = 'certo-shell-v3';
 const APP_SHELL = [
   '/static/css/main.css',
   '/static/img/logos/icon-192.png',
