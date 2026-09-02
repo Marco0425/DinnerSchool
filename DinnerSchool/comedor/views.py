@@ -268,6 +268,14 @@ def cancelOrder(request, pedido_id):
             # Marcar el pedido como cancelado
             pedido.status = 4  # Asumiendo que 4 = Cancelado
             pedido.save()
+
+            # Si era el último pedido activo de su Orden, cancelar también la Orden
+            # (si no, la card se queda "viva" en el kanban aunque su único pedido
+            # ya esté cancelado).
+            if pedido.orden_id and not pedido.orden.items.exclude(status=4).exists():
+                pedido.orden.status = 4
+                pedido.orden.save(update_fields=['status'])
+
             # Registrar el movimiento en CreditoDiario como positivo (reembolso)
             CreditoDiario.objects.create(
                 pedido=pedido,
@@ -1403,7 +1411,7 @@ def accountStatements(request):
                 'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} - Tutor",
                 'descripcion': ", ".join(str_alumnos_parts) if str_alumnos_parts else 'Sin alumnos asignados',
                 'tipo': 'Tutor',
-                'alumnos': alumnos_list,
+                'alumnos': json.dumps(alumnos_list),
             })
         
         # Agregar profesores
