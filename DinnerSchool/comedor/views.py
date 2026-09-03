@@ -1455,7 +1455,9 @@ def _clasificar_movimiento_credito(mov_credito):
     if pedido is None:
         if monto > 0:
             return 'credito', 'Crédito Asignado', f"Crédito asignado de ${monto}"
-        return 'Deuda', 'Deuda', f"Deuda de ${abs(monto)}"
+        if monto < 0:
+            return 'Deuda', 'Deuda', f"Deuda de ${abs(monto)}"
+        return 'Ajuste', 'Ajuste', "Ajuste de crédito sin cambio de saldo"
 
     detalle = f"Pedido #{pedido.id}"
     if pedido.platillo:

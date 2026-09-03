@@ -226,8 +226,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var html = '';
         movimientos.forEach(function (mov) {
             if (!mov) return;
-            var tipoClass = mov.tipo === 'credito' ? 'text-green-600' : 'text-red-600';
             var montoClass = (mov.monto || 0) >= 0 ? 'text-green-600' : 'text-red-600';
+            var tipoClass = montoClass;
             html += '<tr class="hover:bg-gray-50">' +
                 '<td class="py-3 px-4 whitespace-nowrap text-sm text-gray-900">' + (mov.fecha || 'N/A') + '</td>' +
                 '<td class="py-3 px-4 whitespace-nowrap text-sm font-medium ' + tipoClass + '">' + (mov.tipo_display || 'N/A') + '</td>' +
