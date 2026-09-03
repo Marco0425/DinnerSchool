@@ -1439,6 +1439,39 @@ def accountStatements(request):
     else:
         return redirect('core:signInUp')
 
+
+def _clasificar_movimiento_credito(mov_credito):
+    """
+    Determina tipo/tipo_display/descripcion de un movimiento de CreditoDiario
+    para el estado de cuenta. Un movimiento sin pedido es una asignación de
+    crédito o una deuda manual; uno con pedido se reclasifica como "Pedido
+    Cancelado" o "Reembolso" si el pedido ya está cancelado al momento de
+    consultarlo (independientemente de si era el cargo original o el abono
+    del reembolso).
+    """
+    monto = mov_credito.monto
+    pedido = mov_credito.pedido
+
+    if pedido is None:
+        if monto > 0:
+            return 'credito', 'Crédito Asignado', f"Crédito asignado de ${monto}"
+        return 'Deuda', 'Deuda', f"Deuda de ${abs(monto)}"
+
+    detalle = f"Pedido #{pedido.id}"
+    if pedido.platillo:
+        detalle += f": {pedido.platillo.nombre}"
+    if pedido.alumnoId:
+        detalle += f" (Alumno: {pedido.alumnoId.nombre})"
+
+    if pedido.status != 4:
+        return 'gasto', 'Pedido', detalle
+
+    if monto < 0:
+        return 'Pedido Cancelado', 'Pedido Cancelado', detalle
+
+    return 'Reembolso', 'Reembolso', f"{detalle} — Reembolso de ${abs(monto)} por pedido cancelado"
+
+
 def get_movimientos(request):
     """
     Vista AJAX para obtener los movimientos de un usuario específico.
@@ -1527,40 +1560,8 @@ def get_movimientos(request):
                     )
                 
                 for mov_credito in movimientos_credito:
-                    if mov_credito.monto > 0 and mov_credito.pedido == None:  # Incluir solo créditos asignados o gastos con pedido
-                        tipo = 'credito'
-                        tipo_display = 'Crédito Asignado'
-                        descripcion = f"Crédito asignado de ${mov_credito.monto}"
-                    elif mov_credito.monto < 0 and mov_credito.pedido == None:  # Incluir deudas actualizadas sin pedido
-                        tipo = 'Deuda'
-                        tipo_display = 'Deuda'
-                        descripcion = f"Deuda de ${abs(mov_credito.monto)}"
-                    else:
-                        tipo = 'gasto'
-                        tipo_display = 'Pedido'
-                        if mov_credito.pedido.status != 4:  # Excluir pedidos cancelados
-                            descripcion = f"Pedido #{mov_credito.pedido.id}"
-                            if mov_credito.pedido.platillo:
-                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
-                            if mov_credito.pedido.alumnoId:
-                                descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
-                        else:
-                            if mov_credito.monto < 0:
-                                tipo = 'Pedido Cancelado'
-                                tipo_display = 'Pedido Cancelado'
-                                descripcion = f"Pedido #{mov_credito.pedido.id}"
-                                if mov_credito.pedido.platillo:
-                                    descripcion += f": {mov_credito.pedido.platillo.nombre}"
-                                if mov_credito.pedido.alumnoId:
-                                    descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre})"
-                            else:
-                                tipo = 'Reembolso'
-                                tipo_display = 'Reembolso'
-                                descripcion = f"Pedido #{mov_credito.pedido.id}"
-                                if mov_credito.pedido.alumnoId:
-                                    descripcion += f" (Alumno: {mov_credito.pedido.alumnoId.nombre}) "
-                                descripcion += f" Reembolso de ${abs(mov_credito.monto)} por pedido cancelado"
-                    
+                    tipo, tipo_display, descripcion = _clasificar_movimiento_credito(mov_credito)
+
                     movimientos.append({
                         'fecha': mov_credito.fecha,
                         'tipo': tipo,
@@ -1593,34 +1594,8 @@ def get_movimientos(request):
                 ).order_by('fecha', 'id')
                 
                 for mov_credito in movimientos_credito:
-                    if mov_credito.monto > 0 and mov_credito.pedido == None:  # Incluir solo créditos asignados o gastos con pedido
-                        tipo = 'credito'
-                        tipo_display = 'Crédito Asignado'
-                        descripcion = f"Crédito asignado de ${mov_credito.monto}"
-                        
-                    elif mov_credito.monto < 0 and mov_credito.pedido == None:  # Incluir deudas actualizadas sin pedido
-                        tipo = 'Deuda'
-                        tipo_display = 'Deuda'
-                        descripcion = f"Deuda de ${abs(mov_credito.monto)}"
-                    else:
-                        tipo = 'gasto'
-                        tipo_display = 'Pedido'
-                        if mov_credito.pedido.status != 4:
-                            descripcion = f"Pedido #{mov_credito.pedido.id}"
-                            if mov_credito.pedido.platillo:
-                                descripcion += f": {mov_credito.pedido.platillo.nombre}"
-                        else:
-                            if mov_credito.monto < 0:
-                                tipo = 'Pedido Cancelado'
-                                tipo_display = 'Pedido Cancelado'
-                                descripcion = f"Pedido #{mov_credito.pedido.id}"
-                                if mov_credito.pedido.platillo:
-                                    descripcion += f": {mov_credito.pedido.platillo.nombre}"
-                            else:
-                                tipo = 'Reembolso'
-                                tipo_display = 'Reembolso'
-                                descripcion = f" Reembolso de ${abs(mov_credito.monto)} por pedido cancelado #{mov_credito.pedido.id}"
-                    
+                    tipo, tipo_display, descripcion = _clasificar_movimiento_credito(mov_credito)
+
                     movimientos.append({
                         'fecha': mov_credito.fecha,
                         'tipo': tipo,

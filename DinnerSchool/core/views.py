@@ -247,7 +247,7 @@ def register(request):
         username     = request.POST.get("username", "").strip()
         userlastname = request.POST.get("userlastname", "").strip()
         userlastname2 = request.POST.get("userlastname2", "").strip()
-        useremail    = request.POST.get("useremail", "").lower().strip()
+        useremail_raw = request.POST.get("useremail", "")
         password     = request.POST.get("password", "")
         confirm      = request.POST.get("confirmPassword", "")
         userphone    = request.POST.get("userphone", "")
@@ -255,8 +255,13 @@ def register(request):
 
         ctx = {'is_staff': is_staff}
 
-        if not all([username, userlastname, useremail, password, confirm]):
+        if not all([username, userlastname, useremail_raw, password, confirm]):
             messages.error(request, 'Completa todos los campos obligatorios.')
+            return render(request, 'Login/register.html', ctx)
+
+        useremail = normalizar_email(useremail_raw)
+        if not useremail:
+            messages.error(request, 'El correo electrónico no es válido.')
             return render(request, 'Login/register.html', ctx)
 
         if password != confirm:
@@ -681,10 +686,15 @@ def account_settings_form_view(request):
         nombre = request.POST.get("nombre", usuario.nombre).title().strip()
         paterno = request.POST.get("apellidoPaterno", usuario.paterno).title().strip()
         materno = request.POST.get("apellidoMaterno", usuario.materno).title().strip()
-        correo = request.POST.get("correo", usuario.email)
+        correo_raw = request.POST.get("correo", usuario.email)
         telefono = request.POST.get("telefono", usuario.telefono)
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirmPassword")
+
+        correo = normalizar_email(correo_raw) if correo_raw else usuario.email
+        if not correo:
+            messages.error(request, 'El correo electrónico no es válido.')
+            return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
 
         # Actualizar datos en Usuarios
         usuario.nombre = nombre
@@ -694,6 +704,9 @@ def account_settings_form_view(request):
 
         # Si cambia el correo, actualizar en ambos modelos
         if correo and correo != usuario.email:
+            if User.objects.exclude(pk=user.pk).filter(email=correo).exists():
+                messages.error(request, 'Ese correo electrónico ya está en uso por otra cuenta.')
+                return render(request, 'account_settings/account_settings_form_view.html', {'usuario': usuario})
             usuario.email = correo
             user.email = correo
             user.username = correo
