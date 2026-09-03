@@ -386,13 +386,14 @@ function createOrderCard(order) {
     </div>
     <div class="space-y-2 mb-3">
       ${order.platillos.map(platillo => `
-        <div class="bg-gray-50 p-2 rounded border-l-2 border-primary-red">
+        <div class="p-2 rounded border-l-2 ${platillo.cancelado ? 'bg-red-50 border-red-500' : 'bg-gray-50 border-primary-red'}">
           <div class="flex justify-between items-start">
             <div>
-              <span class="font-medium text-gray-800">${platillo.nombre}</span>
-              ${platillo.cantidad > 1 ? `<span class="text-primary-red font-semibold ml-1">x${platillo.cantidad}</span>` : ''}
+              <span class="font-medium ${platillo.cancelado ? 'text-red-700 line-through' : 'text-gray-800'}">${platillo.nombre}</span>
+              ${platillo.cantidad > 1 ? `<span class="${platillo.cancelado ? 'text-red-500' : 'text-primary-red'} font-semibold ml-1">x${platillo.cantidad}</span>` : ''}
+              ${platillo.cancelado ? '<span class="inline-block align-middle ml-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">Cancelado</span>' : ''}
             </div>
-            <span class="text-sm text-gray-600">$${parseFloat(platillo.precio).toFixed(2)}</span>
+            <span class="text-sm ${platillo.cancelado ? 'text-red-400 line-through' : 'text-gray-600'}">$${parseFloat(platillo.precio).toFixed(2)}</span>
           </div>
           ${platillo.ingredientes && platillo.ingredientes.length ? `<p class="text-xs text-gray-500 mt-1"><strong>Ingredientes:</strong> ${platillo.ingredientes.join(', ').slice(0, 50)}${platillo.ingredientes.join(', ').length > 50 ? '...' : ''}</p>` : ''}
           ${platillo.nota ? `<p class="text-xs text-blue-600 mt-1"><strong>Nota:</strong> ${platillo.nota}</p>` : ''}

@@ -500,10 +500,11 @@
             <!-- Items de la orden -->
             <ul class="mt-2 ml-2 space-y-0.5">
               {% for item in orden.items.all %}
-              <li class="text-sm text-gray-600">
-                • {{ item.platillo.nombre }} × {{ item.cantidad }}
+              <li class="text-sm {% if item.status == 4 %}text-red-600{% else %}text-gray-600{% endif %}">
+                • <span class="{% if item.status == 4 %}line-through{% endif %}">{{ item.platillo.nombre }} × {{ item.cantidad }}</span>
                 {% if item.nota %}<span class="text-xs text-gray-400">({{ item.nota }})</span>{% endif %}
-                <span class="text-gray-500">${{ item.total }}</span>
+                <span class="{% if item.status == 4 %}text-red-500 line-through{% else %}text-gray-500{% endif %}">${{ item.total }}</span>
+                {% if item.status == 4 %}<span class="inline-block ml-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">Cancelado</span>{% endif %}
               </li>
               {% endfor %}
             </ul>

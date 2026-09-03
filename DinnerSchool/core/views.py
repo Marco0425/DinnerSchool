@@ -414,8 +414,8 @@ def students(request):
             tutor = Tutor.objects.get(usuario=usuario)
             students_queryset = Alumnos.objects.filter(tutorId=tutor)
         except (Usuarios.DoesNotExist, Tutor.DoesNotExist):
-            messages.warning(request, 'No se encontró un tutor asociado a este usuario.')
-            return redirect('core:createStudents')
+            messages.warning(request, 'Esta sección es solo para tutores.')
+            return redirect('core:dashboard')
 
     # Aplicar filtros
     if nombre:

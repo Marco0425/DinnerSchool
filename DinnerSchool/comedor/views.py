@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from comedor.models import Ingredientes, Platillo, Pedido, Orden, Credito, CreditoDiario, Noticias
-from django.db.models import Q
+from django.db.models import Q, Sum
 from core.models import Alumnos, Usuarios, Tutor, Empleados
 from core.choices import *
 from .choices import *
@@ -269,12 +269,18 @@ def cancelOrder(request, pedido_id):
             pedido.status = 4  # Asumiendo que 4 = Cancelado
             pedido.save()
 
-            # Si era el último pedido activo de su Orden, cancelar también la Orden
-            # (si no, la card se queda "viva" en el kanban aunque su único pedido
-            # ya esté cancelado).
-            if pedido.orden_id and not pedido.orden.items.exclude(status=4).exists():
-                pedido.orden.status = 4
-                pedido.orden.save(update_fields=['status'])
+            # Recalcular el total de la Orden y, si era su último pedido activo,
+            # cancelarla también (si no, la card se queda "viva" en el kanban y
+            # el total mostrado en otras pantallas queda desactualizado).
+            if pedido.orden_id:
+                orden = pedido.orden
+                items_activos = orden.items.exclude(status=4)
+                orden.total = items_activos.aggregate(t=Sum('total'))['t'] or 0
+                update_fields = ['total']
+                if not items_activos.exists():
+                    orden.status = 4
+                    update_fields.append('status')
+                orden.save(update_fields=update_fields)
 
             # Registrar el movimiento en CreditoDiario como positivo (reembolso)
             CreditoDiario.objects.create(
@@ -1254,7 +1260,7 @@ def modify_order_view(request, orden_id):
         platillos = Platillo.objects.filter(disponible=True)
 
         items_data = []
-        for pedido in orden.items.all():
+        for pedido in orden.items.exclude(status=4):
             try:
                 ings = ast.literal_eval(pedido.ingredientePlatillo) if pedido.ingredientePlatillo else []
             except (ValueError, SyntaxError):
@@ -1326,8 +1332,9 @@ def modify_order_view(request, orden_id):
                         )
                         return render(request, 'Orders/modify_order_view.html', context)
 
-                    # Delete old items (CreditoDiario cascade-deletes via FK)
-                    orden.items.all().delete()
+                    # Delete only the active items (CreditoDiario cascade-deletes via FK).
+                    # Los ya cancelados se conservan para no perder su historial.
+                    orden.items.exclude(status=4).delete()
 
                     tutor_obj = orden.alumnoId.tutorId if orden.alumnoId else None
                     for item in cart:
@@ -1780,6 +1787,7 @@ def kanban_orders_api(request):
                 "nota": pedido.nota,
                 "cantidad": pedido.cantidad,
                 "precio": float(pedido.total),
+                "cancelado": pedido.status == 4,
             })
 
         entry = {
@@ -1802,8 +1810,8 @@ def kanban_orders_api(request):
             ),
             "encargado_id": orden.encargadoId.id if orden.encargadoId else None,
             "platillos": platillos,
-            "total_cantidad": sum(p["cantidad"] for p in platillos),
-            "total_precio": float(orden.total),
+            "total_cantidad": sum(p["cantidad"] for p in platillos if not p["cancelado"]),
+            "total_precio": sum(p["precio"] for p in platillos if not p["cancelado"]),
         }
         status_label = status_map.get(orden.status, "pendiente")
         result[status_label].append(entry)
