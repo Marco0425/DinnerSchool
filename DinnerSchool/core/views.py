@@ -521,7 +521,10 @@ def createStudents(request):
             if request.user.is_staff:
                 tutor = Tutor.objects.get(id=tutor_id) if tutor_id else None
             else:
-                tutor = Tutor.objects.get(usuario=Usuarios.objects.get(user=request.user))
+                usuario_actual = Usuarios.objects.filter(user=request.user).first()
+                tutor = Tutor.objects.get(usuario=usuario_actual) if usuario_actual else None
+                if tutor is None:
+                    raise Tutor.DoesNotExist
             
             alumno_exists = Alumnos.objects.filter(
                 nombre=nombre,
@@ -554,7 +557,7 @@ def createStudents(request):
                 messages.success(request, 'Estudiante creado exitosamente.')
             return redirect('core:students')
         except Tutor.DoesNotExist:
-            messages.error(request, 'Tutor no encontrado.')
+            messages.error(request, 'Solo los tutores pueden agregar alumnos.')
             return render(request, 'Students/students_form_view.html', context)
     else:
         return render(request, 'Students/students_form_view.html', context)
