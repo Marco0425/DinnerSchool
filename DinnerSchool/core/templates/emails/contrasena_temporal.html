@@ -1,0 +1,73 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu contraseña temporal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background-color:#f6f5f2;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f5f2;">
+<tr>
+<td align="center" style="padding:32px 16px;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;border-top:6px solid #e62e2d;font-family:'IBM Plex Sans',Arial,sans-serif;">
+
+    <!-- Encabezado con el motivo decorativo (sombrero, cuchillo, cebolla en línea) -->
+    <tr>
+      <td background="{{ site_url }}{% static 'img/emails/kitchen_watermark.png' %}"
+          bgcolor="#fceaea"
+          style="background-image:url('{{ site_url }}{% static 'img/emails/kitchen_watermark.png' %}');background-repeat:no-repeat;background-position:center;padding:24px 32px;">
+        <img src="{{ site_url }}{% static 'img/logos/icon-192.png' %}" width="52" height="52" alt="Cafetería Certo"
+             style="display:block;border-radius:999px;">
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:24px 32px 0;">
+        <h1 style="margin:0 0 2px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:21px;color:#1c1b1a;">Tu contraseña temporal</h1>
+        <p style="margin:0;color:#63615c;font-size:13px;">Cafetería Certo</p>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:20px 32px 0;color:#1c1b1a;font-size:15px;line-height:1.6;">
+        Hola {{ nombre }},<br><br>
+        Usa esta contraseña para iniciar sesión. Te recomendamos cambiarla desde tus ajustes de cuenta en cuanto entres:
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" style="padding:20px 32px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="background-color:#fceaea;border:1.5px solid #a52120;border-radius:8px;">
+          <tr>
+            <td style="padding:14px 32px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:22px;letter-spacing:3px;font-weight:700;color:#a52120;">
+              {{ temp_password }}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" style="padding:16px 32px 8px;">
+        <a href="{{ login_url }}"
+           style="display:inline-block;background-color:#e62e2d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;font-family:'IBM Plex Sans',Arial,sans-serif;padding:12px 32px;border-radius:8px;">
+          Iniciar sesión
+        </a>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:20px 32px 28px;border-top:1px solid #e4e1da;margin-top:8px;color:#8a8781;font-size:12px;">
+        Si no pediste este cambio, contacta al administrador de la cafetería.<br>— Equipo Cafetería Certo
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>

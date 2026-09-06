@@ -1,0 +1,68 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifica tu cuenta</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background-color:#f6f5f2;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f5f2;">
+<tr>
+<td align="center" style="padding:32px 16px;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;border-top:6px solid #e62e2d;font-family:'IBM Plex Sans',Arial,sans-serif;">
+
+    <!-- Encabezado con el motivo decorativo (sombrero, cuchillo, cebolla en línea) -->
+    <tr>
+      <td background="{{ site_url }}{% static 'img/emails/kitchen_watermark.png' %}"
+          bgcolor="#fceaea"
+          style="background-image:url('{{ site_url }}{% static 'img/emails/kitchen_watermark.png' %}');background-repeat:no-repeat;background-position:center;padding:24px 32px;">
+        <img src="{{ site_url }}{% static 'img/logos/icon-192.png' %}" width="52" height="52" alt="Cafetería Certo"
+             style="display:block;border-radius:999px;">
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:24px 32px 0;">
+        <h1 style="margin:0 0 2px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:21px;color:#1c1b1a;">Verifica tu cuenta</h1>
+        <p style="margin:0;color:#63615c;font-size:13px;">Cafetería Certo</p>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:20px 32px 0;color:#1c1b1a;font-size:15px;line-height:1.6;">
+        Hola {{ nombre }},<br><br>
+        Gracias por registrarte en Cafetería Certo. Para activar tu cuenta y empezar a registrar pedidos, confirma tu correo con el siguiente botón:
+      </td>
+    </tr>
+
+    <tr>
+      <td align="center" style="padding:24px 32px 8px;">
+        <a href="{{ url }}"
+           style="display:inline-block;background-color:#e62e2d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;font-family:'IBM Plex Sans',Arial,sans-serif;padding:14px 36px;border-radius:8px;">
+          Verificar mi cuenta
+        </a>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:16px 32px 8px;color:#8a8781;font-size:12px;line-height:1.5;">
+        El enlace expira en 48 horas. Si el botón no funciona, copia y pega esta dirección en tu navegador:<br>
+        <span style="color:#63615c;word-break:break-all;">{{ url }}</span>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:20px 32px 28px;border-top:1px solid #e4e1da;margin-top:8px;color:#8a8781;font-size:12px;">
+        Si no creaste esta cuenta, ignora este correo.<br>— Equipo Cafetería Certo
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
