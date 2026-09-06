@@ -127,7 +127,7 @@ def credit(request):
 
         creditos_qs = creditos_qs.order_by('tutorId__usuario__paterno', 'profesorId__usuario__paterno')
 
-        paginator = Paginator(creditos_qs, 25)
+        paginator = Paginator(creditos_qs, 10)
         page_obj = paginator.get_page(request.GET.get('page'))
 
         userCreditos = []

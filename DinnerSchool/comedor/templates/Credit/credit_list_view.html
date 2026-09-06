@@ -3,37 +3,37 @@
 <div
   class="bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full border-t-8 border-primary-red mb-8"
 >
-  <div class="flex flex-col md:flex-row items-center justify-between mb-6">
+  <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
     <!-- Logo de la cafetería -->
-    <div class="flex items-center mb-4 md:mb-0">
+    <div class="flex items-center">
       <img
         src="{% static 'img/logos/logo.svg' %}"
         alt="Logo de la Cafetería Certo"
-        class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4"
+        class="w-16 h-16 rounded-full border-2 border-primary-red p-1 object-cover mr-4 flex-shrink-0"
       />
       <h1 class="text-3xl font-bold text-gray-800">
         Lista de Creditos de Tutores
       </h1>
     </div>
     <!-- Botón para volver o añadir Credito a tutor-->
-    <div class="text-right">
+    <div class="flex flex-wrap items-center justify-end gap-2">
       <button
         id="generateReportBtn"
-        class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out whitespace-nowrap"
       >
         Reporte
       </button>
       <a
         href="/core/dashboard"
-        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out mr-2"
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition duration-300 ease-in-out whitespace-nowrap"
       >
         Volver
       </a>
       <a
         href="{% url 'comedor:createCredit' %}"
-        class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-300 ease-in-out whitespace-nowrap"
       >
-        + Añadir Credito
+        + Añadir Crédito
       </a>
     </div>
   </div>
