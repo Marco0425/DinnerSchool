@@ -107,7 +107,9 @@
           <th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">Estatus</th>
           <th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">Fecha</th>
           <th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">Total</th>
+          {% if is_staff %}
           <th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">Acciones</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200">
@@ -152,18 +154,20 @@
           <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 font-display">
             ${{ pedido.total }}
           </td>
-          <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
-            <div class="flex gap-2">
-              {% if pedido.orden_id and pedido.orden.status == 0 %}
-                <a href="{% url 'comedor:modify_order' pedido.orden_id %}" class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded-md hover:bg-gray-800 transition duration-200">Editar</a>
-              {% endif %}
-              {% if pedido.status == 0 or pedido.status == 1 %}
-                <a href="{% url 'comedor:cancelOrder' pedido.id %}" class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200">Cancelar</a>
-              {% elif not pedido.orden_id or pedido.orden.status != 0 %}
-                <span class="text-gray-400 text-xs">-</span>
-              {% endif %}
-            </div>
-          </td>
+          {% if is_staff %}
+            <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
+              <div class="flex gap-2">
+                {% if pedido.orden_id and pedido.orden.status == 0 %}
+                  <a href="{% url 'comedor:modify_order' pedido.orden_id %}" class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded-md hover:bg-gray-800 transition duration-200">Editar</a>
+                {% endif %}
+                {% if pedido.status == 0 or pedido.status == 1 %}
+                  <a href="{% url 'comedor:cancelOrder' pedido.id %}" class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200">Cancelar</a>
+                {% elif not pedido.orden_id or pedido.orden.status != 0 %}
+                  <span class="text-gray-400 text-xs">-</span>
+                {% endif %}
+              </div>
+            </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
