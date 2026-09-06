@@ -1293,7 +1293,14 @@ def modify_order_view(request, orden_id):
             messages.error(request, 'No tienes permisos para modificar esta orden.')
             return redirect('core:dashboard')
 
-        if orden.status != 0:
+        if is_admin:
+            # El admin puede corregir una orden ya en curso o entregada, pero no
+            # una cancelada: con la lógica de abajo, sus items nuevos nacerían
+            # ya marcados como cancelados (status=orden.status) y sin sentido.
+            if orden.status == 4:
+                messages.error(request, 'No se puede modificar una orden cancelada.')
+                return redirect('core:dashboard')
+        elif orden.status != 0:
             messages.error(request, 'Solo se pueden modificar órdenes en estado pendiente.')
             return redirect('core:dashboard')
 

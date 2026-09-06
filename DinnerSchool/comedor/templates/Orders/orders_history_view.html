@@ -157,12 +157,12 @@
           {% if is_staff %}
             <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700">
               <div class="flex gap-2">
-                {% if pedido.orden_id and pedido.orden.status == 0 %}
+                {% if pedido.orden_id and pedido.orden.status != 4 %}
                   <a href="{% url 'comedor:modify_order' pedido.orden_id %}" class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded-md hover:bg-gray-800 transition duration-200">Editar</a>
                 {% endif %}
                 {% if pedido.status == 0 or pedido.status == 1 %}
                   <a href="{% url 'comedor:cancelOrder' pedido.id %}" class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-200">Cancelar</a>
-                {% elif not pedido.orden_id or pedido.orden.status != 0 %}
+                {% elif not pedido.orden_id or pedido.orden.status == 4 %}
                   <span class="text-gray-400 text-xs">-</span>
                 {% endif %}
               </div>
