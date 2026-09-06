@@ -1,5 +1,6 @@
 # Imports de Django
 import logging
+import uuid
 from django.http import JsonResponse, HttpResponse
 from django.contrib.staticfiles import finders
 from django.shortcuts import render, redirect
@@ -84,6 +85,53 @@ def reset_password(request):
         
     except Exception as e:
         logger.error(f"Error in reset_password view: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Error interno del servidor. Inténtalo más tarde.'
+        })
+
+@require_http_methods(["POST"])
+def reenviar_verificacion(request):
+    """Reenvía el correo de verificación a una cuenta que aún no se activa.
+
+    Sin esto, un enlace vencido (48h) o un envío de correo fallido dejaba la
+    cuenta muerta para siempre: el usuario no tenía forma de pedir uno nuevo.
+    """
+    try:
+        correo = normalizar_email(request.POST.get('email', ''))
+        if not correo:
+            return JsonResponse({'success': False, 'message': 'El correo electrónico no es válido.'})
+
+        user = User.objects.filter(email__iexact=correo).first()
+        if not user:
+            return JsonResponse({'success': False, 'message': 'No existe una cuenta con ese correo electrónico.'})
+
+        if user.is_active:
+            return JsonResponse({'success': False, 'message': 'Esta cuenta ya está activa. Puedes iniciar sesión.'})
+
+        verificacion, _ = VerificacionEmail.objects.get_or_create(user=user)
+        verificacion.token = uuid.uuid4()
+        verificacion.creado = timezone.now()
+        verificacion.verificado = False
+        verificacion.save()
+
+        try:
+            enviar_verificacion_email(user, verificacion.token)
+        except Exception as email_err:
+            logger.error(f"Error reenviando verificación a {correo}: {email_err}")
+            return JsonResponse({
+                'success': False,
+                'message': 'No se pudo enviar el correo. Intenta más tarde o contacta al administrador.',
+            })
+
+        logger.info(f"Verification email resent for user: {correo}")
+        return JsonResponse({
+            'success': True,
+            'message': 'Te reenviamos el enlace de verificación. Revisa tu correo (y la carpeta de spam).',
+        })
+
+    except Exception as e:
+        logger.error(f"Error in reenviar_verificacion view: {str(e)}")
         return JsonResponse({
             'success': False,
             'message': 'Error interno del servidor. Inténtalo más tarde.'

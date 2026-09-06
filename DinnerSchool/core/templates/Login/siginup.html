@@ -60,6 +60,10 @@
         ¿Olvidaste tu contraseña?
         <a href="#" id="showResetForm" class="font-medium text-primary-red hover:text-red-700">Recupérala aquí</a>
       </p>
+      <p class="text-sm text-gray-600">
+        ¿Tu cuenta no se activó o el correo expiró?
+        <a href="#" id="showResendVerify" class="font-medium text-primary-red hover:text-red-700">Reenviar verificación</a>
+      </p>
     </div>
   </div>
 
@@ -84,26 +88,98 @@
     <div id="resetMessage" class="mt-4 hidden p-3 rounded-md text-sm text-center"></div>
   </div>
 
+  <!-- Reenviar verificación (oculto por defecto) -->
+  <div id="resendVerifyContainer" class="hidden">
+    <p class="text-center text-sm text-gray-500 mb-4">Ingresa el correo con el que te registraste y te reenviamos el enlace de verificación.</p>
+    <form id="resendVerifyForm" method="POST" action="{% url 'core:reenviar_verificacion' %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="resendVerifyEmail" class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico*</label>
+        <input type="email" id="resendVerifyEmail" name="email" required placeholder="tu@correo.com"
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red sm:text-sm" />
+      </div>
+      <button type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary-red hover:bg-red-700 transition duration-200">
+        Reenviar enlace de verificación
+      </button>
+    </form>
+    <p class="mt-4 text-center text-sm text-gray-600">
+      <a href="#" id="backToLoginFromVerify" class="font-medium text-primary-red hover:text-red-700">← Volver al inicio de sesión</a>
+    </p>
+    <div id="resendVerifyMessage" class="mt-4 hidden p-3 rounded-md text-sm text-center"></div>
+  </div>
+
 </div>
 
 <script>
 (function () {
   var loginContainer = document.getElementById('loginContainer');
   var resetContainer = document.getElementById('resetContainer');
+  var resendVerifyContainer = document.getElementById('resendVerifyContainer');
   var descEl = document.getElementById('form-description');
+
+  function showOnly(container, description) {
+    loginContainer.classList.add('hidden');
+    resetContainer.classList.add('hidden');
+    resendVerifyContainer.classList.add('hidden');
+    container.classList.remove('hidden');
+    descEl.textContent = description;
+  }
 
   document.getElementById('showResetForm').addEventListener('click', function (e) {
     e.preventDefault();
-    loginContainer.classList.add('hidden');
-    resetContainer.classList.remove('hidden');
-    descEl.textContent = 'Recupera tu contraseña';
+    showOnly(resetContainer, 'Recupera tu contraseña');
   });
 
   document.getElementById('backToLogin').addEventListener('click', function (e) {
     e.preventDefault();
-    resetContainer.classList.add('hidden');
-    loginContainer.classList.remove('hidden');
-    descEl.textContent = 'Inicia sesión para acceder a tu cuenta';
+    showOnly(loginContainer, 'Inicia sesión para acceder a tu cuenta');
+  });
+
+  document.getElementById('showResendVerify').addEventListener('click', function (e) {
+    e.preventDefault();
+    showOnly(resendVerifyContainer, 'Reenviar verificación de cuenta');
+  });
+
+  document.getElementById('backToLoginFromVerify').addEventListener('click', function (e) {
+    e.preventDefault();
+    showOnly(loginContainer, 'Inicia sesión para acceder a tu cuenta');
+  });
+
+  document.getElementById('resendVerifyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = this.querySelector('button[type="submit"]');
+    var msgDiv = document.getElementById('resendVerifyMessage');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    var formData = new FormData(this);
+    fetch('{% url "core:reenviar_verificacion" %}', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      msgDiv.classList.remove('hidden');
+      if (data.success) {
+        msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-green-100 text-green-800 border border-green-200';
+        msgDiv.textContent = data.message;
+        document.getElementById('resendVerifyForm').reset();
+      } else {
+        msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-red-100 text-red-800 border border-red-200';
+        msgDiv.textContent = data.message || 'No se pudo reenviar el correo.';
+        btn.disabled = false;
+        btn.textContent = 'Reenviar enlace de verificación';
+      }
+    })
+    .catch(function () {
+      msgDiv.classList.remove('hidden');
+      msgDiv.className = 'mt-4 p-3 rounded-md text-sm text-center bg-red-100 text-red-800 border border-red-200';
+      msgDiv.textContent = 'Error de conexión. Inténtalo de nuevo.';
+      btn.disabled = false;
+      btn.textContent = 'Reenviar enlace de verificación';
+    });
   });
 
   document.getElementById('resetForm').addEventListener('submit', function (e) {
