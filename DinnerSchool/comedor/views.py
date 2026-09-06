@@ -96,12 +96,42 @@ def credit(request):
         HttpResponse: Respuesta HTTP que renderiza la lista de créditos.
     """
     if request.user.is_authenticated:
-        userCreditos = []
-        creditos = Credito.objects.select_related(
+        creditos_qs = Credito.objects.select_related(
             'tutorId__usuario',
             'profesorId__usuario',
-        ).prefetch_related('tutorId__alumnos_set').all()
-        for user in creditos:
+        ).prefetch_related('tutorId__alumnos_set')
+
+        usuario = request.GET.get('usuario', '').strip()
+        tipo = request.GET.get('tipo', '').strip()
+        estado = request.GET.get('estado', '').strip()
+
+        if usuario:
+            creditos_qs = creditos_qs.filter(
+                Q(tutorId__usuario__nombre__icontains=usuario) |
+                Q(tutorId__usuario__paterno__icontains=usuario) |
+                Q(tutorId__usuario__materno__icontains=usuario) |
+                Q(profesorId__usuario__nombre__icontains=usuario) |
+                Q(profesorId__usuario__paterno__icontains=usuario) |
+                Q(profesorId__usuario__materno__icontains=usuario)
+            )
+        if tipo == 'Tutor':
+            creditos_qs = creditos_qs.filter(tutorId__isnull=False)
+        elif tipo == 'Profesor':
+            creditos_qs = creditos_qs.filter(profesorId__isnull=False)
+        if estado == 'positive':
+            creditos_qs = creditos_qs.filter(monto__gt=0)
+        elif estado == 'negative':
+            creditos_qs = creditos_qs.filter(monto__lt=0)
+        elif estado == 'zero':
+            creditos_qs = creditos_qs.filter(monto=0)
+
+        creditos_qs = creditos_qs.order_by('tutorId__usuario__paterno', 'profesorId__usuario__paterno')
+
+        paginator = Paginator(creditos_qs, 25)
+        page_obj = paginator.get_page(request.GET.get('page'))
+
+        userCreditos = []
+        for user in page_obj:
             userCreditos.append({
                 'id': user.id,
                 'nombre': user.tutorId.usuario.nombre if user.tutorId else user.profesorId.usuario.nombre,
@@ -111,8 +141,18 @@ def credit(request):
                 'tipo': 'Profesor' if user.profesorId else 'Tutor',
                 'alumnos': user.tutorId.alumnos_set.all() if user.tutorId else '',
             })
-        
-        return render(request, 'Credit/credit_list_view.html', {'creditos': userCreditos})
+
+        query_params = request.GET.copy()
+        query_params.pop('page', None)
+        query_string = query_params.urlencode()
+
+        return render(request, 'Credit/credit_list_view.html', {
+            'creditos': userCreditos,
+            'page_obj': page_obj,
+            'query_string': query_string,
+            'total_count': paginator.count,
+            'filtros': {'usuario': usuario, 'tipo': tipo, 'estado': estado},
+        })
     else:
         return redirect('core:signInUp')
     
@@ -196,10 +236,10 @@ def createCredit(request):
     # Agregar tutores
     for tutor in tutors:
         alumnos = Alumnos.objects.filter(tutorId=tutor.id).all()
-        strAlumnos = ", ".join([f"{alumno.nombre} {alumno.paterno} {alumno.materno} - {getChoiceLabel(NIVELEDUCATIVO,alumno.nivelEducativo.nivel)} - {getChoiceLabel(GRADO,alumno.nivelEducativo.grado)}{getChoiceLabel(GRUPO,alumno.nivelEducativo.grupo)}" for alumno in alumnos])
+        strAlumnos = ", ".join([f"{alumno.nombre} {alumno.paterno}" for alumno in alumnos]) if alumnos else "sin alumnos asignados"
         all_users.append({
             'id': f'tutor_{tutor.id}',
-            'nombre': f"{strAlumnos}",
+            'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} — {strAlumnos}",
             'tipo': 'Tutor'
         })
     

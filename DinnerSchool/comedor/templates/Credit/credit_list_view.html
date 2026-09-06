@@ -51,17 +51,19 @@
   </div>
   {% endif %}
 
-  <!-- Panel de filtros -->
-  <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-    <div class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
+  <!-- Panel de filtros (server-side: busca en los {{ total_count }} registros, no solo en esta página) -->
+  <form method="get" class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+    <div class="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-4 md:space-y-0">
       <!-- Búsqueda por nombre -->
       <div class="flex-1">
-        <label for="search-name" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="usuario" class="block text-sm font-medium text-gray-700 mb-1">
           Buscar por nombre
         </label>
         <input
           type="text"
-          id="search-name"
+          id="usuario"
+          name="usuario"
+          value="{{ filtros.usuario|default:'' }}"
           placeholder="Escriba el nombre a buscar..."
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red text-sm"
         />
@@ -69,53 +71,54 @@
 
       <!-- Filtro por tipo de usuario -->
       <div class="flex-shrink-0">
-        <label for="filter-type" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="tipo" class="block text-sm font-medium text-gray-700 mb-1">
           Tipo de usuario
         </label>
         <select
-          id="filter-type"
+          id="tipo"
+          name="tipo"
           class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red text-sm"
         >
-          <option value="">Todos</option>
-          <option value="Tutor">Tutor</option>
-          <option value="Profesor">Profesor</option>
+          <option value="" {% if not filtros.tipo %}selected{% endif %}>Todos</option>
+          <option value="Tutor" {% if filtros.tipo == 'Tutor' %}selected{% endif %}>Tutor</option>
+          <option value="Profesor" {% if filtros.tipo == 'Profesor' %}selected{% endif %}>Profesor</option>
         </select>
       </div>
 
       <!-- Filtro por rango de crédito -->
       <div class="flex-shrink-0">
-        <label for="filter-credit" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">
           Estado del crédito
         </label>
         <select
-          id="filter-credit"
+          id="estado"
+          name="estado"
           class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-red focus:border-primary-red text-sm"
         >
-          <option value="">Todos</option>
-          <option value="positive">Crédito positivo</option>
-          <option value="negative">Crédito negativo</option>
-          <option value="zero">Sin crédito</option>
+          <option value="" {% if not filtros.estado %}selected{% endif %}>Todos</option>
+          <option value="positive" {% if filtros.estado == 'positive' %}selected{% endif %}>Crédito positivo</option>
+          <option value="negative" {% if filtros.estado == 'negative' %}selected{% endif %}>Crédito negativo</option>
+          <option value="zero" {% if filtros.estado == 'zero' %}selected{% endif %}>Sin crédito</option>
         </select>
       </div>
 
-      <!-- Botón para limpiar filtros -->
-      <div class="flex-shrink-0 pt-6">
-        <button
-          id="clear-filters"
-          class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-200"
-        >
-          Limpiar filtros
+      <div class="flex-shrink-0 flex gap-2">
+        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-red rounded-md hover:bg-red-700 transition duration-200">
+          Filtrar
         </button>
+        <a href="?" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-200">
+          Limpiar
+        </a>
       </div>
     </div>
 
     <!-- Contador de resultados -->
     <div class="mt-3 pt-3 border-t border-gray-200">
       <p class="text-sm text-gray-600">
-        Mostrando <span id="results-count">{{ creditos|length }}</span> de <span id="total-count">{{ creditos|length }}</span> registros
+        Mostrando {{ creditos|length }} de {{ total_count }} registros
       </p>
     </div>
-  </div>
+  </form>
 
   <!-- Tabla de Creditos -->
   <div class="overflow-x-auto">
@@ -186,11 +189,11 @@
       </thead>
       <tbody id="credit-table-body" class="divide-y divide-gray-200">
           {% for credito in creditos %}
-          <tr class="hover:bg-gray-50 credit-row" 
-              data-nombre="{{ credito.nombre|lower }}" 
-              data-paterno="{{ credito.paterno|lower }}" 
-              data-materno="{{ credito.materno|lower }}" 
-              data-tipo="{{ credito.tipo }}" 
+          <tr class="hover:bg-gray-50 credit-row"
+              data-nombre="{{ credito.nombre|lower }}"
+              data-paterno="{{ credito.paterno|lower }}"
+              data-materno="{{ credito.materno|lower }}"
+              data-tipo="{{ credito.tipo }}"
               data-monto="{{ credito.monto }}">
             <td class="py-4 px-4 text-sm text-gray-700">
               {{ credito.nombre }}
@@ -215,6 +218,7 @@
             {% else %}
               Sin alumnos asignados
             {% endif %}
+            </td>
           </tr>
           {% endfor %}
       </tbody>
@@ -231,5 +235,83 @@
       <p class="text-gray-500">Intenta ajustar los filtros para obtener más resultados.</p>
     </div>
   </div>
+
+  <!-- Paginación -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0" aria-label="Paginación de la tabla">
+    <div class="text-sm text-gray-600">
+      Mostrando página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+      ({{ total_count }} registros en total)
+    </div>
+
+    <div class="flex items-center space-x-1">
+      {% if page_obj.number > 3 %}
+      <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+        1
+      </a>
+      {% if page_obj.number > 4 %}
+      <span class="px-2 py-2 text-sm text-gray-500">...</span>
+      {% endif %}
+      {% endif %}
+
+      {% for i in page_obj.paginator.page_range %}
+        {% if i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+          {% if page_obj.number == i %}
+          <span class="px-3 py-2 text-sm font-medium text-white bg-primary-red rounded-md">
+            {{ i }}
+          </span>
+          {% else %}
+          <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ i }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+            {{ i }}
+          </a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+      {% if page_obj.number < page_obj.paginator.num_pages|add:"-3" %}
+      <span class="px-2 py-2 text-sm text-gray-500">...</span>
+      {% endif %}
+      <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">
+        {{ page_obj.paginator.num_pages }}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center space-x-2">
+      {% if page_obj.has_previous %}
+      <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200 flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Anterior
+      </a>
+      {% else %}
+      <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed flex items-center">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Anterior
+      </span>
+      {% endif %}
+
+      {% if page_obj.has_next %}
+      <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200 flex items-center">
+        Siguiente
+        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+      {% else %}
+      <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed flex items-center">
+        Siguiente
+        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </span>
+      {% endif %}
+    </div>
+  </nav>
+  {% endif %}
 </div>
 {% endblock %}

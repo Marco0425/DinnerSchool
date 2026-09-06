@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar el select con búsqueda del tutor
     initializeTutorSearch();
-    
-    // Inicializar filtros de tabla
-    initializeTableFilters();
+
+    // Inicializar ordenamiento de tabla (el filtrado/búsqueda ahora es server-side)
+    initializeTableSort();
 });
 
 /**
@@ -327,112 +327,27 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 }
 
 /**
- * Función para inicializar los filtros de la tabla de créditos
+ * Función para inicializar el ordenamiento de la tabla de créditos
+ * (el filtrado/búsqueda ahora se hace server-side, vía el form GET)
  */
-function initializeTableFilters() {
-    const searchName = document.getElementById('search-name');
-    const filterType = document.getElementById('filter-type');
-    const filterCredit = document.getElementById('filter-credit');
-    const clearFilters = document.getElementById('clear-filters');
+function initializeTableSort() {
     const tableBody = document.getElementById('credit-table-body');
-    const noResults = document.getElementById('no-results');
-    const resultsCount = document.getElementById('results-count');
-    const totalCount = document.getElementById('total-count');
-    
-    // Verificar que los elementos existan
-    if (!searchName || !filterType || !filterCredit) {
+
+    if (!tableBody) {
         return; // No estamos en la página de lista de créditos
     }
-    
+
     const allRows = document.querySelectorAll('.credit-row');
     const sortHeaders = document.querySelectorAll('[data-sort]');
     let currentSort = { column: null, direction: 'asc' };
-    
-    // Eventos para filtros
-    searchName.addEventListener('input', applyFilters);
-    filterType.addEventListener('change', applyFilters);
-    filterCredit.addEventListener('change', applyFilters);
-    clearFilters.addEventListener('click', clearAllFilters);
-    
-    // Eventos para ordenamiento
+
     sortHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.sort;
             sortTable(column);
         });
     });
-    
-    function applyFilters() {
-        const nameQuery = searchName.value.toLowerCase().trim();
-        const typeFilter = filterType.value;
-        const creditFilter = filterCredit.value;
-        
-        let visibleCount = 0;
-        
-        allRows.forEach(row => {
-            let shouldShow = true;
-            
-            // Filtro por nombre (busca en nombre, paterno y materno)
-            if (nameQuery) {
-                const nombre = row.dataset.nombre;
-                const paterno = row.dataset.paterno;
-                const materno = row.dataset.materno;
-                const fullName = `${nombre} ${paterno} ${materno}`;
-                
-                if (!fullName.includes(nameQuery)) {
-                    shouldShow = false;
-                }
-            }
-            
-            // Filtro por tipo
-            if (typeFilter && row.dataset.tipo !== typeFilter) {
-                shouldShow = false;
-            }
-            
-            // Filtro por crédito
-            if (creditFilter) {
-                const monto = parseFloat(row.dataset.monto);
-                switch (creditFilter) {
-                    case 'positive':
-                        if (monto <= 0) shouldShow = false;
-                        break;
-                    case 'negative':
-                        if (monto >= 0) shouldShow = false;
-                        break;
-                    case 'zero':
-                        if (monto !== 0) shouldShow = false;
-                        break;
-                }
-            }
-            
-            // Mostrar/ocultar fila
-            if (shouldShow) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        // Actualizar contador y mostrar/ocultar mensaje de "no resultados"
-        resultsCount.textContent = visibleCount;
-        
-        if (visibleCount === 0) {
-            tableBody.parentElement.style.display = 'none';
-            noResults.classList.remove('hidden');
-        } else {
-            tableBody.parentElement.style.display = '';
-            noResults.classList.add('hidden');
-        }
-    }
-    
-    function clearAllFilters() {
-        searchName.value = '';
-        filterType.value = '';
-        filterCredit.value = '';
-        applyFilters();
-    }
-    
+
     function sortTable(column) {
         // Determinar dirección del ordenamiento
         if (currentSort.column === column) {
