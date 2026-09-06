@@ -247,12 +247,13 @@ def cancelOrder(request, pedido_id):
             # Calcular el total a reembolsar
             total_reembolso = pedido.total
             
-            # Buscar el crédito correspondiente
+            # Buscar el crédito correspondiente (select_for_update: evita que dos
+            # cancelaciones simultáneas lean el mismo saldo antes de escribirlo).
             credito = None
             if pedido.alumnoId:
-                credito = Credito.objects.filter(tutorId=pedido.alumnoId.tutorId).first()
+                credito = Credito.objects.select_for_update().filter(tutorId=pedido.alumnoId.tutorId).first()
             elif pedido.profesorId:
-                credito = Credito.objects.filter(profesorId=pedido.profesorId).first()
+                credito = Credito.objects.select_for_update().filter(profesorId=pedido.profesorId).first()
             
             if not credito:
                 return JsonResponse({
@@ -608,7 +609,7 @@ def orderHistory(request):
         if total_max:
             Pedidos = Pedidos.filter(total__lte=total_max)
 
-        Pedidos = Pedidos.order_by('-fecha')
+        Pedidos = Pedidos.select_related('orden').order_by('-fecha')
 
         # Paginación
         paginator = Paginator(Pedidos, 10)
