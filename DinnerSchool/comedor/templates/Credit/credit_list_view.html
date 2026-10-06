@@ -211,9 +211,12 @@
               {{ credito.tipo }}
             </td>
             <td class="py-4 px-4 text-sm text-gray-700">
+            {% if credito.perfil_inactivo %}
+              <span class="text-red-600 font-medium">{{ credito.tipo }} inactivo</span><br>
+            {% endif %}
             {% if credito.alumnos %}
               {% for alumno in credito.alumnos %}
-                {{ alumno }}{% if not forloop.last %}, {% endif %}
+                {{ alumno }}{% if not alumno.is_active %} <span class="text-red-600">- Inactivo</span>{% endif %}{% if not forloop.last %}, {% endif %}
               {% endfor %}
             {% else %}
               Sin alumnos asignados

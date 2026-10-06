@@ -97,8 +97,8 @@ def credit(request):
     """
     if request.user.is_authenticated:
         creditos_qs = Credito.objects.select_related(
-            'tutorId__usuario',
-            'profesorId__usuario',
+            'tutorId__usuario__user',
+            'profesorId__usuario__user',
         ).prefetch_related('tutorId__alumnos_set')
 
         usuario = request.GET.get('usuario', '').strip()
@@ -132,14 +132,18 @@ def credit(request):
 
         userCreditos = []
         for user in page_obj:
+            usuario_perfil = user.tutorId.usuario if user.tutorId else user.profesorId.usuario
             userCreditos.append({
                 'id': user.id,
-                'nombre': user.tutorId.usuario.nombre if user.tutorId else user.profesorId.usuario.nombre,
-                'paterno': user.tutorId.usuario.paterno if user.tutorId else user.profesorId.usuario.paterno,
-                'materno': user.tutorId.usuario.materno if user.tutorId else user.profesorId.usuario.materno,
+                'nombre': usuario_perfil.nombre,
+                'paterno': usuario_perfil.paterno,
+                'materno': usuario_perfil.materno,
                 'monto': float(user.monto) if isinstance(user.monto, Decimal) else '0.00',
                 'tipo': 'Profesor' if user.profesorId else 'Tutor',
                 'alumnos': user.tutorId.alumnos_set.all() if user.tutorId else '',
+                # Solo para el admin: aviso de que no se le puede modificar porque
+                # el perfil está desactivado (no se muestra al usuario final).
+                'perfil_inactivo': not usuario_perfil.user.is_active,
             })
 
         query_params = request.GET.copy()
@@ -229,25 +233,35 @@ def createCredit(request):
             return redirect('comedor:createCredit')
     
     # GET request - mismo proceso
-    tutors = Tutor.objects.all()
-    profesores = Empleados.objects.filter(puesto='Profesor')
-    
+    tutors = Tutor.objects.select_related('usuario__user')
+    profesores = Empleados.objects.filter(puesto='Profesor').select_related('usuario__user')
+
     all_users = []
     # Agregar tutores
     for tutor in tutors:
         alumnos = Alumnos.objects.filter(tutorId=tutor.id).all()
-        strAlumnos = ", ".join([f"{alumno.nombre} {alumno.paterno}" for alumno in alumnos]) if alumnos else "sin alumnos asignados"
+        nombres_alumnos = [
+            f"{alumno.nombre} {alumno.paterno}" + ('' if alumno.is_active else ' - Inactivo')
+            for alumno in alumnos
+        ]
+        strAlumnos = ", ".join(nombres_alumnos) if nombres_alumnos else "sin alumnos asignados"
+        nombre_tutor = f"{tutor.usuario.nombre} {tutor.usuario.paterno}"
+        if not tutor.usuario.user.is_active:
+            nombre_tutor += " - Inactivo"
         all_users.append({
             'id': f'tutor_{tutor.id}',
-            'nombre': f"{tutor.usuario.nombre} {tutor.usuario.paterno} — {strAlumnos}",
+            'nombre': f"{nombre_tutor} — {strAlumnos}",
             'tipo': 'Tutor'
         })
-    
+
     # Agregar profesores
     for profesor in profesores:
+        nombre_profesor = f"{profesor.usuario.nombre} {profesor.usuario.paterno}"
+        if not profesor.usuario.user.is_active:
+            nombre_profesor += " - Inactivo"
         all_users.append({
             'id': f'profesor_{profesor.id}',
-            'nombre': f"{profesor.usuario.nombre} {profesor.usuario.paterno}",
+            'nombre': nombre_profesor,
             'tipo': 'Profesor'
         })
     
