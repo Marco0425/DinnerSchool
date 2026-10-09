@@ -367,8 +367,54 @@ def cancelOrder(request, pedido_id):
 
 @login_required
 @require_POST
+def cancelar_orden_completa(orden):
+    """
+    Cancela los items ACTIVOS de una Orden y reembolsa su crédito. Debe
+    llamarse dentro de un transaction.atomic() ya abierto por el caller.
+
+    Excluye items que ya estaban cancelados (status=4) para no duplicar su
+    reembolso en CreditoDiario — si se cancelan uno por uno y luego se
+    cancela la orden completa, el saldo ya se les regresó antes.
+
+    Devuelve (total_reembolso, nuevo_saldo). Lanza Credito.DoesNotExist si
+    no hay un Credito asociado al dueño de la orden.
+    """
+    credito = None
+    if orden.alumnoId:
+        credito = Credito.objects.select_for_update().filter(tutorId=orden.alumnoId.tutorId).first()
+    elif orden.profesorId:
+        credito = Credito.objects.select_for_update().filter(profesorId=orden.profesorId).first()
+
+    if not credito:
+        raise Credito.DoesNotExist(f"No se encontró crédito para la Orden #{orden.id}")
+
+    tutor_obj = orden.alumnoId.tutorId if orden.alumnoId else None
+    items_activos = orden.items.exclude(status=4)
+    total_reembolso = items_activos.aggregate(t=Sum('total'))['t'] or Decimal('0')
+
+    for pedido in items_activos:
+        pedido.status = 4
+        pedido.save(update_fields=['status'])
+        CreditoDiario.objects.create(
+            pedido=pedido,
+            tutorId=tutor_obj,
+            profesorId=orden.profesorId,
+            monto=pedido.total,
+            fecha=date.today(),
+        )
+
+    credito.monto += total_reembolso
+    credito.fecha = date.today()
+    credito.save()
+
+    orden.status = 4
+    orden.save(update_fields=['status'])
+
+    return total_reembolso, credito.monto
+
+
 def cancelOrden(request, orden_id):
-    """Cancela una Orden completa (todos sus Pedidos) y reembolsa el crédito."""
+    """Cancela una Orden completa (todos sus Pedidos activos) y reembolsa el crédito."""
     try:
         with transaction.atomic():
             orden = get_object_or_404(
@@ -388,40 +434,15 @@ def cancelOrden(request, orden_id):
             if orden.status not in [0, 1]:
                 return JsonResponse({'success': False, 'message': 'La orden no se puede cancelar en su estado actual'}, status=400)
 
-            credito = None
-            if orden.alumnoId:
-                credito = Credito.objects.select_for_update().filter(tutorId=orden.alumnoId.tutorId).first()
-            elif orden.profesorId:
-                credito = Credito.objects.select_for_update().filter(profesorId=orden.profesorId).first()
-
-            if not credito:
+            try:
+                total_reembolso, nuevo_saldo = cancelar_orden_completa(orden)
+            except Credito.DoesNotExist:
                 return JsonResponse({'success': False, 'message': 'Crédito no encontrado'}, status=404)
-
-            total_reembolso = orden.total
-            tutor_obj = orden.alumnoId.tutorId if orden.alumnoId else None
-
-            for pedido in orden.items.all():
-                pedido.status = 4
-                pedido.save(update_fields=['status'])
-                CreditoDiario.objects.create(
-                    pedido=pedido,
-                    tutorId=tutor_obj,
-                    profesorId=orden.profesorId,
-                    monto=pedido.total,
-                    fecha=date.today(),
-                )
-
-            credito.monto += total_reembolso
-            credito.fecha = date.today()
-            credito.save()
-
-            orden.status = 4
-            orden.save(update_fields=['status'])
 
             return JsonResponse({
                 'success': True,
                 'message': f'Orden #{orden_id} cancelada. Se reembolsaron ${total_reembolso} a tu cuenta.',
-                'nuevo_credito': float(credito.monto),
+                'nuevo_credito': float(nuevo_saldo),
             })
 
     except Exception as e:
